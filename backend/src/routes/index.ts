@@ -1,13 +1,11 @@
 import { Router } from "express";
-import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app.ts";
-import { exampleRouter } from "./example.routes.ts";
 import authRoutes from "./auth-routes";
 import shopRoutes from "./shop-routes";
+import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app";
 
+const router = Router();
 
-export const apiRouter = Router();
-
-apiRouter.get("/health", (_req, res) => {
+router.get("/health", (_req, res) => {
   res.json({
     ok: true,
     app: APP_DISPLAY_NAME,
@@ -15,10 +13,6 @@ apiRouter.get("/health", (_req, res) => {
   });
 });
 
-apiRouter.use("/examples", exampleRouter);
-
-
-const router = Router();
 router.use("/auth", authRoutes);
 router.use("/shops", shopRoutes);
 

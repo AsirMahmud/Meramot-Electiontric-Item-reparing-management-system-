@@ -54,14 +54,14 @@ export default function Navbar({
 
           {/* Logo */}
           <Link href="/" className="inline-flex items-center">
-          <Image
-              src="/images/meramot.svg"
+            <Image
+              src="/images/meramot.png"
               alt="Meramot"
               width={280}
               height={100}
               className="h-16 w-auto object-contain md:h-20"
               priority
-          />
+            />
           </Link>
 
           {/* Right side */}

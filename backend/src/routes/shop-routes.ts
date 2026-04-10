@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { getShops } from "../controllers/shop-controllers.ts";
+import {
+  getFeaturedShops,
+  getShopBySlug,
+  getShops,
+} from "../controllers/shop-controllers";
+
 const router = Router();
+
 router.get("/", getShops);
+router.get("/featured", getFeaturedShops);
+router.get("/:slug", getShopBySlug);
+
 export default router;

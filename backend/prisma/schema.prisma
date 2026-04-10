@@ -1,6 +1,6 @@
 // ============================================================
-// Smart Electronics Repair & Bidding Marketplace
-// Prisma Schema — PostgreSQL
+// Meramot marketplace schema (customer-focused iteration)
+// PostgreSQL + Prisma
 // ============================================================
 
 generator client {
@@ -12,34 +12,67 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────
-// ENUMS
-// ─────────────────────────────────────────────
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
 
-enum ServiceType {
-  CHECK_UP_ONLY
+enum VendorApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ShopCategory {
+  COURIER_PICKUP
+  IN_SHOP_REPAIR
+  SPARE_PARTS
+}
+
+enum RequestMode {
+  CHECKUP_ONLY
   DIRECT_REPAIR
   CHECKUP_AND_REPAIR
 }
 
 enum RequestStatus {
-  PENDING          // just submitted, waiting for bids or shop assignment
-  ASSIGNED         // shop assigned (check-up flow) or bid accepted (direct repair)
-  PICKED_UP        // device collected by courier
-  AT_SHOP          // device arrived at shop
-  DIAGNOSING       // shop is diagnosing the device
-  AWAITING_APPROVAL // quote sent, waiting for customer decision
-  FIXING           // customer approved, repair in progress
-  RETURNING        // device on the way back to customer
-  COMPLETED        // repair done and delivered
-  CANCELLED        // cancelled by customer or declined after diagnosis
+  DRAFT
+  PENDING
+  BIDDING
+  ASSIGNED
+  PICKUP_SCHEDULED
+  PICKED_UP
+  AT_SHOP
+  DIAGNOSING
+  WAITING_APPROVAL
+  REPAIRING
+  RETURN_SCHEDULED
+  RETURNING
+  COMPLETED
+  CANCELLED
+  REJECTED
 }
 
 enum BidStatus {
-  PENDING
+  ACTIVE
   ACCEPTED
-  REJECTED
-  WITHDRAWN
+  DECLINED
+  EXPIRED
+}
+
+enum RepairJobStatus {
+  CREATED
+  PICKUP_SCHEDULED
+  PICKED_UP
+  AT_SHOP
+  DIAGNOSING
+  WAITING_APPROVAL
+  REPAIRING
+  READY_TO_RETURN
+  RETURNING
+  COMPLETED
+  CANCELLED
 }
 
 enum DeliveryType {
@@ -47,32 +80,27 @@ enum DeliveryType {
   EXPRESS
 }
 
+enum DeliveryDirection {
+  TO_SHOP
+  TO_CUSTOMER
+}
+
 enum DeliveryStatus {
   PENDING
-  DISPATCHED
+  SCHEDULED
   PICKED_UP
+  IN_TRANSIT
   DELIVERED
   FAILED
+  CANCELLED
 }
 
-enum RepairStage {
-  PICKED_UP
-  AT_SHOP
-  DIAGNOSING
-  AWAITING_APPROVAL
-  FIXING
-  RETURNING
-}
-
-enum CustomerDecision {
-  PENDING
-  ACCEPTED
-  DECLINED
-}
-
-enum PaymentType {
-  INITIAL_FEE   // delivery + check-up fee paid upfront
-  FINAL_BILL    // spare parts + labour paid after approval
+enum PaymentMethod {
+  BKASH
+  NAGAD
+  CARD
+  CASH
+  SSLCOMMERZ
 }
 
 enum PaymentStatus {
@@ -80,309 +108,302 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  PARTIALLY_REFUNDED
 }
 
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum TicketStatus {
+enum SupportTicketStatus {
   OPEN
   IN_PROGRESS
   RESOLVED
   CLOSED
 }
 
-enum RaisedByType {
-  CUSTOMER
-  SHOP
+enum HomeSectionType {
+  HERO_OFFER
+  PROMO_BANNER
+  FEATURED_SHOPS
+  POPULAR_CATEGORY
+  RECENTLY_VIEWED
 }
-
-enum NotificationChannel {
-  SMS
-  IN_APP
-}
-
-enum NotificationEventType {
-  REQUEST_CREATED
-  NEW_BID_RECEIVED
-  BID_ACCEPTED
-  REPAIR_STAGE_UPDATED
-  QUOTE_SENT
-  PAYMENT_RECEIVED
-  WARRANTY_ISSUED
-  SUPPORT_TICKET_UPDATE
-}
-
-// ─────────────────────────────────────────────
-// USER
-// ─────────────────────────────────────────────
 
 model User {
-  id         String   @id @default(uuid())
-  name       String
-  phone      String   @unique
-  email      String?  @unique
-  address    String
-  lat        Float
-  lng        Float
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String     @id @default(cuid())
+  username        String     @unique
+  email           String     @unique
+  passwordHash    String
+  name            String?
+  phone           String?
+  avatarUrl       String?
+  address         String?
+  city            String?
+  area            String?
+  lat             Float?
+  lng             Float?
+  isEmailVerified Boolean    @default(false)
+  status          UserStatus @default(ACTIVE)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   repairRequests RepairRequest[]
   payments       Payment[]
-  warranties     Warranty[]
   ratings        Rating[]
-  notifications  Notification[]
+  recentlyViewed RecentlyViewed[]
   supportTickets SupportTicket[]
-
-  @@map("users")
 }
 
-// ─────────────────────────────────────────────
-// SHOP
-// ─────────────────────────────────────────────
+model VendorApplication {
+  id             String                  @id @default(cuid())
+  ownerName      String
+  businessEmail  String                  @unique
+  phone          String
+  shopName       String
+  tradeLicenseNo String?
+  address        String
+  city           String?
+  area           String?
+  lat            Float?
+  lng            Float?
+  specialties    String[]
+  courierPickup  Boolean                 @default(false)
+  inShopRepair   Boolean                 @default(true)
+  spareParts     Boolean                 @default(false)
+  notes          String?
+  status         VendorApplicationStatus @default(PENDING)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+}
 
 model Shop {
-  id              String   @id @default(uuid())
-  name            String
-  phone           String   @unique
-  email           String?  @unique
-  address         String
-  lat             Float
-  lng             Float
-  rating          Float    @default(0)
-  totalReviews    Int      @default(0)
-  commissionOwed  Float    @default(0)
-  isVerified      Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  skills     ShopSkill[]
-  bids       Bid[]
-  repairJobs RepairJob[]
-  ratings    Rating[]
-
-  @@map("shops")
-}
-
-// ─────────────────────────────────────────────
-// SHOP SKILL — device specializations for targeted SMS alerts
-// ─────────────────────────────────────────────
-
-model ShopSkill {
-  id          String @id @default(uuid())
-  shopId      String
-  deviceType  String // e.g. "Phone", "Laptop", "Tablet"
-  brand       String // e.g. "Apple", "Samsung", "Any"
-
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
-
-  @@unique([shopId, deviceType, brand])
-  @@map("shop_skills")
-}
-
-// ─────────────────────────────────────────────
-// REPAIR REQUEST — central entity for every job
-// ─────────────────────────────────────────────
-
-model RepairRequest {
-  id               String        @id @default(uuid())
-  userId           String
-  deviceType       String        // e.g. "Phone"
-  brand            String        // e.g. "Samsung"
-  model            String        // e.g. "S23"
-  issueDescription String?
-  serviceType      ServiceType
-  status           RequestStatus @default(PENDING)
-  platformFee      Int           @default(0) // fixed fee in BDT for check-up flows
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-
-  user           User            @relation(fields: [userId], references: [id])
-  bids           Bid[]
-  delivery       Delivery?
-  repairJob      RepairJob?
-  payments       Payment[]
-  supportTickets SupportTicket[]
-
-  @@map("repair_requests")
-}
-
-// ─────────────────────────────────────────────
-// BID — shops bid on DIRECT_REPAIR requests
-// ─────────────────────────────────────────────
-
-model Bid {
-  id        String    @id @default(uuid())
-  requestId String
-  shopId    String
-  partsCost Int
-  laborCost Int
-  totalCost Int
-  status    BidStatus @default(PENDING)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  request   RepairRequest @relation(fields: [requestId], references: [id])
-  shop      Shop          @relation(fields: [shopId], references: [id])
-  repairJob RepairJob?
-
-  @@unique([requestId, shopId]) // one bid per shop per request
-  @@map("bids")
-}
-
-// ─────────────────────────────────────────────
-// DELIVERY — Pathao courier integration
-// ─────────────────────────────────────────────
-
-model Delivery {
-  id             String         @id @default(uuid())
-  requestId      String         @unique
-  pathaoOrderId  String?        // returned by Pathao API
-  pickupAddress  String
-  dropoffAddress String
-  distanceKm     Float
-  deliveryFee    Int            // calculated dynamically via Google Maps + Pathao
-  deliveryType   DeliveryType   @default(REGULAR)
-  status         DeliveryStatus @default(PENDING)
-  dispatchedAt   DateTime?
-  deliveredAt    DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  request RepairRequest @relation(fields: [requestId], references: [id])
-
-  @@map("deliveries")
-}
-
-// ─────────────────────────────────────────────
-// REPAIR JOB — tracks the 6-stage repair progress
-// ─────────────────────────────────────────────
-
-model RepairJob {
-  id               String           @id @default(uuid())
-  requestId        String           @unique
-  shopId           String
-  bidId            String?          @unique // null for check-up-only / auto-assigned
-  stage            RepairStage      @default(PICKED_UP)
-  diagnosisNotes   String?
-  finalQuote       Int?             // quote sent to customer after diagnosis
-  customerDecision CustomerDecision @default(PENDING)
-  completedAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-
-  request  RepairRequest @relation(fields: [requestId], references: [id])
-  shop     Shop          @relation(fields: [shopId], references: [id])
-  bid      Bid?          @relation(fields: [bidId], references: [id])
-  warranty Warranty?
-  rating   Rating?
-
-  @@map("repair_jobs")
-}
-
-// ─────────────────────────────────────────────
-// PAYMENT — SSLCommerz integration (bKash, Nagad, card)
-// ─────────────────────────────────────────────
-
-model Payment {
-  id               String        @id @default(uuid())
-  requestId        String
-  userId           String
-  sslcommerzTxnId  String?       @unique // returned by SSLCommerz
-  paymentType      PaymentType
-  amount           Int           // in BDT
-  status           PaymentStatus @default(PENDING)
-  paidAt           DateTime?
-  createdAt        DateTime      @default(now())
-
-  request RepairRequest @relation(fields: [requestId], references: [id])
-  user    User          @relation(fields: [userId], references: [id])
-
-  @@map("payments")
-}
-
-// ─────────────────────────────────────────────
-// WARRANTY — digital warranty card after successful repair
-// ─────────────────────────────────────────────
-
-model Warranty {
-  id           String   @id @default(uuid())
-  repairJobId  String   @unique
-  userId       String
-  description  String   // e.g. "Screen replacement warranty"
-  durationDays Int      // e.g. 30
-  issuedAt     DateTime @default(now())
-  expiresAt    DateTime
-
-  repairJob RepairJob @relation(fields: [repairJobId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
-
-  @@map("warranties")
-}
-
-// ─────────────────────────────────────────────
-// RATING — 5-star reviews; feeds shop ranking algorithm
-// ─────────────────────────────────────────────
-
-model Rating {
-  id          String   @id @default(uuid())
-  repairJobId String   @unique
-  userId      String
-  shopId      String
-  stars       Int      // 1–5
-  comment     String?
-  createdAt   DateTime @default(now())
-
-  repairJob RepairJob @relation(fields: [repairJobId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
-  shop      Shop      @relation(fields: [shopId], references: [id])
-
-  @@map("ratings")
-}
-
-// ─────────────────────────────────────────────
-// SUPPORT TICKET — disputes for customers and shops
-// ─────────────────────────────────────────────
-
-model SupportTicket {
-  id           String         @id @default(uuid())
-  requestId    String
-  raisedById   String         // userId or shopId depending on raisedByType
-  raisedByType RaisedByType
-  subject      String
-  description  String
-  priority     TicketPriority @default(MEDIUM)
-  status       TicketStatus   @default(OPEN)
-  resolvedAt   DateTime?
+  id           String         @id @default(cuid())
+  name         String
+  slug         String         @unique
+  description  String?
+  logoUrl      String?
+  bannerUrl    String?
+  address      String
+  city         String?
+  area         String?
+  lat          Float?
+  lng          Float?
+  phone        String?
+  email        String?
+  ratingAvg    Float          @default(0)
+  reviewCount  Int            @default(0)
+  priceLevel   Int            @default(2)
+  isFeatured   Boolean        @default(false)
+  isActive     Boolean        @default(true)
+  hasVoucher   Boolean        @default(false)
+  freeDelivery Boolean        @default(false)
+  hasDeals     Boolean        @default(false)
+  categories   ShopCategory[]
+  specialties  String[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  request  RepairRequest @relation(fields: [requestId], references: [id])
-  raisedBy User          @relation(fields: [raisedById], references: [id])
-
-  @@map("support_tickets")
+  bids       Bid[]
+  ratings    Rating[]
+  repairJobs RepairJob[]
 }
 
-// ─────────────────────────────────────────────
-// NOTIFICATION — SMS alerts via BulkSMSBD
-// ─────────────────────────────────────────────
+model RepairRequest {
+  id                String        @id @default(cuid())
+  userId            String
+  title             String
+  description       String?
+  deviceType        String
+  brand             String?
+  model             String?
+  issueCategory     String?
+  problem           String
+  imageUrls         String[]
+  mode              RequestMode
+  status            RequestStatus @default(PENDING)
+  preferredPickup   Boolean       @default(false)
+  deliveryType      DeliveryType?
+  checkupFee        Float?
+  quotedFinalAmount Float?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-model Notification {
-  id        String                @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bids      Bid[]
+  payments  Payment[]
+  repairJob RepairJob?
+
+  @@index([userId])
+  @@index([status])
+  @@index([deviceType, brand, model])
+}
+
+model Bid {
+  id              String    @id @default(cuid())
+  repairRequestId String
+  shopId          String
+  partsCost       Float
+  laborCost       Float
+  totalCost       Float
+  estimatedDays   Int?
+  notes           String?
+  status          BidStatus @default(ACTIVE)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  repairRequest RepairRequest @relation(fields: [repairRequestId], references: [id], onDelete: Cascade)
+  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  repairJob     RepairJob?
+
+  @@unique([repairRequestId, shopId])
+  @@index([repairRequestId])
+  @@index([shopId])
+}
+
+model RepairJob {
+  id                String          @id @default(cuid())
+  repairRequestId   String          @unique
+  shopId            String
+  acceptedBidId     String?         @unique
+  status            RepairJobStatus @default(CREATED)
+  diagnosisNotes    String?
+  finalQuotedAmount Float?
+  customerApproved  Boolean?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  repairRequest RepairRequest @relation(fields: [repairRequestId], references: [id], onDelete: Cascade)
+  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  acceptedBid   Bid?          @relation(fields: [acceptedBidId], references: [id])
+  deliveries    Delivery[]
+  warranty      Warranty?
+
+  @@index([shopId])
+  @@index([status])
+}
+
+model Delivery {
+  id            String            @id @default(cuid())
+  repairJobId   String
+  direction     DeliveryDirection
+  type          DeliveryType      @default(REGULAR)
+  status        DeliveryStatus    @default(PENDING)
+  partnerName   String?
+  trackingCode  String?
+  riderName     String?
+  riderPhone    String?
+  pickupAddress String
+  dropAddress   String
+  distanceKm    Float?
+  fee           Float?
+  scheduledAt   DateTime?
+  pickedUpAt    DateTime?
+  deliveredAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+
+  @@index([repairJobId])
+  @@index([status])
+}
+
+model Payment {
+  id              String         @id @default(cuid())
+  userId          String
+  repairRequestId String?
+  amount          Float
+  currency        String         @default("BDT")
+  method          PaymentMethod?
+  status          PaymentStatus  @default(PENDING)
+  transactionRef  String?        @unique
+  paidAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repairRequest RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([repairRequestId])
+  @@index([status])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
   userId    String
-  message   String
-  channel   NotificationChannel   @default(SMS)
-  eventType NotificationEventType
-  sent      Boolean               @default(false)
-  sentAt    DateTime?
-  createdAt DateTime              @default(now())
+  shopId    String
+  score     Int
+  review    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
-  @@map("notifications")
+  @@unique([userId, shopId])
+  @@index([shopId])
+}
+
+model Warranty {
+  id           String   @id @default(cuid())
+  repairJobId  String   @unique
+  title        String
+  details      String?
+  durationDays Int
+  startsAt     DateTime
+  endsAt       DateTime
+  createdAt    DateTime @default(now())
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+}
+
+model RecentlyViewed {
+  id       String   @id @default(cuid())
+  userId   String
+  shopId   String
+  viewedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, viewedAt])
+  @@index([shopId])
+}
+
+model SupportTicket {
+  id              String              @id @default(cuid())
+  userId          String
+  repairRequestId String?
+  subject         String
+  message         String
+  status          SupportTicketStatus @default(OPEN)
+  priority        String?
+  adminNotes      String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OfferBanner {
+  id              String          @id @default(cuid())
+  title           String
+  subtitle        String?
+  imageUrl        String?
+  ctaLabel        String?
+  ctaHref         String?
+  backgroundColor String?
+  isActive        Boolean         @default(true)
+  position        Int             @default(0)
+  sectionType     HomeSectionType @default(HERO_OFFER)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([isActive, position])
 }
