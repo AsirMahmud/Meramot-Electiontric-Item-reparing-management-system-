@@ -1,10 +1,11 @@
-import { createApp } from "./app.js";
-import { APP_DISPLAY_NAME } from "./config/app.js";
-import { env } from "./config/env.js";
-
-const app = createApp();
-
+import express from "express";
+import cors from "cors";
+import routes from "./routes";
+import { env } from "./config/env.ts";
+const app = express();
+app.use(cors({ origin: env.frontendOrigin, credentials: true }));
+app.use(express.json());
+app.use("/api", routes);
 app.listen(env.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`${APP_DISPLAY_NAME} — API http://localhost:${env.port}`);
+  console.log(`Backend running on port ${env.port}`);
 });

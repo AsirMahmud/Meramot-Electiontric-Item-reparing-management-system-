@@ -1,5 +1,5 @@
 import type { Example } from "@prisma/client";
-import { prisma } from "./prisma.js";
+import prisma from "./prisma.js";
 
 export const exampleModel = {
   async list(): Promise<Example[]> {
