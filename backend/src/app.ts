@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
+import routes from "./routes";
 import { apiRouter } from "./routes/index.js";
 
 export function createApp() {
