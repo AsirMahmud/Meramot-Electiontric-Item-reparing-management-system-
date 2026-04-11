@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 type NavbarProps = {
   isLoggedIn?: boolean;
@@ -29,13 +30,10 @@ export default function Navbar({
     return firstName?.trim() || "User";
   }, [firstName]);
 
-  const confirmLogout = () => {
-    localStorage.removeItem("meramot.token");
-    localStorage.removeItem("meramot.user");
-    window.dispatchEvent(new Event("meramot-auth-changed"));
+  const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
   };
 
   const handleSearchSubmit = (e: FormEvent) => {
@@ -154,7 +152,7 @@ export default function Navbar({
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-4 text-[#1d3528] font-semibold">
+            <div className="flex flex-wrap items-center gap-4 font-semibold text-[#1d3528]">
               <Link href="/shops?category=COURIER_PICKUP" className="hover:underline">
                 Courier Pickup
               </Link>

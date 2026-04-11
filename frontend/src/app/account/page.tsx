@@ -2,56 +2,39 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-
-type StoredUser = {
-  id: string;
-  name?: string | null;
-  username?: string | null;
-  email?: string | null;
-  phone?: string | null;
-};
+import { useSession } from "next-auth/react";
 
 export default function AccountPage() {
   const router = useRouter();
-  const [user, setUser] = useState<StoredUser | null>(null);
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    const rawUser = localStorage.getItem("meramot.user");
-
-    if (!rawUser) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      setUser(JSON.parse(rawUser));
-    } catch {
-      localStorage.removeItem("meramot.user");
-      localStorage.removeItem("meramot.token");
-      router.push("/login");
-    }
-  }, [router]);
+  const user = session?.user;
 
   const firstName = useMemo(() => {
     return (
       user?.name?.trim()?.split(" ")[0] ||
-      user?.username?.trim()?.split(" ")[0] ||
+      (user as any)?.username?.trim()?.split(" ")[0] ||
       "User"
     );
   }, [user]);
 
-  if (!user) {
+  if (status === "loading") {
     return (
-      <main className="min-h-screen bg-[#f2f7ef] px-4 py-8">
-        <div className="mx-auto max-w-4xl">Loading account...</div>
+      <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
+        <div className="mx-auto max-w-4xl text-[#173726]">Loading account...</div>
       </main>
     );
   }
 
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
+
   return (
-    <main className="min-h-screen bg-[#f2f7ef] px-4 py-8">
+    <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
@@ -110,7 +93,7 @@ export default function AccountPage() {
                 Username
               </p>
               <p className="mt-2 text-base font-medium text-[#173726]">
-                {user.username || "Not provided"}
+                {(user as any)?.username || "Not provided"}
               </p>
             </div>
 
@@ -128,7 +111,7 @@ export default function AccountPage() {
                 Phone
               </p>
               <p className="mt-2 text-base font-medium text-[#173726]">
-                {user.phone || "Not provided"}
+                {(user as any)?.phone || "Not provided"}
               </p>
             </div>
           </div>

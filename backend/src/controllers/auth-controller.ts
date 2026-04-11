@@ -124,3 +124,23 @@ export async function login(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function checkUsername(req: Request, res: Response) {
+  try {
+    const username = String(req.query.username || "").trim();
+
+    if (!username) {
+      return res.status(400).json({ message: "username is required" });
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { username },
+      select: { id: true },
+    });
+
+    return res.json({ available: !existing });
+  } catch (error) {
+    console.error("checkUsername error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

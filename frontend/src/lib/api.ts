@@ -64,3 +64,10 @@ export function login(data: { identifier: string; password: string }) {
     body: JSON.stringify(data),
   });
 }
+
+export function checkUsername(username: string) {
+  return request<{ available: boolean }>(
+    `/auth/check-username?username=${encodeURIComponent(username)}`,
+    { cache: "no-store" }
+  );
+}

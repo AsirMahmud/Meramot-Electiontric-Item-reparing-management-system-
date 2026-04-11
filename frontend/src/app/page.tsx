@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import FeaturedShops from "@/components/home/FeaturedShops";
 import Navbar from "@/components/home/Navbar";
 import PopularCategories from "@/components/home/PopularCategories";
@@ -10,57 +11,36 @@ import OfferCarousel from "@/components/home/OfferCarousel";
 import { getShops } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
 
-type StoredUser = {
-  id: string;
-  name?: string | null;
-  username?: string | null;
-  email?: string | null;
-  phone?: string | null;
-};
-
 export default function HomePage() {
   const [shops, setShops] = useState(fallbackShops);
-  const [user, setUser] = useState<StoredUser | null>(null);
   const [language, setLanguage] = useState<"en" | "bn">("en");
+  const { data: session } = useSession();
 
   useEffect(() => {
-    function syncUserFromStorage() {
-      const rawUser = localStorage.getItem("meramot.user");
-  
-      if (!rawUser) {
-        setUser(null);
-        return;
-      }
-  
+    async function loadShops() {
       try {
-        setUser(JSON.parse(rawUser));
+        const data = await getShops();
+        setShops(data);
       } catch {
-        localStorage.removeItem("meramot.user");
-        setUser(null);
+        setShops(fallbackShops);
       }
     }
-  
-    syncUserFromStorage();
-  
-    window.addEventListener("meramot-auth-changed", syncUserFromStorage);
-  
-    return () => {
-      window.removeEventListener("meramot-auth-changed", syncUserFromStorage);
-    };
+
+    loadShops();
   }, []);
 
   const firstName = useMemo(() => {
     return (
-      user?.name?.trim()?.split(" ")[0] ||
-      user?.username?.trim()?.split(" ")[0] ||
+      session?.user?.name?.trim()?.split(" ")[0] ||
+      (session?.user as any)?.username?.trim()?.split(" ")[0] ||
       "User"
     );
-  }, [user]);
+  }, [session]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-[#E4FCD5] text-foreground">
       <Navbar
-        isLoggedIn={!!user}
+        isLoggedIn={!!session?.user}
         firstName={firstName}
         language={language}
         onLanguageChange={setLanguage}
