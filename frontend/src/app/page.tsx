@@ -8,33 +8,29 @@ import PopularCategories from "@/components/home/PopularCategories";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import SidebarFilters from "@/components/home/SidebarFilters";
 import OfferCarousel from "@/components/home/OfferCarousel";
-import { getShops } from "@/lib/api";
+import { getShops, type ShopSummary } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
 
 export default function HomePage() {
-  const [shops, setShops] = useState(fallbackShops);
+  const [shops, setShops] = useState<ShopSummary[]>(fallbackShops);
   const [language, setLanguage] = useState<"en" | "bn">("en");
   const { data: session } = useSession();
 
   useEffect(() => {
     async function loadShops() {
       try {
-        const data = await getShops();
+        const data = await getShops({ take: 12 });
         setShops(data);
       } catch {
         setShops(fallbackShops);
       }
     }
 
-    loadShops();
+    void loadShops();
   }, []);
 
   const firstName = useMemo(() => {
-    return (
-      session?.user?.name?.trim()?.split(" ")[0] ||
-      (session?.user as any)?.username?.trim()?.split(" ")[0] ||
-      "User"
-    );
+    return session?.user?.name?.trim()?.split(" ")[0] || (session?.user as { username?: string } | undefined)?.username?.trim()?.split(" ")[0] || "User";
   }, [session]);
 
   return (

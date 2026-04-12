@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../models/prisma";
+import prisma from "../models/prisma.js";
 
 function toNumber(value: unknown, fallback?: number) {
   const n = Number(value);
@@ -14,17 +14,26 @@ export async function getShops(req: Request, res: Response) {
     const hasDeals = req.query.deals === "true";
     const category = typeof req.query.category === "string" ? req.query.category : undefined;
     const sort = typeof req.query.sort === "string" ? req.query.sort : "topRated";
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const take = toNumber(req.query.take, 12);
 
-    const where: Record<string, unknown> = {
-      isActive: true,
-    };
+    const where: Record<string, unknown> = { isActive: true };
 
     if (featuredOnly) where.isFeatured = true;
     if (hasVoucher) where.hasVoucher = true;
     if (freeDelivery) where.freeDelivery = true;
     if (hasDeals) where.hasDeals = true;
     if (category) where.categories = { has: category };
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { address: { contains: q, mode: "insensitive" } },
+        { city: { contains: q, mode: "insensitive" } },
+        { area: { contains: q, mode: "insensitive" } },
+        { specialties: { has: q } },
+      ];
+    }
 
     let orderBy: Array<Record<string, "asc" | "desc">> = [
       { isFeatured: "desc" },
@@ -65,6 +74,9 @@ export async function getShops(req: Request, res: Response) {
         hasDeals: true,
         categories: true,
         specialties: true,
+        acceptsDirectOrders: true,
+        supportsPickup: true,
+        supportsOnsiteRepair: true,
       },
     });
 
@@ -78,10 +90,7 @@ export async function getShops(req: Request, res: Response) {
 export async function getFeaturedShops(_req: Request, res: Response) {
   try {
     const shops = await prisma.shop.findMany({
-      where: {
-        isActive: true,
-        isFeatured: true,
-      },
+      where: { isActive: true, isFeatured: true },
       orderBy: [{ ratingAvg: "desc" }, { reviewCount: "desc" }],
       take: 8,
       select: {
@@ -102,6 +111,8 @@ export async function getFeaturedShops(_req: Request, res: Response) {
         freeDelivery: true,
         hasDeals: true,
         categories: true,
+        specialties: true,
+        acceptsDirectOrders: true,
       },
     });
 
@@ -139,9 +150,35 @@ export async function getShopBySlug(req: Request, res: Response) {
         hasVoucher: true,
         freeDelivery: true,
         hasDeals: true,
+        acceptsDirectOrders: true,
+        supportsPickup: true,
+        supportsOnsiteRepair: true,
+        deliveryRadiusKm: true,
+        openingHoursText: true,
         categories: true,
         specialties: true,
         createdAt: true,
+        services: {
+          where: { isActive: true },
+          orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            shortDescription: true,
+            description: true,
+            deviceType: true,
+            issueCategory: true,
+            pricingType: true,
+            basePrice: true,
+            priceMax: true,
+            estimatedDaysMin: true,
+            estimatedDaysMax: true,
+            includesPickup: true,
+            includesDelivery: true,
+            isFeatured: true,
+          },
+        },
       },
     });
 

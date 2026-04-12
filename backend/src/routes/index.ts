@@ -1,7 +1,7 @@
 import { Router } from "express";
-import authRoutes from "./auth-routes";
-import shopRoutes from "./shop-routes";
-import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app";
+import authRoutes from "./auth-routes.js";
+import shopRoutes from "./shop-routes.js";
+import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app.js";
 
 const router = Router();
 

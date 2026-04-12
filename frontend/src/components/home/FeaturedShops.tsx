@@ -1,36 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ShopCard from "@/components/shops/shop-card";
+import { getFeaturedShops, type ShopSummary } from "@/lib/api";
 
-type Shop = {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  address: string;
-  ratingAvg: number;
-  reviewCount: number;
-  priceLevel: number;
-  hasVoucher: boolean;
-  freeDelivery: boolean;
-  hasDeals: boolean;
+type FeaturedShopsProps = {
+  shops?: ShopSummary[];
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-export default function FeaturedShops() {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProps) {
+  const [shops, setShops] = useState<ShopSummary[]>(initialShops ?? []);
+  const [loading, setLoading] = useState(!initialShops || initialShops.length === 0);
 
   useEffect(() => {
+    if (initialShops && initialShops.length > 0) {
+      setShops(initialShops);
+      setLoading(false);
+      return;
+    }
+
     const fetchShops = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/shops?sort=topRated`);
-        const data = await res.json();
-        const normalized = Array.isArray(data) ? data : [];
-        setShops(normalized.slice(0, 5));
+        const data = await getFeaturedShops();
+        setShops(data.slice(0, 6));
       } catch (err) {
         console.error("Failed to fetch featured shops:", err);
       } finally {
@@ -38,14 +31,14 @@ export default function FeaturedShops() {
       }
     };
 
-    fetchShops();
-  }, []);
+    void fetchShops();
+  }, [initialShops]);
+
+  const featured = useMemo(() => shops.slice(0, 6), [shops]);
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 text-2xl font-bold text-[#163625]">
-        Featured shops
-      </h2>
+      <h2 className="mb-4 text-2xl font-bold text-[#163625]">Featured shops</h2>
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -67,12 +60,8 @@ export default function FeaturedShops() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {shops.map((shop) => (
-            <Link
-              key={shop.id}
-              href={`/shops?q=${encodeURIComponent(shop.name)}`}
-              className="block"
-            >
+          {featured.map((shop) => (
+            <Link key={shop.id} href={`/shops/${shop.slug}`} className="block">
               <ShopCard shop={shop} />
             </Link>
           ))}
