@@ -3,7 +3,7 @@ import {
   getFeaturedShops,
   getShopBySlug,
   getShops,
-} from "../controllers/shop-controllers";
+} from "../controllers/shop-controllers.js";
 
 const router = Router();
 

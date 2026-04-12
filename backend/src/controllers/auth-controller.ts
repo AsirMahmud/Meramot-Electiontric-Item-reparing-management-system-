@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma";
-import { env } from "../config/env";
+import prisma from "../models/prisma.js";
+import { env } from "../config/env.js";
 
 function signToken(user: { id: string; username: string; email: string }) {
   return jwt.sign(
@@ -12,7 +12,7 @@ function signToken(user: { id: string; username: string; email: string }) {
       email: user.email,
     },
     env.jwtSecret,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
 }
 
@@ -32,9 +32,12 @@ export async function signup(req: Request, res: Response) {
       });
     }
 
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
     const existing = await prisma.user.findFirst({
       where: {
-        OR: [{ username: username.trim() }, { email: email.trim() }],
+        OR: [{ username: cleanUsername }, { email: cleanEmail }],
       },
       select: { id: true },
     });
@@ -50,8 +53,8 @@ export async function signup(req: Request, res: Response) {
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
-        username: username.trim(),
-        email: email.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
         phone: phone.trim(),
         passwordHash,
       },
@@ -90,9 +93,11 @@ export async function login(req: Request, res: Response) {
       });
     }
 
+    const cleanIdentifier = identifier.trim();
+
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ email: identifier.trim() }, { username: identifier.trim() }],
+        OR: [{ email: cleanIdentifier.toLowerCase() }, { username: cleanIdentifier }],
       },
     });
 
@@ -117,6 +122,7 @@ export async function login(req: Request, res: Response) {
         username: user.username,
         email: user.email,
         phone: user.phone,
+        role: user.role,
       },
     });
   } catch (error) {
