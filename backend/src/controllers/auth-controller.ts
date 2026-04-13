@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma";
-import { env } from "../config/env";
+import prisma from "../models/prisma.js";
+import { env } from "../config/env.js";
 
-function signToken(user: { id: string; username: string; email: string }) {
+function signToken(user: { id: string; username: string; email: string; role: string }) {
   return jwt.sign(
     {
       sub: user.id,
+      role: user.role,
       username: user.username,
       email: user.email,
     },
@@ -61,6 +62,7 @@ export async function signup(req: Request, res: Response) {
         username: true,
         email: true,
         phone: true,
+        role: true,
       },
     });
 
@@ -117,6 +119,7 @@ export async function login(req: Request, res: Response) {
         username: user.username,
         email: user.email,
         phone: user.phone,
+        role: user.role,
       },
     });
   } catch (error) {

@@ -57,6 +57,20 @@ export function getShops() {
   return request<Shop[]>("/shops", { cache: "no-store" });
 }
 
+export function getAuthHeaders(): HeadersInit {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  const token = localStorage.getItem("meramot.token");
+
+  if (!token) {
+    return {};
+  }
+
+  return { Authorization: `Bearer ${token}` };
+}
+
 
 export function login(data: { identifier: string; password: string }) {
   return request<AuthPayload>("/auth/login", {

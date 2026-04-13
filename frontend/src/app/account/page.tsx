@@ -15,24 +15,30 @@ type StoredUser = {
 
 export default function AccountPage() {
   const router = useRouter();
-  const [user, setUser] = useState<StoredUser | null>(null);
+  const [user] = useState<StoredUser | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
 
-  useEffect(() => {
     const rawUser = localStorage.getItem("meramot.user");
-
     if (!rawUser) {
-      router.push("/login");
-      return;
+      return null;
     }
 
     try {
-      setUser(JSON.parse(rawUser));
+      return JSON.parse(rawUser) as StoredUser;
     } catch {
       localStorage.removeItem("meramot.user");
       localStorage.removeItem("meramot.token");
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    if (!user) {
       router.push("/login");
     }
-  }, [router]);
+  }, [router, user]);
 
   const firstName = useMemo(() => {
     return (

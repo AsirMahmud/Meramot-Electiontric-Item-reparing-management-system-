@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../models/prisma";
+import prisma from "../models/prisma.js";
 
 function toNumber(value: unknown, fallback?: number) {
   const n = Number(value);
@@ -114,7 +114,7 @@ export async function getFeaturedShops(_req: Request, res: Response) {
 
 export async function getShopBySlug(req: Request, res: Response) {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params.slug);
 
     const shop = await prisma.shop.findUnique({
       where: { slug },

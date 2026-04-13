@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Navbar from "@/components/home/navbar";
+import Navbar from "@/components/home/Navbar";
 
 type Shop = {
   id: string;
@@ -89,6 +89,8 @@ export default function ShopsResultsClient() {
         <h1 className="text-4xl font-bold text-[#123324]">
           {loading ? "Loading..." : `${shops.length} matches found`}
         </h1>
+
+        <p className="mt-2 text-sm font-medium text-[#4c6354]">Sorted by: {sortLabel}</p>
 
         {q && (
           <p className="mt-2 text-2xl text-[#31483a]">{q}</p>

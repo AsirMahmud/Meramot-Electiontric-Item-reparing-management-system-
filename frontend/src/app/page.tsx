@@ -7,8 +7,6 @@ import PopularCategories from "@/components/home/PopularCategories";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import SidebarFilters from "@/components/home/SidebarFilters";
 import OfferCarousel from "@/components/home/OfferCarousel";
-import { getShops } from "@/lib/api";
-import { fallbackShops } from "@/lib/mock-data";
 
 type StoredUser = {
   id: string;
@@ -19,7 +17,6 @@ type StoredUser = {
 };
 
 export default function HomePage() {
-  const [shops, setShops] = useState(fallbackShops);
   const [user, setUser] = useState<StoredUser | null>(null);
   const [language, setLanguage] = useState<"en" | "bn">("en");
 
@@ -71,7 +68,7 @@ export default function HomePage() {
 
         <div className="space-y-8">
           <OfferCarousel />
-          <FeaturedShops shops={shops} />
+          <FeaturedShops />
           <PopularCategories />
           <RecentlyViewed />
         </div>
