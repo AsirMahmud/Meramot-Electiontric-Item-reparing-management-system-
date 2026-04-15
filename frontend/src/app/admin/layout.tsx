@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/finance", label: "Finance Ledger" },
   { href: "/admin/vendors", label: "Vendor Review" },
   { href: "/admin/tickets", label: "Support Tickets" },
   { href: "/admin/disputes", label: "Disputes" },

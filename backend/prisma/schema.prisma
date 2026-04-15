@@ -211,6 +211,12 @@ enum DeliveryReportStatus {
   DISMISSED
 }
 
+enum ShopServicePricingType {
+  FIXED
+  STARTING_FROM
+  INSPECTION_REQUIRED
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -249,6 +255,7 @@ model User {
   deliveryReportsMade DeliveryReport[]      @relation("DeliveryReportReporter")
   deliveryReportsOn   DeliveryReport[]      @relation("DeliveryReportAgainst")
   ordersPlaced        EscrowLedger[]        @relation("EscrowCustomer")
+  vendorLedgerEntries EscrowLedger[]        @relation("EscrowVendor")
   vendorApplications  VendorApplication[]   @relation("VendorApplicant")
   ownedShops          Shop[]                @relation("ShopOwner")
 
@@ -319,6 +326,11 @@ model Shop {
   hasVoucher    Boolean        @default(false)
   freeDelivery  Boolean        @default(false)
   hasDeals      Boolean        @default(false)
+  acceptsDirectOrders Boolean   @default(true)
+  supportsPickup      Boolean   @default(false)
+  supportsOnsiteRepair Boolean  @default(false)
+  deliveryRadiusKm    Float?
+  openingHoursText    String?
   categories    ShopCategory[]
   specialties   String[]
   createdAt     DateTime       @default(now())
@@ -330,10 +342,40 @@ model Shop {
   bids          Bid[]
   ratings       Rating[]
   repairJobs    RepairJob[]
+  services      ShopService[]
   recentlyViewed RecentlyViewed[]
 
   @@index([ownerId])
   @@index([isActive])
+}
+
+model ShopService {
+  id               String                 @id @default(cuid())
+  shopId           String
+  slug             String
+  name             String
+  shortDescription String?
+  description      String?
+  deviceType       String?
+  issueCategory    String?
+  pricingType      ShopServicePricingType @default(INSPECTION_REQUIRED)
+  basePrice        Float?
+  priceMax         Float?
+  estimatedDaysMin Int?
+  estimatedDaysMax Int?
+  includesPickup   Boolean                @default(false)
+  includesDelivery Boolean                @default(false)
+  sortOrder        Int                    @default(0)
+  isFeatured       Boolean                @default(false)
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  shop             Shop                   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, slug])
+  @@index([shopId])
+  @@index([isActive, sortOrder])
 }
 
 model RepairRequest {
@@ -639,7 +681,11 @@ model EscrowLedger {
   repairRequestId  String?
   disputeCaseId    String?
   customerUserId   String?
+  vendorUserId     String?
   amount           Decimal      @db.Decimal(10, 2)
+  grossAmount      Decimal?     @db.Decimal(10, 2)
+  platformCommissionAmount Decimal? @db.Decimal(10, 2)
+  vendorNetAmount  Decimal?     @db.Decimal(10, 2)
   action           String
   note             String?
   createdAt        DateTime     @default(now())
@@ -648,11 +694,14 @@ model EscrowLedger {
   repairRequest    RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
   disputeCase      DisputeCase?  @relation(fields: [disputeCaseId], references: [id], onDelete: SetNull)
   customer         User?         @relation("EscrowCustomer", fields: [customerUserId], references: [id], onDelete: SetNull)
+  vendor           User?         @relation("EscrowVendor", fields: [vendorUserId], references: [id], onDelete: SetNull)
 
   @@index([paymentId])
   @@index([repairRequestId])
   @@index([disputeCaseId])
   @@index([customerUserId])
+  @@index([vendorUserId])
+  @@index([action])
 }
 
 model DeliveryReport {
