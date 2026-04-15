@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { checkUsername, login, signup } from "../controllers/auth-controller.js";
+import { login, signup } from "../controllers/auth-controller.js";
+import { loginRateLimiter } from "../middleware/rate-limit.js";
 
 const router = Router();
 
-router.get("/check-username", checkUsername);
 router.post("/signup", signup);
-router.post("/login", login);
+router.post("/login", loginRateLimiter, login);
 
 export default router;

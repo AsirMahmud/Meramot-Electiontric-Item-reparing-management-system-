@@ -9,6 +9,8 @@ The API stores data in **PostgreSQL**. Prisma is configured with `provider = "po
 - **Node.js** (LTS recommended) and npm  
 - **PostgreSQL** 12+ (server running and reachable from the API host)
 
+For local development, the repo also includes a `docker-compose.yml` that can start a Postgres container with the same defaults used by the backend example env file.
+
 ## 1. Backend (API)
 
 Path: `backend/`
@@ -16,6 +18,12 @@ Path: `backend/`
 ### First-time setup
 
 1. In PostgreSQL, create a database and user with permission to use it (for example database `meeramoot_electric_repair`). You can do this with `psql`, **pgAdmin**, or your host’s console.
+
+   If you want a local container instead, start the bundled database first from the repo root:
+
+   ```bash
+   docker compose up -d postgres
+   ```
 
 2. Copy the environment template and edit values:
 
@@ -26,7 +34,17 @@ Path: `backend/`
 
    On macOS or Linux use `cp .env.example .env`.
 
-3. In `.env`, set a valid **`DATABASE_URL`** for your Postgres instance. Keep **`FRONTEND_ORIGIN`** equal to the URL where the Next.js app runs (default: `http://localhost:3000`). Adjust **`PORT`** if `4000` is already in use.
+3. In `.env`, set a valid **`DATABASE_URL`** for your Postgres instance. The bundled defaults are:
+
+   ```env
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/meeramoot_electric_repair?schema=public
+   PORT=4000
+   NODE_ENV=development
+   FRONTEND_ORIGIN=http://localhost:3000
+   JWT_SECRET=dev-secret
+   ```
+
+   Keep **`FRONTEND_ORIGIN`** equal to the URL where the Next.js app runs. Adjust **`PORT`** if `4000` is already in use.
 
 4. Install dependencies and prepare Prisma:
 
@@ -123,6 +141,8 @@ The frontend must use **`NEXT_PUBLIC_API_URL`** pointing at wherever the API is 
 2. Start **backend**: `cd backend && npm run dev`.  
 3. Start **frontend**: `cd frontend && npm run dev`.  
 4. Use the site at `http://localhost:3000` and confirm the API status on the home page.
+
+If you use the bundled Postgres container, stop it with `docker compose down` when you are done.
 
 ## Useful commands
 
