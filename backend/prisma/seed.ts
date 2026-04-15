@@ -59,13 +59,34 @@ async function main() {
     },
   });
 
-  // 🔥 CREATE 20 SHOPS
+  const shopSeedData = [
+    { name: "Dhaka Device Doctors", slug: "dhaka-device-doctors" },
+    { name: "Gulshan Gadget Care", slug: "gulshan-gadget-care" },
+    { name: "Banani Tech Bench", slug: "banani-tech-bench" },
+    { name: "Mirpur Laptop Lab", slug: "mirpur-laptop-lab" },
+    { name: "Uttara FixPoint", slug: "uttara-fixpoint" },
+    { name: "Mohammadpur Device Depot", slug: "mohammadpur-device-depot" },
+    { name: "New Market Repair Works", slug: "new-market-repair-works" },
+    { name: "Farmgate Tech Rescue", slug: "farmgate-tech-rescue" },
+    { name: "Tejgaon Circuit Care", slug: "tejgaon-circuit-care" },
+    { name: "Bashundhara Laptop Lounge", slug: "bashundhara-laptop-lounge" },
+    { name: "ByteBack Solutions", slug: "byteback-solutions" },
+    { name: "Pixel Repair Station", slug: "pixel-repair-station" },
+    { name: "Motherboard Masters", slug: "motherboard-masters" },
+    { name: "QuickFix Electronics", slug: "quickfix-electronics" },
+    { name: "Urban Device Clinic", slug: "urban-device-clinic" },
+    { name: "Prime Laptop Care", slug: "prime-laptop-care" },
+    { name: "Screen & Circuit", slug: "screen-and-circuit" },
+    { name: "Trusted Tech Service", slug: "trusted-tech-service" },
+    { name: "CoreFix Bangladesh", slug: "corefix-bangladesh" },
+    { name: "Laptop Harbor", slug: "laptop-harbor" },
+  ];
+  
   const shops = [];
-
-  for (let i = 1; i <= 20; i++) {
-    const name = `Repair Hub ${i}`;
-    const slug = `repair-hub-${i}`;
-
+  
+  for (let i = 0; i < shopSeedData.length; i++) {
+    const { name, slug } = shopSeedData[i];
+  
     const shop = await prisma.shop.upsert({
       where: { slug },
       update: {},
@@ -73,16 +94,15 @@ async function main() {
         name,
         slug,
         description: "Professional electronics repair service.",
-        address: `${10 + i} Main Road`,
+        address: `${10 + i + 1} Main Road`,
         city: "Dhaka",
         area: randomFrom(areas),
         ratingAvg: Number((3.5 + Math.random() * 1.5).toFixed(1)),
         reviewCount: Math.floor(Math.random() * 200),
         priceLevel: Math.floor(Math.random() * 3) + 1,
-        isFeatured: i % 3 === 0,
-        hasVoucher: i % 2 === 0,
-        freeDelivery: i % 4 === 0,
-        hasDeals: i % 5 === 0,
+        hasVoucher: (i + 1) % 2 === 0,
+        freeDelivery: (i + 1) % 4 === 0,
+        hasDeals: (i + 1) % 5 === 0,
         categories: [
           ShopCategory.COURIER_PICKUP,
           ShopCategory.IN_SHOP_REPAIR,
@@ -90,7 +110,7 @@ async function main() {
         specialties: randomSubset(specialtiesPool, 3),
       },
     });
-
+  
     shops.push(shop);
   }
 

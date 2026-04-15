@@ -83,7 +83,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f7f2]">
+    <main className="min-h-screen bg-[#E4FCD5]">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
       <div className="border-b border-[#dbe5d6] bg-white">

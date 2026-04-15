@@ -6,7 +6,9 @@ type FeaturedShopsProps = {
 };
 
 export default function FeaturedShops({ shops }: FeaturedShopsProps) {
-  const featured = shops.slice(0, 6);
+  const featured = [...shops]
+    .sort((a, b) => b.ratingAvg - a.ratingAvg)
+    .slice(0, 5);
 
   return (
     <section className="mt-10">
