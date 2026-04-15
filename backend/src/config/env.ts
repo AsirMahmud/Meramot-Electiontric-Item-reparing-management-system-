@@ -14,4 +14,9 @@ export const env = {
   databaseUrl: required("DATABASE_URL"),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000",
   jwtSecret: process.env.JWT_SECRET ?? "dev-secret",
+  demoAdminIdentifier:
+    process.env.DEMO_ADMIN_IDENTIFIER ?? "admin@meeramoot.demo",
+  demoAdminPassword:
+    process.env.DEMO_ADMIN_PASSWORD ?? "AdminDemo123!",
+  demoAdminName: process.env.DEMO_ADMIN_NAME ?? "Demo Admin",
 };
