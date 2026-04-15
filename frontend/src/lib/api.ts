@@ -199,6 +199,21 @@ export async function getShopReviews(slug: string) {
   return Array.isArray(data) ? data : data.reviews || [];
 }
 
+export async function getReviewEligibility(
+  shopSlug: string,
+  accessToken?: string
+) {
+  return request<{
+    eligible: boolean;
+    hasCompletedJob: boolean;
+    hasExistingReview: boolean;
+  }>(`/shops/${shopSlug}/review-eligibility`, {
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+  });
+}
+
 export async function createReview(
   slug: string,
   payload: { score: number; review?: string },

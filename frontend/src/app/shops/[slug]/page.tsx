@@ -7,7 +7,7 @@ import Navbar from "@/components/home/Navbar";
 import {
   createReview,
   getReviewEligibility,
-  getShop,
+  getShops,
   getShopReviews,
   type Review,
   type Shop,
@@ -55,7 +55,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
   useEffect(() => {
     if (!slug) return;
-    getShop(slug).then(setShop).catch(() => setShop(null));
+    getShops(slug).then(setShop).catch(() => setShop(null));
     getShopReviews(slug).then(setReviews).catch(() => setReviews([]));
   }, [slug]);
 
