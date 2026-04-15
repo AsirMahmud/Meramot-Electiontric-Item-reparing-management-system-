@@ -125,7 +125,10 @@ export async function getFeaturedShops(_req: Request, res: Response) {
 
 export async function getShopBySlug(req: Request, res: Response) {
   try {
-    const { slug } = req.params;
+    const slug = Array.isArray(req.params.slug) ? req.params.slug[0] : req.params.slug;
+    if (!slug) {
+      return res.status(400).json({ message: "slug is required" });
+    }
 
     const shop = await prisma.shop.findUnique({
       where: { slug },

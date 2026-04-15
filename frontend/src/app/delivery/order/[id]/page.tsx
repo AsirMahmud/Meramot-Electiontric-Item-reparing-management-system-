@@ -1,131 +1,256 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Package, AlertTriangle, ShieldAlert, CheckCircle2, Navigation2, DollarSign, Clock } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Package } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  acceptDelivery,
+  fetchDeliveryDeliveries,
+  type DeliveryStatusValue,
+  type DeliveryWithJob,
+  updateDeliveryStatus,
+} from "@/lib/api";
+import { useDeliveryAuth } from "@/lib/delivery-auth-context";
 
-export default function OrderRequestDetails({ params }: { params: { id: string } }) {
+const NEXT_STATUS: Record<string, DeliveryStatusValue | null> = {
+  PENDING: "SCHEDULED",
+  SCHEDULED: "DISPATCHED",
+  DISPATCHED: "PICKED_UP",
+  PICKED_UP: "IN_TRANSIT",
+  IN_TRANSIT: "DELIVERED",
+  DELIVERED: null,
+  FAILED: null,
+  CANCELLED: null,
+};
+
+const FLOW_BY_DIRECTION: Record<
+  string,
+  {
+    code: DeliveryStatusValue;
+    title: string;
+  }[]
+> = {
+  TO_SHOP: [
+    { code: "PENDING", title: "Waiting for rider acceptance" },
+    { code: "SCHEDULED", title: "Accepted by rider" },
+    { code: "DISPATCHED", title: "Rider is going to customer" },
+    { code: "PICKED_UP", title: "Picked up from customer" },
+    { code: "IN_TRANSIT", title: "On the way to shop" },
+    { code: "DELIVERED", title: "Delivered to shop" },
+  ],
+  TO_CUSTOMER: [
+    { code: "PENDING", title: "Waiting for rider acceptance" },
+    { code: "SCHEDULED", title: "Accepted by rider" },
+    { code: "DISPATCHED", title: "Rider is going to shop" },
+    { code: "PICKED_UP", title: "Picked up from shop" },
+    { code: "IN_TRANSIT", title: "On the way to customer" },
+    { code: "DELIVERED", title: "Delivered to customer" },
+  ],
+};
+
+export default function OrderRequestDetails() {
+  const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { token, me } = useDeliveryAuth();
+  const [delivery, setDelivery] = useState<DeliveryWithJob | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState("");
+
+  const id = typeof params?.id === "string" ? params.id : "";
+  const registrationStatus = me?.registrationStatus ?? "APPROVED";
+
+  useEffect(() => {
+    if (!token || !id || registrationStatus !== "APPROVED") {
+      setDelivery(null);
+      setLoading(false);
+      setError("");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    fetchDeliveryDeliveries(token)
+      .then((data) => {
+        const found = data.deliveries.find((d) => d.id === id) ?? null;
+        setDelivery(found);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load order"))
+      .finally(() => setLoading(false));
+  }, [token, id, registrationStatus]);
+
+  const nextStatus = useMemo(() => (delivery ? NEXT_STATUS[delivery.status] ?? null : null), [delivery]);
+  const flowSteps = useMemo(() => {
+    if (!delivery) return [];
+    return FLOW_BY_DIRECTION[delivery.direction] ?? FLOW_BY_DIRECTION.TO_SHOP;
+  }, [delivery]);
+  const currentStepIndex = useMemo(() => {
+    if (!delivery) return -1;
+    return flowSteps.findIndex((step) => step.code === delivery.status);
+  }, [delivery, flowSteps]);
+
+  async function handleAdvance() {
+    if (!token || !delivery || !nextStatus || registrationStatus !== "APPROVED") return;
+    setUpdating(true);
+    setError("");
+    try {
+      const result = await updateDeliveryStatus(token, delivery.id, nextStatus);
+      setDelivery(result.delivery);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  async function handleAccept() {
+    if (!token || !delivery || registrationStatus !== "APPROVED") return;
+    setAccepting(true);
+    setError("");
+    try {
+      const result = await acceptDelivery(token, delivery.id);
+      setDelivery(result.delivery);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to accept order");
+    } finally {
+      setAccepting(false);
+    }
+  }
 
   return (
-    <div className="flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-neutral-100 relative pb-28">
-      {/* Top Header & Map Placeholder */}
-      <div className="relative h-64 bg-neutral-200">
-        <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=37.7749,-122.4194&zoom=13&size=600x300&maptype=roadmap&style=element:geometry%7Ccolor:0x242f3e&style=element:labels.text.stroke%7Ccolor:0x242f3e&style=element:labels.text.fill%7Ccolor:0x746855&style=feature:administrative.locality%7Celement:labels.text.fill%7Ccolor:0xd59563&style=feature:poi%7Celement:labels.text.fill%7Ccolor:0xd59563&style=feature:poi.park%7Celement:geometry%7Ccolor:0x263c3f&style=feature:poi.park%7Celement:labels.text.fill%7Ccolor:0x6b9a76&style=feature:road%7Celement:geometry%7Ccolor:0x38414e&style=feature:road%7Celement:geometry.stroke%7Ccolor:0x212a37&style=feature:road%7Celement:labels.text.fill%7Ccolor:0x9ca5b3&style=feature:road.highway%7Celement:geometry%7Ccolor:0x746855&style=feature:road.highway%7Celement:geometry.stroke%7Ccolor:0x1f2835&style=feature:road.highway%7Celement:labels.text.fill%7Ccolor:0xf3d19c&style=feature:transit%7Celement:geometry%7Ccolor:0x2f3948&style=feature:transit.station%7Celement:labels.text.fill%7Ccolor:0xd59563&style=feature:water%7Celement:geometry%7Ccolor:0x17263c&style=feature:water%7Celement:labels.text.fill%7Ccolor:0x515c6d&style=feature:water%7Celement:labels.text.stroke%7Ccolor:0x17263c')] bg-cover bg-center mix-blend-luminosity opacity-40"></div>
-        
-        {/* Safe Area Header */}
-        <div className="absolute top-0 w-full p-6 flex justify-between items-center z-10">
-          <button 
+    <div className="flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-[#d9e5d5] relative pb-10">
+      <div className="p-6 border-b border-[#e7efe2]">
+        <div className="flex justify-between items-center">
+          <button
+            type="button"
             onClick={() => router.back()}
-            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-neutral-900 border border-neutral-100"
+            className="w-10 h-10 rounded-full bg-[#eef4ea] flex items-center justify-center text-[#163625] border border-[#d9e5d5]"
           >
             <ArrowLeft size={20} />
           </button>
-          <div className="bg-neutral-900 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
-             Request #{params.id}
+          <div className="bg-[#163625] text-[#E4FCD5] px-3 py-1.5 rounded-full text-xs font-bold">
+            Delivery #{id.slice(0, 8)}
           </div>
         </div>
-
-        {/* Floating Route info */}
-        <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-            <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-neutral-900 font-bold text-sm shadow-lg flex items-center gap-2 border border-white/50">
-                <Clock size={16} className="text-orange-500" /> 22 mins
-            </div>
-            <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-neutral-900 font-bold text-sm shadow-lg flex items-center gap-2 border border-white/50">
-                <Navigation2 size={16} className="text-orange-500" /> 4.2 mi
-            </div>
-        </div>
       </div>
 
-      {/* Main Content Area */}
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="px-5 -mt-6 relative z-20"
-      >
-        <div className="bg-white rounded-3xl p-6 shadow-xl border border-neutral-100">
-            {/* Header / Payout */}
-            <div className="flex justify-between items-start mb-6">
+      <div className="p-6">
+        {registrationStatus !== "APPROVED" ? (
+          <div className="rounded-2xl border border-[#d9e5d5] bg-white p-6">
+            <h2 className="text-lg font-bold text-[#163625]">Order access blocked</h2>
+            <p className="mt-2 text-sm text-[#163625]/75">
+              You cannot view delivery orders until your account is approved by admin.
+            </p>
+          </div>
+        ) : null}
+
+        {registrationStatus !== "APPROVED" ? null : (
+          <>
+        {loading ? <p className="text-sm text-[#163625]/70">Loading delivery...</p> : null}
+        {!loading && !delivery ? <p className="text-sm text-red-700">Delivery not found.</p> : null}
+        {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}
+
+        {delivery ? (
+          <>
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-extrabold text-[#163625] mb-1">{delivery.repairJob.repairRequest.title}</h2>
+                <p className="text-sm text-[#163625]/70">
+                  {delivery.direction === "TO_SHOP" ? "Customer to service center" : "Service center to customer"}
+                </p>
+              </div>
+              <div className="text-right">
+                <h3 className="text-2xl font-extrabold text-green-700">BDT {(delivery.fee ?? 0).toFixed(2)}</h3>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-[#163625] bg-[#eef4ea] px-2 py-0.5 rounded">
+                  {delivery.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-2xl border border-[#d9e5d5] bg-[#eef4ea] p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center shrink-0 border border-[#d9e5d5]">
+                  <Package size={22} className="text-[#163625]" />
+                </div>
                 <div>
-                   <h2 className="text-2xl font-extrabold text-neutral-900 mb-1">Pickup Request</h2>
-                   <p className="text-sm text-neutral-500 font-medium">Customer to Service Center</p>
+                  <h4 className="font-bold text-[#163625]">{delivery.repairJob.repairRequest.deviceType}</h4>
+                  <p className="text-xs text-[#163625]/70 mt-1">Shop: {delivery.repairJob.shop.name}</p>
+                  <p className="text-xs text-[#163625]/70">Contact: {delivery.repairJob.repairRequest.contactPhone ?? "-"}</p>
                 </div>
-                <div className="text-right">
-                   <h3 className="text-2xl font-extrabold text-green-600">$18.50</h3>
-                   <span className="text-[10px] uppercase font-bold tracking-wider text-green-700 bg-green-100 px-2 py-0.5 rounded">Guaranteed</span>
-                </div>
+              </div>
             </div>
 
-            {/* Device Info & Warnings */}
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
-                <div className="flex items-center gap-2 text-red-700 text-sm font-bold mb-2">
-                    <ShieldAlert size={18} /> DEVICE SPECIFICATIONS
-                </div>
-                <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
-                        <Package size={24} className="text-red-500" />
-                    </div>
-                    <div>
-                        <h4 className="font-bold text-neutral-900">Samsung S23 Ultra</h4>
-                        <p className="text-xs text-red-600 font-medium mt-1 uppercase tracking-wide">⚠️ BROKEN SCREEN - HANDLE WITH CARE</p>
-                        <p className="text-xs text-neutral-500 mt-2 line-clamp-2">Ensure the device is placed in the shock-proof padded sleeve before transit. Serial verification required upon pickup.</p>
-                    </div>
-                </div>
+            <div className="space-y-4 mb-8">
+              <div className="rounded-xl border border-[#d9e5d5] p-4">
+                <p className="text-[10px] font-bold text-[#163625]/60 uppercase tracking-wider mb-1">Pickup</p>
+                <p className="text-sm font-semibold text-[#163625]">{delivery.pickupAddress}</p>
+              </div>
+              <div className="rounded-xl border border-[#d9e5d5] p-4">
+                <p className="text-[10px] font-bold text-[#163625]/60 uppercase tracking-wider mb-1">Dropoff</p>
+                <p className="text-sm font-semibold text-[#163625]">{delivery.dropAddress}</p>
+              </div>
             </div>
 
-            {/* Routing Details */}
-            <div className="relative">
-                <div className="absolute top-4 left-3 w-0.5 h-[4.5rem] bg-neutral-200"></div>
-                
-                {/* Pickup node */}
-                <div className="flex gap-4 mb-6 relative">
-                    <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 z-10 border border-white">
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-600"></div>
+            <div className="mb-8 rounded-2xl border border-[#d9e5d5] bg-[#f8fbf6] p-4">
+              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#163625]/70">
+                {delivery.direction === "TO_SHOP" ? "Customer to shop flow" : "Shop to customer flow"}
+              </p>
+              <div className="space-y-2">
+                {flowSteps.map((step, index) => {
+                  const isCompleted = currentStepIndex > index;
+                  const isCurrent = currentStepIndex === index;
+                  return (
+                    <div key={step.code} className="flex items-center gap-3 rounded-lg border border-[#d9e5d5] bg-white px-3 py-2">
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                          isCompleted || isCurrent ? "bg-[#163625] text-[#E4FCD5]" : "bg-[#eef4ea] text-[#163625]/60"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className={`text-sm font-semibold ${isCurrent ? "text-[#163625]" : "text-[#163625]/75"}`}>{step.title}</p>
+                        <p className="text-[10px] font-bold text-[#163625]/50">{step.code}</p>
+                      </div>
                     </div>
-                    <div>
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Pickup Location</p>
-                        <h4 className="text-sm font-bold text-neutral-900">123 Market St, Apt 4B</h4>
-                        <p className="text-xs text-neutral-500">Meet customer in lobby</p>
-                    </div>
-                </div>
-
-                {/* Dropoff node */}
-                <div className="flex gap-4 relative">
-                    <div className="w-6 h-6 rounded-sm bg-neutral-900 flex items-center justify-center flex-shrink-0 z-10 border border-white relative">
-                        <div className="w-1.5 h-1.5 bg-white"></div>
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Dropoff Location</p>
-                        <h4 className="text-sm font-bold text-neutral-900">North Hub Repair Center</h4>
-                        <p className="text-xs text-neutral-500">Technician Bay 3</p>
-                    </div>
-                </div>
+                  );
+                })}
+              </div>
             </div>
 
-        </div>
-      </motion.div>
-
-      {/* Floating Action Button Floor */}
-      <div className="absolute bottom-0 left-0 w-full p-5 bg-gradient-to-t from-white via-white to-transparent z-40 pb-6">
-         <div className="flex gap-4 max-w-xl mx-auto">
-             <button className="flex-[1] bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold py-4 px-6 rounded-[1rem] transition-colors shadow-sm border border-neutral-200 active:scale-95 text-lg">
-                 Decline
-             </button>
-             <button className="flex-[2] bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-4 px-6 rounded-[1rem] transition-transform active:scale-95 shadow-lg shadow-orange-500/30 flex items-center justify-center gap-3 text-lg">
-                 Accept Request <ArrowRight size={22} />
-             </button>
-         </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/delivery")}
+                className="flex-1 rounded-xl border border-[#d9e5d5] bg-white py-3 text-sm font-bold text-[#163625]"
+              >
+                Back to dashboard
+              </button>
+              {!delivery.deliveryAgentId ? (
+                <button
+                  type="button"
+                  onClick={handleAccept}
+                  disabled={accepting}
+                  className="flex-[2] rounded-xl bg-[#163625] py-3 text-sm font-bold text-[#E4FCD5] disabled:opacity-60"
+                >
+                  {accepting ? "Accepting..." : "Accept this order"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAdvance}
+                  disabled={!nextStatus || updating}
+                  className="flex-[2] rounded-xl bg-[#163625] py-3 text-sm font-bold text-[#E4FCD5] disabled:opacity-60"
+                >
+                  {updating ? "Updating..." : nextStatus ? `Move to ${nextStatus}` : "Final status reached"}
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+          </>
+        )}
       </div>
     </div>
-  );
-}
-
-function ArrowRight(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14"/>
-      <path d="m12 5 7 7-7 7"/>
-    </svg>
   );
 }

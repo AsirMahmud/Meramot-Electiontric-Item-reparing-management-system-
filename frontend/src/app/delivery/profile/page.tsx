@@ -1,10 +1,12 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { Settings, Shield, Bell, HelpCircle, LogOut, ChevronRight, User as UserIcon } from 'lucide-react';
-import Link from 'next/link';
+import { Settings, Shield, Bell, HelpCircle, LogOut, ChevronRight, User as UserIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useDeliveryAuth } from "@/lib/delivery-auth-context";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { me, logout } = useDeliveryAuth();
   const menuItems = [
     { icon: UserIcon, text: "Personal Details", isAlert: false },
     { icon: Shield, text: "Verification Status", isAlert: true },
@@ -19,13 +21,18 @@ export default function ProfilePage() {
 
       <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm flex flex-col items-center mb-6">
         <div className="w-24 h-24 rounded-full border-[3px] border-orange-500 p-1 mb-4">
-            <div className="w-full h-full rounded-full bg-neutral-200 overflow-hidden">
-                <img src="https://i.pravatar.cc/150?img=11" alt="Profile" className="w-full h-full object-cover" />
-            </div>
+          <div className="w-full h-full rounded-full bg-[#163625] text-[#E4FCD5] overflow-hidden flex items-center justify-center text-2xl font-bold">
+            {(me?.user?.name ?? me?.user?.username ?? "P").slice(0, 1).toUpperCase()}
+          </div>
         </div>
-        <h2 className="text-xl font-bold text-neutral-900 leading-tight">Jonathan Doe</h2>
-        <p className="text-xs text-neutral-500 mb-3">Partner ID: #LF-8429-DX</p>
-        <span className="bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded">Platinum Rider</span>
+        <h2 className="text-xl font-bold text-neutral-900 leading-tight">
+          {me?.user?.name ?? me?.user?.username ?? "Delivery Partner"}
+        </h2>
+        <p className="text-xs text-neutral-500 mb-2">Partner ID: {me?.id ?? "-"}</p>
+        <p className="text-xs text-neutral-500 mb-3">{me?.user?.email ?? ""}</p>
+        <span className="bg-orange-100 text-orange-700 font-bold text-[10px] uppercase tracking-wider px-2 py-1 rounded">
+          {me?.status ?? "UNKNOWN"}
+        </span>
       </div>
 
       <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden mb-6">
@@ -43,8 +50,15 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      <button className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-xl transition-colors text-sm shadow-sm flex justify-center items-center gap-2 active:scale-95 mb-8">
-          <LogOut size={18} /> Sign Out
+      <button
+        type="button"
+        onClick={() => {
+          logout();
+          router.push("/delivery/login");
+        }}
+        className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-4 rounded-xl transition-colors text-sm shadow-sm flex justify-center items-center gap-2 active:scale-95 mb-8"
+      >
+        <LogOut size={18} /> Sign Out
       </button>
 
     </div>

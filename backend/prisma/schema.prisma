@@ -12,6 +12,13 @@ enum UserRole {
   VENDOR
   ADMIN
   DELIVERY
+  DELIVERY_ADMIN
+}
+
+enum DeliveryPartnerApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum UserStatus {
@@ -491,8 +498,12 @@ model RiderProfile {
   id            String              @id @default(cuid())
   userId         String              @unique
   vehicleType    String?
+  nidDocumentUrl String?
+  educationDocumentUrl String?
+  cvDocumentUrl  String?
   status         DeliveryAgentStatus @default(OFFLINE)
   isActive       Boolean             @default(true)
+  registrationStatus DeliveryPartnerApprovalStatus @default(APPROVED)
   currentLat     Float?
   currentLng     Float?
   createdAt      DateTime            @default(now())
@@ -504,6 +515,7 @@ model RiderProfile {
   payoutRecords     VendorPayout[] @relation("DeliveryAgentPayouts")
 
   @@index([status, isActive])
+  @@index([registrationStatus])
 }
 
 model CoverageZone {

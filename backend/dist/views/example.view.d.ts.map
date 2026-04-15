@@ -1,0 +1,1 @@
+{"version":3,"file":"example.view.d.ts","sourceRoot":"","sources":["../../src/views/example.view.ts"],"names":[],"mappings":"AAAA,4FAA4F;AAC5F,MAAM,WAAW,UAAU;IACzB,EAAE,EAAE,MAAM,CAAC;IACX,KAAK,EAAE,MAAM,CAAC;IACd,SAAS,EAAE,IAAI,CAAC;IAChB,SAAS,EAAE,IAAI,CAAC;CACjB;AAED,wBAAgB,eAAe,CAAC,IAAI,EAAE,UAAU,EAAE;;;;;;;EAEjD;AAED,wBAAgB,eAAe,CAAC,GAAG,EAAE,UAAU;;;;;EAO9C"}

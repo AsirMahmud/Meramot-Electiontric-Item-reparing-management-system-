@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-import routes from "./routes";
-import { env } from "./config/env";
+import routes from "./routes/index.js";
+import { env } from "./config/env.js";
 
 const app = express();
 
