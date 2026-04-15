@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getShopBySlug } from "@/lib/api";
 import { fallbackShopDetails } from "@/lib/mock-data";
 
-function formatPrice(basePrice?: number | null, priceMax?: number | null, pricingType?: string) {
+function formatPrice(basePrice?: number | null, priceMax?: number | null, pricingType?: string | null) {
   if (pricingType === "INSPECTION_REQUIRED") return "Inspection required";
   if (basePrice == null) return "Contact shop";
   if (priceMax != null && priceMax > basePrice) return `৳${basePrice.toLocaleString()} - ৳${priceMax.toLocaleString()}`;

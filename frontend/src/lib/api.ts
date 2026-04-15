@@ -28,6 +28,56 @@ export type Shop = {
   heroTag: string;
 };
 
+export type ShopSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  address: string;
+  city?: string | null;
+  area?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  ratingAvg: number;
+  reviewCount: number;
+  priceLevel: number;
+  hasVoucher: boolean;
+  freeDelivery: boolean;
+  hasDeals: boolean;
+  categories: string[];
+  specialties: string[];
+  acceptsDirectOrders: boolean;
+  supportsPickup?: boolean;
+  supportsOnsiteRepair?: boolean;
+};
+
+export type ShopService = {
+  id: string;
+  slug: string;
+  name: string;
+  shortDescription?: string | null;
+  description?: string | null;
+  deviceType?: string | null;
+  issueCategory?: string | null;
+  pricingType?: string | null;
+  basePrice?: number | null;
+  priceMax?: number | null;
+  estimatedDaysMin?: number | null;
+  estimatedDaysMax?: number | null;
+  includesPickup?: boolean;
+  includesDelivery?: boolean;
+  isFeatured?: boolean;
+};
+
+export type ShopDetail = ShopSummary & {
+  bannerUrl?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  openingHoursText?: string | null;
+  services: ShopService[];
+};
+
 export type AuthPayload = {
   message: string;
   token: string;
@@ -53,8 +103,36 @@ export function signup(data: {
   });
 }
 
-export function getShops() {
-  return request<Shop[]>("/shops", { cache: "no-store" });
+export function checkUsername(username: string) {
+  return request<{ available: boolean }>(
+    `/auth/check-username?username=${encodeURIComponent(username)}`,
+    { cache: "no-store" },
+  );
+}
+
+export function getShops(params?: {
+  category?: string;
+  sort?: string;
+  q?: string;
+  featured?: boolean;
+  take?: number;
+}) {
+  const query = new URLSearchParams();
+  if (params?.category) query.set("category", params.category);
+  if (params?.sort) query.set("sort", params.sort);
+  if (params?.q) query.set("q", params.q);
+  if (params?.featured) query.set("featured", "true");
+  if (params?.take) query.set("take", String(params.take));
+  const suffix = query.toString() ? `?${query}` : "";
+  return request<ShopSummary[]>(`/shops${suffix}`, { cache: "no-store" });
+}
+
+export function getFeaturedShops() {
+  return request<ShopSummary[]>("/shops/featured", { cache: "no-store" });
+}
+
+export function getShopBySlug(slug: string) {
+  return request<ShopDetail>(`/shops/${encodeURIComponent(slug)}`, { cache: "no-store" });
 }
 
 export function getAuthHeaders(): HeadersInit {
