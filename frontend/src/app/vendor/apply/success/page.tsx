@@ -34,7 +34,7 @@ export default async function VendorApplySuccessPage({
             href="/login"
             className="rounded-2xl bg-accent-dark px-5 py-3 text-sm font-semibold text-white"
           >
-            Go to vendor login
+            Go to Login
           </Link>
 
           <Link

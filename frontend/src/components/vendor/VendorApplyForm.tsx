@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   createVendorApplication,
   getVendorApplicationStatus,
@@ -10,6 +11,8 @@ import {
 
 export default function VendorApplyForm() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
 
   const [form, setForm] = useState({
     ownerName: "",
@@ -36,43 +39,48 @@ export default function VendorApplyForm() {
   const passwordsMismatch =
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
 
-  useEffect(() => {
-    async function loadExisting() {
-      try {
-        const token = localStorage.getItem("access_token");
-        if (!token) return;
+ useEffect(() => {
+  if (status === "loading") return;
 
-        const result = await getVendorApplicationStatus(token);
-        const app = result.application;
+  async function loadExisting() {
+    try {
+      if (!token) return;
 
-        setForm((prev) => ({
-            ...prev,
-            ownerName: app.ownerName || "",
-            businessEmail: app.businessEmail || "",
-            phone: app.phone || "",
-            shopName: app.shopName || "",
-            tradeLicenseNo: app.tradeLicenseNo || "",
-            address: app.address || "",
-            city: app.city || "",
-            area: app.area || "",
-            specialties: Array.isArray(app.specialties)
-                ? app.specialties.join(", ")
-                : "",
-            courierPickup: Boolean(app.courierPickup),
-            inShopRepair:
-                typeof app.inShopRepair === "boolean" ? app.inShopRepair : true,
-            spareParts: Boolean(app.spareParts),
-            notes: app.notes || "",
-            }));
+      const result = await getVendorApplicationStatus(token);
+      const app = result.application;
 
+      if (!app) return;
+
+      setForm((prev) => ({
+        ...prev,
+        ownerName: app.ownerName || "",
+        businessEmail: app.businessEmail || "",
+        phone: app.phone || "",
+        shopName: app.shopName || "",
+        tradeLicenseNo: app.tradeLicenseNo || "",
+        address: app.address || "",
+        city: app.city || "",
+        area: app.area || "",
+        specialties: Array.isArray(app.specialties)
+          ? app.specialties.join(", ")
+          : "",
+        courierPickup: Boolean(app.courierPickup),
+        inShopRepair:
+          typeof app.inShopRepair === "boolean" ? app.inShopRepair : true,
+        spareParts: Boolean(app.spareParts),
+        notes: app.notes || "",
+      }));
+
+      if (app.status === "REJECTED" || app.status === "PENDING") {
         setIsEditMode(true);
-      } catch {
-        // ignore: not logged in as vendor or no application yet
       }
+    } catch {
+      // no existing application yet
     }
+  }
 
-    loadExisting();
-  }, []);
+  loadExisting();
+}, [status, token]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -100,27 +108,31 @@ export default function VendorApplyForm() {
         throw new Error("Business address is required.");
       }
 
-      const token = localStorage.getItem("access_token");
+     if (isEditMode) {
+  if (!token) {
+    throw new Error("Please log in first.");
+  }
 
-      if (isEditMode && token) {
-        await updateVendorApplication(token, {
-          ownerName: form.ownerName,
-          phone: form.phone,
-          shopName: form.shopName,
-          tradeLicenseNo: form.tradeLicenseNo || undefined,
-          address: form.address,
-          city: form.city || undefined,
-          area: form.area || undefined,
-          specialties: form.specialties,
-          courierPickup: form.courierPickup,
-          inShopRepair: form.inShopRepair,
-          spareParts: form.spareParts,
-          notes: form.notes || undefined,
-        });
+  await updateVendorApplication(token, {
+    ownerName: form.ownerName,
+    businessEmail: form.businessEmail,
+    phone: form.phone,
+    shopName: form.shopName,
+    tradeLicenseNo: form.tradeLicenseNo || undefined,
+    address: form.address,
+    city: form.city || undefined,
+    area: form.area || undefined,
+    specialties: form.specialties,
+    courierPickup: form.courierPickup,
+    inShopRepair: form.inShopRepair,
+    spareParts: form.spareParts,
+    notes: form.notes || undefined,
+  });
 
-        router.push("/vendor/status");
-        return;
-      }
+  router.push("/vendor/status");
+  router.refresh();
+  return;
+}
 
       if (!form.password) {
         throw new Error("Password is required.");
@@ -174,6 +186,11 @@ export default function VendorApplyForm() {
             : "Apply as a repair shop partner. Your application will be reviewed by the admin team."}
         </p>
       </div>
+      {isEditMode && (
+      <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        Update your previous vendor application and submit again. It will go back to pending review.
+      </div>
+    )}
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid gap-4 md:grid-cols-2">
@@ -189,7 +206,6 @@ export default function VendorApplyForm() {
             placeholder="Business email"
             type="email"
             value={form.businessEmail}
-            readOnly={isEditMode}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, businessEmail: e.target.value }))
             }

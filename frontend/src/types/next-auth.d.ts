@@ -11,13 +11,16 @@ declare module "next-auth" {
       username?: string | null;
       phone?: string | null;
       role?: string | null;
+      accessToken?: string | null;
     };
   }
 
   interface User {
+    id?: string;
     username?: string | null;
     phone?: string | null;
     role?: string | null;
+    accessToken?: string | null;
   }
 }
 
@@ -27,5 +30,6 @@ declare module "next-auth/jwt" {
     username?: string | null;
     phone?: string | null;
     role?: string | null;
+    accessToken?: string | null;
   }
 }

@@ -1,5 +1,11 @@
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 
+export function getAuthHeaders(token: string) {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
 /* =========================================================
    CORE REQUEST HELPERS
 ========================================================= */
@@ -141,38 +147,48 @@ export function vendorLogin(data: { identifier: string; password: string }) {
   });
 }
 
-export function getVendorApplicationStatus(token: string) {
-  return request<{
-    application: {
-      id: string;
-      status: "PENDING" | "APPROVED" | "REJECTED";
-      ownerName: string;
-      businessEmail: string;
-      phone?: string | null;
-      shopName: string;
-      tradeLicenseNo?: string | null;
-      address?: string | null;
-      city?: string | null;
-      area?: string | null;
-      specialties?: string[] | null;
-      courierPickup?: boolean | null;
-      inShopRepair?: boolean | null;
-      spareParts?: boolean | null;
-      notes?: string | null;
-      rejectionReason?: string | null;
-      rejectionVisibleUntil?: string | null;
-      createdAt: string;
-    };
-  }>("/vendor/application-status", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export type VendorApplicationStatusResponse = {
+  application?: {
+    id: string;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    rejectionReason?: string | null;
+    rejectedAt?: string | null;
+    rejectionVisibleUntil?: string | null;
+
+    ownerName?: string;
+    businessEmail?: string;
+    phone?: string;
+    shopName?: string;
+    tradeLicenseNo?: string | null;
+    address?: string;
+    city?: string | null;
+    area?: string | null;
+    specialties?: string[];
+    courierPickup?: boolean;
+    inShopRepair?: boolean;
+    spareParts?: boolean;
+    notes?: string | null;
+
+    createdAt?: string;
+  };
+  message?: string;
+};
+export function getMyVendorApplication(token: string) {
+  return authedRequest<{ application?: VendorApplicationStatusResponse["application"]; message?: string }>(
+    "/vendor/application-status",
+    token
+  );
+}
+export async function getVendorApplicationStatus(
+  token: string
+): Promise<VendorApplicationStatusResponse> {
+  return authedRequest("/vendor/application-status", token);
 }
 export function updateVendorApplication(
   token: string,
   data: {
     ownerName: string;
+    businessEmail: string;
     phone: string;
     shopName: string;
     tradeLicenseNo?: string;
@@ -190,10 +206,22 @@ export function updateVendorApplication(
     message: string;
     application: {
       id: string;
-      status: string;
+      status: "PENDING" | "APPROVED" | "REJECTED";
       ownerName: string;
       businessEmail: string;
+      phone: string;
       shopName: string;
+      tradeLicenseNo?: string | null;
+      address?: string;
+      city?: string | null;
+      area?: string | null;
+      specialties?: string[];
+      courierPickup?: boolean;
+      inShopRepair?: boolean;
+      spareParts?: boolean;
+      notes?: string | null;
+      rejectionReason?: string | null;
+      rejectionVisibleUntil?: string | null;
       createdAt: string;
     };
   }>("/vendor/application-status", {
@@ -205,6 +233,85 @@ export function updateVendorApplication(
   });
 }
 
+export type EditableVendorApplication = {
+  id?: string;
+  ownerName: string;
+  businessEmail: string;
+  phone: string;
+  shopName: string;
+  tradeLicenseNo?: string | null;
+  address: string;
+  city?: string | null;
+  area?: string | null;
+  specialties?: string[] | string;
+  courierPickup?: boolean;
+  inShopRepair?: boolean;
+  spareParts?: boolean;
+  notes?: string | null;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string | null;
+  rejectionVisibleUntil?: string | null;
+};
+
+export type AdminVendorApplication = {
+  id: string;
+  userId: string;
+  ownerName: string;
+  businessEmail: string;
+  phone: string;
+  shopName: string;
+  tradeLicenseNo?: string | null;
+  address: string;
+  city?: string | null;
+  area?: string | null;
+  specialties: string[];
+  courierPickup: boolean;
+  inShopRepair: boolean;
+  spareParts: boolean;
+  notes?: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    role?: string | null;
+  } | null;
+};
+
+export function getAdminVendorApplications(token: string) {
+  return request<{ applications: AdminVendorApplication[] }>("/vendor/applications/admin", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export function approveAdminVendorApplication(token: string, id: string) {
+  return request<{ message: string; application: AdminVendorApplication }>(
+    `/vendor/applications/admin/${encodeURIComponent(id)}/approve`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
+
+export function rejectAdminVendorApplication(token: string, id: string, reason: string) {
+  return request<{ message: string; application: AdminVendorApplication }>(
+    `/vendor/applications/admin/${encodeURIComponent(id)}/reject`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    }
+  );
+}
 /* =========================================================
    AUTH
 ========================================================= */

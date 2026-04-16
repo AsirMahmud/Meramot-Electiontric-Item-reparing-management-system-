@@ -43,13 +43,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: data.user.id,
-          name: data.user.name || data.user.username || "User",
-          email: data.user.email || null,
-          username: data.user.username || null,
-          phone: data.user.phone || null,
-          accessToken: data.token,
-        } as any;
+        id: data.user.id,
+        name: data.user.name || data.user.username || "User",
+        email: data.user.email || null,
+        username: data.user.username || null,
+        phone: data.user.phone || null,
+        role: data.user.role || null,
+        accessToken: data.token,
+      } as any;
       },
     }),
   ],
@@ -78,6 +79,7 @@ export const authOptions: NextAuthOptions = {
             token.id = data.user.id;
             token.username = data.user.username ?? null;
             token.phone = data.user.phone ?? null;
+            token.role = data.user.role ?? null;
             token.accessToken = data.token;
           }
         } catch (error) {
@@ -89,20 +91,22 @@ export const authOptions: NextAuthOptions = {
         token.id = (user as any).id;
         token.username = (user as any).username ?? null;
         token.phone = (user as any).phone ?? null;
+        token.role = (user as any).role ?? token.role ?? null;
         token.accessToken = (user as any).accessToken ?? token.accessToken ?? null;
       }
 
       return token;
     },
 
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).username = token.username;
-        (session.user as any).phone = token.phone;
-        (session.user as any).accessToken = token.accessToken ?? null;
-      }
-      return session;
-    },
+   async session({ session, token }) {
+    if (session.user) {
+      (session.user as any).id = token.id;
+      (session.user as any).username = token.username;
+      (session.user as any).phone = token.phone;
+      (session.user as any).role = token.role ?? null;
+      (session.user as any).accessToken = token.accessToken ?? null;
+    }
+    return session;
+  },
   },
 };

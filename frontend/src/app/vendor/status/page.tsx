@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getVendorApplicationStatus } from "@/lib/api";
 
 type VendorStatusPayload = {
-  application: {
+  application?: {
     id: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
     ownerName: string;
@@ -15,18 +16,22 @@ type VendorStatusPayload = {
     rejectionVisibleUntil?: string | null;
     createdAt: string;
   };
+  message?: string;
 };
 
 export default function VendorStatusPage() {
+  const { data: session, status } = useSession();
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
   const [data, setData] = useState<VendorStatusPayload | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === "loading") return;
+
     async function load() {
       try {
-        const token = localStorage.getItem("access_token");
-
         if (!token) {
           throw new Error("Please log in first.");
         }
@@ -41,9 +46,9 @@ export default function VendorStatusPage() {
     }
 
     load();
-  }, []);
+  }, [status, token]);
 
-  if (loading) {
+  if (status === "loading" || loading) {
     return (
       <main className="grid min-h-screen place-items-center">
         <p className="text-sm text-slate-600">Loading vendor status...</p>
@@ -51,11 +56,15 @@ export default function VendorStatusPage() {
     );
   }
 
-  if (error || !data) {
+  const app = data?.application;
+
+  if (error || !data || !app) {
     return (
       <main className="grid min-h-screen place-items-center px-4">
         <div className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-lg">
-          <p className="text-red-600">{error || "Could not load status."}</p>
+          <p className="text-red-600">
+            {error || data?.message || "Could not load status."}
+          </p>
 
           <Link
             href="/login"
@@ -67,8 +76,6 @@ export default function VendorStatusPage() {
       </main>
     );
   }
-
-  const app = data.application;
 
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
@@ -105,19 +112,27 @@ export default function VendorStatusPage() {
         ) : null}
 
         {app.status === "REJECTED" ? (
-          <div className="mt-6 rounded-2xl bg-red-50 px-4 py-4 text-sm text-red-800">
-            <p className="font-semibold">Your application was rejected.</p>
-            <p className="mt-1">
-              {app.rejectionReason || "No rejection reason was provided."}
-            </p>
-            {app.rejectionVisibleUntil ? (
+          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+            <p className="font-semibold text-base">Your application was rejected.</p>
+
+            <div className="mt-3 rounded-xl bg-white/70 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
+                Rejection reason
+              </p>
               <p className="mt-2">
+                {app.rejectionReason?.trim() || "No rejection reason was provided."}
+              </p>
+            </div>
+
+            {app.rejectionVisibleUntil ? (
+              <p className="mt-3">
                 Visible until:{" "}
                 <span className="font-semibold">
                   {new Date(app.rejectionVisibleUntil).toLocaleDateString()}
                 </span>
               </p>
             ) : null}
+
             <p className="mt-3">
               Contact admin: <span className="font-semibold">support@meeramoot.com</span>
             </p>
