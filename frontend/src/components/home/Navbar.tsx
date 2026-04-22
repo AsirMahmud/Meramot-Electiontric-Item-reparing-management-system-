@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 
 type NavbarProps = {
   isLoggedIn?: boolean;
@@ -20,8 +20,8 @@ const categoryTabs = [
 ] as const;
 
 export default function Navbar({
-  isLoggedIn,
-  firstName,
+  isLoggedIn = false,
+  firstName = "User",
   language = "en",
   onLanguageChange,
 }: NavbarProps) {
@@ -30,32 +30,15 @@ export default function Navbar({
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeCategory =
-    pathname === "/shops" ? searchParams.get("category") ?? "" : "";
+  const activeCategory = pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
-  const resolvedIsLoggedIn = isLoggedIn ?? !!session?.user;
-
-  const resolvedFirstName = useMemo(() => {
-    if (firstName?.trim()) return firstName.trim();
-
-    const sessionName =
-      session?.user?.name?.trim()?.split(" ")[0] ||
-      (session?.user as { username?: string } | undefined)?.username
-        ?.trim()
-        ?.split(" ")[0];
-
-    return sessionName || "User";
-  }, [firstName, session]);
-
-  const displayName = resolvedFirstName;
-
-  const userRole =
-    (session?.user as { role?: string } | undefined)?.role ?? null;
+  const displayName = useMemo(() => {
+    return firstName?.trim() || "User";
+  }, [firstName]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
@@ -89,12 +72,12 @@ export default function Navbar({
             </Link>
 
             <div className="flex flex-wrap items-center gap-3 md:justify-end">
-              {!resolvedIsLoggedIn ? (
+              {!isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#183625]"
+                  className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
                 >
-                  Log in / Sign up
+                  Sign in
                 </Link>
               ) : (
                 <div className="relative">
@@ -103,13 +86,13 @@ export default function Navbar({
                       setIsUserMenuOpen((prev) => !prev);
                       setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34]"
+                    className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
                   >
-                    Hi, {displayName} ▼
+                    {displayName} ▼
                   </button>
 
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-[#d9e5d5] bg-white p-2 shadow-lg">
+                    <div className="absolute right-0 z-30 mt-2 w-56 rounded-3xl border border-[#d9e5d5] bg-white p-3 shadow-lg">
                       <Link
                         href="/profile"
                         className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
@@ -133,16 +116,6 @@ export default function Navbar({
                       >
                         Make request
                       </Link>
-
-                      {userRole === "ADMIN" && (
-                        <Link
-                          href="/admin/vendors"
-                          className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Admin dashboard
-                        </Link>
-                      )}
 
                       <button
                         onClick={() => {
@@ -176,16 +149,17 @@ export default function Navbar({
                         onLanguageChange?.("en");
                         setIsLangMenuOpen(false);
                       }}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#234733] hover:bg-[#eef5ea]"
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm hover:bg-[#eef5ea]"
                     >
                       English
                     </button>
+
                     <button
                       onClick={() => {
                         onLanguageChange?.("bn");
                         setIsLangMenuOpen(false);
                       }}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#234733] hover:bg-[#eef5ea]"
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm hover:bg-[#eef5ea]"
                     >
                       বাংলা
                     </button>
@@ -195,84 +169,68 @@ export default function Navbar({
             </div>
           </div>
 
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex flex-col gap-3 md:flex-row md:items-center"
-          >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search shops, devices, or services..."
-              className="w-full rounded-full border border-[#b9ceb7] bg-white px-5 py-3 text-sm outline-none placeholder:text-[#70836d] md:flex-1"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#183625]"
-            >
-              Search
-            </button>
-          </form>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-end gap-6 font-semibold text-[#1d3528]">
+              {categoryTabs.map((tab) => {
+                const active = activeCategory === tab.value;
+                return (
+                  <Link
+                    key={tab.value}
+                    href={`/shops?category=${tab.value}`}
+                    className={`inline-flex border-b-[3px] pb-1 transition ${
+                      active
+                        ? "border-[#214c34] text-[#214c34]"
+                        : "border-transparent text-[#1d3528] hover:border-[#214c34]/40"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
 
-          <div className="flex flex-wrap gap-3">
-            {categoryTabs.map((tab) => {
-              const isActive = activeCategory === tab.value;
-
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-
-                    if (pathname !== "/shops") {
-                      params.set("category", tab.value);
-                      router.push(`/shops?${params.toString()}`);
-                      return;
-                    }
-
-                    if (isActive) {
-                      params.delete("category");
-                    } else {
-                      params.set("category", tab.value);
-                    }
-
-                    router.push(`/shops?${params.toString()}`);
-                  }}
-                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-[#214c34] text-white"
-                      : "bg-white text-[#214c34] border border-[#b9ceb7]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+            <form onSubmit={handleSearchSubmit} className="w-full md:w-[520px]">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shops, parts, devices, or repair types"
+                className="w-full rounded-xl border-2 border-[#2f4030] bg-[#a9bb83] px-5 py-3 text-sm text-[#183325] shadow-sm outline-none placeholder:text-[#2f4030]"
+              />
+            </form>
           </div>
         </div>
       </header>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-[#173726]">Log out?</h3>
-            <p className="mt-2 text-sm text-[#5b7262]">
-              You will need to sign in again to access your account.
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowLogoutConfirm(false)}
+          />
+
+          <div className="relative z-[101] w-[90%] max-w-md rounded-[2rem] border border-[#cfe0c6] bg-[#dff0dc] p-8 shadow-2xl">
+            <h2 className="text-center text-2xl font-bold text-[#214c34]">
+              Are you sure?
+            </h2>
+
+            <p className="mt-3 text-center text-sm text-[#355541]">
+              You will be logged out of your account.
             </p>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex items-center justify-center gap-4">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
+                className="rounded-full border border-[#214c34] bg-white px-6 py-2.5 text-sm font-semibold text-[#214c34] transition hover:bg-[#f7fbf5]"
               >
-                Cancel
+                No
               </button>
+
               <button
                 onClick={confirmLogout}
-                className="flex-1 rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white"
+                className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
               >
-                Log out
+                Yes
               </button>
             </div>
           </div>

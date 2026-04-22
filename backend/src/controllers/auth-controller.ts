@@ -1,21 +1,15 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma.js";
-import { env } from "../config/env.js";
-import { isAdminEmail } from "../config/admin.js";
-function signToken(user: {
-  id: string;
-  username: string;
-  email: string;
-  role?: string | null;
-}) {
+import prisma from "../models/prisma";
+import { env } from "../config/env";
+
+function signToken(user: { id: string; username: string; email: string }) {
   return jwt.sign(
     {
       sub: user.id,
       username: user.username,
       email: user.email,
-      role: user.role ?? undefined,
     },
     env.jwtSecret,
     { expiresIn: "7d" }
@@ -40,7 +34,7 @@ export async function signup(req: Request, res: Response) {
 
     const existing = await prisma.user.findFirst({
       where: {
-        OR: [{ username: username.trim() }, { email: email.trim().toLowerCase() }],
+        OR: [{ username: username.trim() }, { email: email.trim() }],
       },
       select: { id: true },
     });
@@ -53,17 +47,13 @@ export async function signup(req: Request, res: Response) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const normalizedEmail = email.trim().toLowerCase();
-
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         username: username.trim(),
-        email: normalizedEmail,
+        email: email.trim(),
         phone: phone.trim(),
         passwordHash,
-        role: isAdminEmail(normalizedEmail) ? "ADMIN" : "CUSTOMER",
-        isEmailVerified: true,
       },
       select: {
         id: true,
@@ -71,7 +61,6 @@ export async function signup(req: Request, res: Response) {
         username: true,
         email: true,
         phone: true,
-        role: true,
       },
     });
 
@@ -101,11 +90,9 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    const normalizedIdentifier = identifier.trim().toLowerCase();
-
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ email: normalizedIdentifier }, { username: identifier.trim() }],
+        OR: [{ email: identifier.trim() }, { username: identifier.trim() }],
       },
     });
 
@@ -130,7 +117,6 @@ export async function login(req: Request, res: Response) {
         username: user.username,
         email: user.email,
         phone: user.phone,
-        role: user.role,
       },
     });
   } catch (error) {
@@ -158,6 +144,7 @@ export async function checkUsername(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
 export async function googleExchange(req: Request, res: Response) {
   try {
     const { email, name } = req.body as {
@@ -170,16 +157,12 @@ export async function googleExchange(req: Request, res: Response) {
       return res.status(400).json({ message: "email is required" });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-
     let user = await prisma.user.findFirst({
-      where: { email: normalizedEmail },
+      where: { email: email.trim() },
     });
 
     if (!user) {
-      const baseUsername =
-        normalizedEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "user";
-
+      const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "user";
       let username = baseUsername;
       let counter = 1;
 
@@ -196,22 +179,9 @@ export async function googleExchange(req: Request, res: Response) {
         data: {
           name: name?.trim() || baseUsername,
           username,
-          email: normalizedEmail,
-          phone: null,
+          email: email.trim(),
+          phone: `temp-${Date.now()}`,
           passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
-          role: isAdminEmail(normalizedEmail) ? "ADMIN" : "CUSTOMER",
-          isEmailVerified: true,
-        },
-      });
-    } else {
-      const shouldBeAdmin = isAdminEmail(normalizedEmail);
-
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          isEmailVerified: true,
-          name: user.name || name?.trim() || user.name,
-          role: shouldBeAdmin ? "ADMIN" : user.role,
         },
       });
     }
@@ -227,7 +197,6 @@ export async function googleExchange(req: Request, res: Response) {
         username: user.username,
         email: user.email,
         phone: user.phone,
-        role: user.role,
       },
     });
   } catch (error) {

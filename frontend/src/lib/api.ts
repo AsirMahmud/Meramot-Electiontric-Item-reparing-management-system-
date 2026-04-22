@@ -343,18 +343,7 @@ export function signup(data: {
 }
 
 export function login(data: { identifier: string; password: string }) {
-  return request<{
-    message: string;
-    token: string;
-    user: {
-      id: string;
-      username: string;
-      email: string;
-      name?: string | null;
-      phone?: string | null;
-      role?: string | null;
-    };
-  }>("/auth/login", {
+  return request<AuthPayload>("/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });

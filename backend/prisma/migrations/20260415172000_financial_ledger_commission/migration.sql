@@ -1,3 +1,10 @@
+CREATE TABLE "EscrowLedger" (
+    "id" TEXT PRIMARY KEY,
+    "action" TEXT NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+);
+
+
 -- AlterTable
 ALTER TABLE "EscrowLedger"
 ADD COLUMN "vendorUserId" TEXT,

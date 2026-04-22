@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
@@ -91,6 +92,15 @@ function ShopResultCard({ shop }: { shop: ApiShop }) {
 }
 
 export default function ShopsResultsClient() {
+  const { data: session } = useSession();
+
+  const firstName = useMemo(() => {
+  return (
+    session?.user?.name?.trim()?.split(" ")[0] ||
+    (session?.user as any)?.username?.trim()?.split(" ")[0] ||
+    "User"
+  );
+}, [session]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -157,7 +167,10 @@ export default function ShopsResultsClient() {
   if (categoryBrowseMode) {
     return (
       <main className="min-h-screen bg-[#E4FCD5]">
-        <Navbar />
+        <Navbar
+          isLoggedIn={!!session?.user}
+          firstName={firstName}
+        />
 
         <section className="mx-auto max-w-7xl px-4 py-6 md:px-6">
           {apiFailed ? (
@@ -184,7 +197,10 @@ export default function ShopsResultsClient() {
 
   return (
     <main className="min-h-screen bg-[#f7f8f3]">
-      <Navbar />
+        <Navbar
+          isLoggedIn={!!session?.user}
+          firstName={firstName}
+        />
 
       <section className="mx-auto max-w-7xl px-4 py-5 md:px-6">
         <div className="mb-5">

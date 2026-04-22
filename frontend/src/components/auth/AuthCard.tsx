@@ -5,11 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
-import {
-  checkUsername,
-  signup,
-  getVendorApplicationStatus,
-} from "@/lib/api";
+import { checkUsername, signup } from "@/lib/api";
 
 type Mode = "login" | "signup";
 type UsernameStatus = "idle" | "checking" | "available" | "taken";
@@ -63,11 +59,6 @@ function getPasswordBar(password: string) {
   };
 }
 
-type SessionUser = {
-  role?: string | null;
-  accessToken?: string | null;
-};
-
 export default function AuthCard({ mode }: { mode: Mode }) {
   const router = useRouter();
   const isSignup = mode === "signup";
@@ -90,7 +81,6 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     () => getPasswordChecks(form.password),
     [form.password]
   );
-
   const passwordBar = useMemo(
     () => getPasswordBar(form.password),
     [form.password]
@@ -119,54 +109,6 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     return () => clearTimeout(timer);
   }, [form.username, isSignup]);
 
-  async function getCurrentSessionUser(): Promise<SessionUser | undefined> {
-    const sessionResponse = await fetch("/api/auth/session");
-    const sessionData = await sessionResponse.json();
-    return sessionData?.user as SessionUser | undefined;
-  }
-
- async function redirectByRole(user?: SessionUser) {
-  console.log("redirectByRole user =", user);
-
-  if (!user) {
-    router.push("/");
-    router.refresh();
-    return;
-  }
-
-  if (user?.accessToken) {
-    try {
-      const vendorStatus = await getVendorApplicationStatus(user.accessToken);
-      console.log("vendorStatus =", vendorStatus);
-
-      const application = vendorStatus?.application;
-      console.log("application =", application);
-
-      if (application?.status === "PENDING" || application?.status === "REJECTED") {
-        router.push("/vendor/status");
-        return;
-      }
-
-      if (application?.status === "APPROVED") {
-        router.push("/vendor/onboarding");
-        return;
-      }
-    } catch (error) {
-      console.log("getVendorApplicationStatus failed =", error);
-    }
-  } else {
-    console.log("No accessToken found on session user");
-  }
-
-  if (user.role === "ADMIN") {
-    router.push("/admin/vendors");
-    router.refresh();
-    return;
-  }
-
-  router.push("/");
-  router.refresh();
-}
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -179,15 +121,12 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         if (!form.email.trim()) throw new Error("Email is required.");
         if (!form.phone.trim()) throw new Error("Phone number is required.");
         if (!form.password) throw new Error("Password is required.");
-
         if (usernameStatus === "taken") {
           throw new Error("Please choose a different username.");
         }
-
         if (!passwordBar.acceptable) {
           throw new Error("Please choose a stronger password.");
         }
-
         if (form.password !== form.confirm) {
           throw new Error("Passwords do not match.");
         }
@@ -209,32 +148,27 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         if (loginResult?.error) {
           throw new Error("Signup worked, but automatic login failed.");
         }
+      } else {
+        if (!form.email.trim()) {
+          throw new Error("Username or email is required.");
+        }
+        if (!form.password) {
+          throw new Error("Password is required.");
+        }
 
-        const user = await getCurrentSessionUser();
-        await redirectByRole(user);
-        return;
+        const loginResult = await signIn("credentials", {
+          identifier: form.email.trim(),
+          password: form.password,
+          redirect: false,
+        });
+
+        if (loginResult?.error) {
+          throw new Error("Invalid credentials.");
+        }
       }
 
-      if (!form.email.trim()) {
-        throw new Error("Username or email is required.");
-      }
-
-      if (!form.password) {
-        throw new Error("Password is required.");
-      }
-
-      const loginResult = await signIn("credentials", {
-        identifier: form.email.trim(),
-        password: form.password,
-        redirect: false,
-      });
-
-      if (loginResult?.error) {
-        throw new Error("Invalid credentials.");
-      }
-
-      const user = await getCurrentSessionUser();
-      await redirectByRole(user);
+      router.push("/");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not authenticate.");
     } finally {
@@ -243,12 +177,10 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   }
 
   async function handleGoogleSignIn() {
-    setError("");
-    await signIn("google", { callbackUrl: "/admin/vendors" });
+    await signIn("google", { callbackUrl: "/" });
   }
 
-  const showPasswordBar =
-    isSignup && (passwordFocused || form.password.length > 0);
+  const showPasswordBar = isSignup && (passwordFocused || form.password.length > 0);
 
   return (
     <div className="w-full max-w-[440px]">
@@ -272,216 +204,156 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           <p className="mt-1 text-sm text-muted-foreground">
             {isSignup
               ? "Sign up to request repairs, compare shops, and save viewed items."
-              : "Log in to continue to your dashboard."}
+              : "Log in to continue to your customer dashboard."}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          className="mb-4 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-secondary"
-        >
-          <span className="text-base">G</span>
-          Continue with Google
-        </button>
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          {isSignup && (
+            <>
+              <input
+                className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+                placeholder="Full name"
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+              />
 
-        <div className="mb-4 flex items-center gap-3">
+              <div>
+                <input
+                  className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+                  placeholder="Username"
+                  value={form.username}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, username: event.target.value }))
+                  }
+                />
+                {usernameStatus === "checking" && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Checking username...
+                  </p>
+                )}
+                {usernameStatus === "available" && (
+                  <p className="mt-1 text-xs text-green-600">
+                    Username is available.
+                  </p>
+                )}
+                {usernameStatus === "taken" && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Username already in use.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          <input
+            className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+            type={isSignup ? "email" : "text"}
+            placeholder={isSignup ? "Email" : "Username or email"}
+            value={form.email}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, email: event.target.value }))
+            }
+          />
+
+          {isSignup && (
+            <input
+              className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+              type="tel"
+              placeholder="Phone number"
+              value={form.phone}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, phone: event.target.value }))
+              }
+            />
+          )}
+
+          <input
+            className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, password: event.target.value }))
+            }
+          />
+
+          {showPasswordBar && (
+            <div className="rounded-2xl border border-border bg-mint-50 px-3 py-3">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[#d9e5d5]">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${passwordBar.color}`}
+                  style={{ width: passwordBar.width }}
+                />
+              </div>
+            </div>
+          )}
+
+          {isSignup && (
+            <input
+              className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+              type="password"
+              placeholder="Confirm password"
+              value={form.confirm}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, confirm: event.target.value }))
+              }
+            />
+          )}
+
+          {error ? (
+            <p className="text-sm font-medium text-red-600">{error}</p>
+          ) : null}
+
+          <button
+            disabled={loading}
+            className="w-full rounded-2xl bg-accent-dark py-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Please wait..." : isSignup ? "Sign up" : "Log in"}
+          </button>
+        </form>
+
+        <div className="my-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
             or
           </span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {isSignup ? (
-            <>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
-                  Full name
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((previous) => ({
-                      ...previous,
-                      name: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  placeholder="Your full name"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={form.username}
-                  onChange={(event) =>
-                    setForm((previous) => ({
-                      ...previous,
-                      username: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  placeholder="Choose a username"
-                />
-                {form.username.trim() ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {usernameStatus === "checking" && "Checking username..."}
-                    {usernameStatus === "available" && "Username is available."}
-                    {usernameStatus === "taken" && "Username is already taken."}
-                  </p>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-accent-dark">
-              {isSignup ? "Email" : "Username or Email"}
-            </label>
-            <input
-              type="text"
-              value={form.email}
-              onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  email: event.target.value,
-                }))
-              }
-              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder={isSignup ? "you@example.com" : "Username or email"}
-            />
-          </div>
-
-          {isSignup ? (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-accent-dark">
-                Phone number
-              </label>
-              <input
-                type="text"
-                value={form.phone}
-                onChange={(event) =>
-                  setForm((previous) => ({
-                    ...previous,
-                    phone: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                placeholder="01XXXXXXXXX"
-              />
-            </div>
-          ) : null}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-accent-dark">
-              Password
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-              onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  password: event.target.value,
-                }))
-              }
-              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder="Enter your password"
-            />
-            {showPasswordBar ? (
-              <div className="mt-2">
-                <div className="h-2 w-full rounded-full bg-gray-200">
-                  <div
-                    className={`h-2 rounded-full transition-all ${passwordBar.color}`}
-                    style={{ width: passwordBar.width }}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {isSignup ? (
-            <>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
-                  Confirm password
-                </label>
-                <input
-                  type="password"
-                  value={form.confirm}
-                  onChange={(event) =>
-                    setForm((previous) => ({
-                      ...previous,
-                      confirm: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  placeholder="Re-enter your password"
-                />
-              </div>
-
-              {showPasswordBar ? (
-                <div className="rounded-2xl bg-[#f6faf4] px-4 py-3 text-xs text-[#58725f]">
-                  <p>Password must include:</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>{passwordChecks.length ? "✓" : "•"} At least 8 characters</li>
-                    <li>{passwordChecks.upper ? "✓" : "•"} An uppercase letter</li>
-                    <li>{passwordChecks.lower ? "✓" : "•"} A lowercase letter</li>
-                    <li>{passwordChecks.number ? "✓" : "•"} A number</li>
-                    <li>{passwordChecks.special ? "✓" : "•"} A special character</li>
-                  </ul>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-
-          {error ? (
-            <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </div>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#183625] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading
-              ? isSignup
-                ? "Creating account..."
-                : "Logging in..."
-              : isSignup
-              ? "Create account"
-              : "Log in"}
-          </button>
-        </form>
-        <div className="mt-4">
-        <Link
-          href="/vendor/apply"
-          className="block w-full rounded-[1.25rem] bg-[#D4AF37] px-5 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="w-full rounded-2xl border border-border bg-mint-50 py-2.5 text-sm font-semibold text-accent-dark shadow-sm"
         >
-          Register as a vendor
-        </Link>
-      </div>
-        <p className="mt-5 text-center text-sm text-muted-foreground">
-          {isSignup ? "Already have an account?" : "Don’t have an account?"}{" "}
+          Continue with Google
+        </button>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          {isSignup ? "Already have an account?" : "Need an account?"}{" "}
           <Link
             href={isSignup ? "/login" : "/signup"}
-            className="font-semibold text-[#214c34] hover:underline"
+            className="font-semibold text-accent-dark underline underline-offset-4"
           >
             {isSignup ? "Log in" : "Sign up"}
           </Link>
         </p>
       </div>
+
+      {isSignup && (
+        <div className="mt-4">
+          <Link
+            href="/vendor/apply"
+            className="block w-full rounded-[1.25rem] bg-[#D4AF37] px-5 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+          >
+            Register as a vendor
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
