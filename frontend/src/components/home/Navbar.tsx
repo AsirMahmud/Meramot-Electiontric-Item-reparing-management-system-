@@ -2,15 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { getVendorApplicationStatus } from "@/lib/api";
 
 type NavbarProps = {
   isLoggedIn?: boolean;
   firstName?: string;
   language?: "en" | "bn";
   onLanguageChange?: (lang: "en" | "bn") => void;
+};
+
+type VendorNavbarStatus = {
+  application?: {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    setupComplete?: boolean;
+  };
+  message?: string;
 };
 
 const categoryTabs = [
@@ -29,6 +38,7 @@ export default function Navbar({
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -55,7 +65,28 @@ export default function Navbar({
   const displayName = resolvedFirstName;
 
   const userRole =
-    (session?.user as { role?: string } | undefined)?.role ?? null;
+    (session?.user as { role?: string; accessToken?: string } | undefined)?.role ?? null;
+
+  const token =
+    (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  useEffect(() => {
+    async function loadVendorStatus() {
+      if (userRole !== "VENDOR" || !token) {
+        setVendorStatus(null);
+        return;
+      }
+
+      try {
+        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
+        setVendorStatus(result);
+      } catch {
+        setVendorStatus(null);
+      }
+    }
+
+    loadVendorStatus();
+  }, [userRole, token]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
@@ -63,7 +94,19 @@ export default function Navbar({
     await signOut({ callbackUrl: "/" });
   };
 
-  const handleSearchSubmit = (e: FormEvent) => {
+  const vendorApplication = vendorStatus?.application;
+
+  const isVendorSetupComplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete === true;
+
+  const isVendorSetupIncomplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete !== true;
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const trimmed = searchQuery.trim();
@@ -110,38 +153,108 @@ export default function Navbar({
 
                   {isUserMenuOpen && (
                     <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-[#d9e5d5] bg-white p-2 shadow-lg">
-                      <Link
-                        href="/profile"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        View profile
-                      </Link>
+                      {userRole === "VENDOR" ? (
+                        <>
+                          {isVendorSetupIncomplete ? (
+                            <>
+                              <Link
+                                href="/vendor/setup-shop"
+                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Set up your shop
+                              </Link>
 
-                      <Link
-                        href="/orders"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Requests history
-                      </Link>
+                              <Link
+                                href="/vendor/status"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                View application status
+                              </Link>
+                            </>
+                          ) : isVendorSetupComplete ? (
+                            <>
+                              <Link
+                                href="/profile"
+                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                View profile
+                              </Link>
 
-                      <Link
-                        href="/requests/new"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Make request
-                      </Link>
+                              <Link
+                                href="/"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Go to home
+                              </Link>
 
-                      {userRole === "ADMIN" && (
-                        <Link
-                          href="/admin/vendors"
-                          className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Admin dashboard
-                        </Link>
+                              <Link
+                                href="/vendor/status"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                View application status
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              <Link
+                                href="/vendor/status"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                View application status
+                              </Link>
+
+                              <Link
+                                href="/"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Go to home
+                              </Link>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            href="/profile"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            View profile
+                          </Link>
+
+                          <Link
+                            href="/orders"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            Requests history
+                          </Link>
+
+                          <Link
+                            href="/requests/new"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            Make request
+                          </Link>
+
+                          {userRole === "ADMIN" && (
+                            <Link
+                              href="/admin/vendors"
+                              className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Admin dashboard
+                            </Link>
+                          )}
+                        </>
                       )}
 
                       <button
@@ -242,7 +355,7 @@ export default function Navbar({
                   className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                     isActive
                       ? "bg-[#214c34] text-white"
-                      : "bg-white text-[#214c34] border border-[#b9ceb7]"
+                      : "border border-[#b9ceb7] bg-white text-[#214c34]"
                   }`}
                 >
                   {tab.label}

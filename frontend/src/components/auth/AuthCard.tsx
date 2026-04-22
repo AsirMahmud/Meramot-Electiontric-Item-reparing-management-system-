@@ -147,7 +147,13 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         return;
       }
 
-      if (application?.status === "APPROVED") {
+            if (application?.status === "APPROVED") {
+        if (application?.setupComplete) {
+          router.push("/");
+          router.refresh();
+          return;
+        }
+
         router.push("/vendor/onboarding");
         return;
       }

@@ -86,8 +86,9 @@ export async function getShops(req: Request, res: Response) {
     const originLng = toNumber(req.query.lng, 90.4125);
 
     const where: Record<string, unknown> = {
-      isActive: true,
-    };
+    isActive: true,
+    isPublic: true,
+  };
 
     if (featuredOnly) where.isFeatured = true;
     if (hasVoucher) where.hasVoucher = true;

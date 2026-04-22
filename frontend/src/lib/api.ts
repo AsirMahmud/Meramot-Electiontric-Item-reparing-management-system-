@@ -11,19 +11,29 @@ export function getAuthHeaders(token: string) {
 ========================================================= */
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API}/api${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: init?.cache ?? "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API}/api${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+      cache: init?.cache ?? "no-store",
+    });
+  } catch (error) {
+    throw new Error(
+      `Network error while requesting ${API}/api${path}. Check whether the backend is running and reachable.`
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error((data as any)?.message || `Request failed with status ${response.status}`);
+    throw new Error(
+      (data as any)?.message || `Request failed with status ${response.status}`
+    );
   }
 
   return data as T;
@@ -168,11 +178,30 @@ export type VendorApplicationStatusResponse = {
     inShopRepair?: boolean;
     spareParts?: boolean;
     notes?: string | null;
-
+    setupComplete?: boolean;
+    isPublic?: boolean;
     createdAt?: string;
   };
   message?: string;
 };
+
+export type VendorSetupShopPayload = {
+  shopName: string;
+  description?: string;
+  phone: string;
+  address: string;
+  city?: string;
+  area?: string;
+  courierPickup?: boolean;
+  inShopRepair?: boolean;
+  spareParts?: boolean;
+  inspectionFee: number;
+  baseLaborFee: number;
+  pickupFee?: number | null;
+  expressFee?: number | null;
+  skillTags: string[];
+};
+
 export function getMyVendorApplication(token: string) {
   return authedRequest<{ application?: VendorApplicationStatusResponse["application"]; message?: string }>(
     "/vendor/application-status",
@@ -183,6 +212,28 @@ export async function getVendorApplicationStatus(
   token: string
 ): Promise<VendorApplicationStatusResponse> {
   return authedRequest("/vendor/application-status", token);
+}
+
+export function completeVendorShopSetup(
+  token: string,
+  data: VendorSetupShopPayload
+) {
+  return request<{
+    message: string;
+    shop: {
+      id: string;
+      name: string;
+      slug: string;
+      isPublic: boolean;
+      setupComplete: boolean;
+    };
+  }>("/vendor/application-status/setup-shop", {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
 }
 export function updateVendorApplication(
   token: string,

@@ -262,9 +262,9 @@ export async function approveVendorApplication(req: Request, res: Response) {
       return res.status(404).json({ message: "Vendor application not found" });
     }
 
-    const existingShop = await prisma.shop.findFirst({
+   const existingShop = await prisma.shop.findFirst({
       where: { email: application.businessEmail },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     const result = await prisma.$transaction(async (tx) => {
@@ -283,29 +283,53 @@ export async function approveVendorApplication(req: Request, res: Response) {
         data: { role: "VENDOR" },
       });
 
-      if (!existingShop) {
-        const slug = await generateUniqueShopSlug(application.shopName);
+    if (!existingShop) {
+      const slug = await generateUniqueShopSlug(application.shopName);
 
-        await tx.shop.create({
-          data: {
-            name: application.shopName,
-            slug,
-            description: application.notes || null,
-            address: application.address,
-            city: application.city,
-            area: application.area,
-            phone: application.phone,
-            email: application.businessEmail,
-            categories: [
-              ...(application.courierPickup ? ["COURIER_PICKUP" as const] : []),
-              ...(application.inShopRepair ? ["IN_SHOP_REPAIR" as const] : []),
-              ...(application.spareParts ? ["SPARE_PARTS" as const] : []),
-            ],
-            specialties: application.specialties,
-            isActive: true,
-          },
-        });
-      }
+      await tx.shop.create({
+        data: {
+          name: application.shopName,
+          slug,
+          description: application.notes || null,
+          address: application.address,
+          city: application.city,
+          area: application.area,
+          phone: application.phone,
+          email: application.businessEmail,
+          categories: [
+            ...(application.courierPickup ? ["COURIER_PICKUP" as const] : []),
+            ...(application.inShopRepair ? ["IN_SHOP_REPAIR" as const] : []),
+            ...(application.spareParts ? ["SPARE_PARTS" as const] : []),
+          ],
+          specialties: application.specialties,
+          isActive: true,
+          isPublic: false,
+          setupComplete: false,
+        },
+      });
+    } else {
+      await tx.shop.update({
+        where: { id: existingShop.id },
+        data: {
+          name: application.shopName,
+          description: application.notes || null,
+          address: application.address,
+          city: application.city,
+          area: application.area,
+          phone: application.phone,
+          email: application.businessEmail,
+          categories: [
+            ...(application.courierPickup ? ["COURIER_PICKUP" as const] : []),
+            ...(application.inShopRepair ? ["IN_SHOP_REPAIR" as const] : []),
+            ...(application.spareParts ? ["SPARE_PARTS" as const] : []),
+          ],
+          specialties: application.specialties,
+          isActive: true,
+          isPublic: false,
+          setupComplete: false,
+        },
+      });
+    }
 
       return updatedApplication;
     });

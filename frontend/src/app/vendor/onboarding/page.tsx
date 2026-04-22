@@ -3,28 +3,67 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getVendorApplicationStatus } from "@/lib/api";
 
+type VendorStatusPayload = {
+  application?: {
+    id: string;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    ownerName: string;
+    businessEmail: string;
+    shopName: string;
+    rejectionReason?: string | null;
+    rejectionVisibleUntil?: string | null;
+    setupComplete?: boolean;
+    isPublic?: boolean;
+    createdAt: string;
+  };
+  message?: string;
+};
 export default function VendorOnboardingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const role = (session?.user as { role?: string } | undefined)?.role;
+  const role = (session?.user as { role?: string; accessToken?: string } | undefined)?.role;
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  const [data, setData] = useState<VendorStatusPayload | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return;
 
-    if (!session?.user) {
-      router.replace("/login");
-      return;
+    async function load() {
+      if (!session?.user) {
+        router.replace("/login");
+        return;
+      }
+
+      if (role !== "VENDOR") {
+        router.replace("/");
+        return;
+      }
+
+      try {
+        if (!token) {
+          setLoadingStatus(false);
+          return;
+        }
+
+        const result = await getVendorApplicationStatus(token);
+        setData(result);
+      } catch {
+        setData(null);
+      } finally {
+        setLoadingStatus(false);
+      }
     }
 
-    if (role !== "VENDOR") {
-      router.replace("/");
-    }
-  }, [session, status, role, router]);
+    load();
+  }, [session, status, role, router, token]);
 
-  if (status === "loading") {
+  if (status === "loading" || loadingStatus) {
     return (
       <main className="grid min-h-screen place-items-center">
         <p className="text-sm text-slate-600">Loading vendor onboarding...</p>
@@ -35,6 +74,8 @@ export default function VendorOnboardingPage() {
   if (!session?.user || role !== "VENDOR") {
     return null;
   }
+
+  const app = data?.application;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
@@ -71,12 +112,21 @@ export default function VendorOnboardingPage() {
                 View application status
               </Link>
 
-              <Link
-                href="/"
-                className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
-              >
-                Go to home
-              </Link>
+              {app?.status === "APPROVED" ? (
+                <Link
+                  href="/vendor/setup-shop"
+                  className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
+                >
+                  Set up your shop
+                </Link>
+              ) : (
+                <Link
+                  href="/"
+                  className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
+                >
+                  Go to home
+                </Link>
+              )}
             </div>
           </div>
         </div>

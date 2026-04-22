@@ -1,9 +1,12 @@
--- AlterTable
-ALTER TABLE "EscrowLedger"
-ADD COLUMN "vendorUserId" TEXT,
-ADD COLUMN "grossAmount" DECIMAL(10,2),
-ADD COLUMN "platformCommissionAmount" DECIMAL(10,2),
-ADD COLUMN "vendorNetAmount" DECIMAL(10,2);
+CREATE TABLE "EscrowLedger" (
+    "id" TEXT PRIMARY KEY,
+    "action" TEXT NOT NULL,
+    "vendorUserId" TEXT,
+    "grossAmount" DECIMAL(10,2),
+    "platformCommissionAmount" DECIMAL(10,2),
+    "vendorNetAmount" DECIMAL(10,2),
+    "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+);
 
 -- CreateIndex
 CREATE INDEX "EscrowLedger_vendorUserId_idx" ON "EscrowLedger"("vendorUserId");
