@@ -38,7 +38,7 @@ export async function deliveryAdminLogin(req: Request, res: Response) {
       },
     });
 
-    if (!user || user.role !== "DELIVERY_ADMIN") {
+    if (!user || user.role !== "ADMIN") {
       return res.status(401).json({ message: "Invalid delivery admin credentials" });
     }
 

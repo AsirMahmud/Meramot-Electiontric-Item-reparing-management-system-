@@ -8,28 +8,23 @@ function parseDeliveryStatusQuery(raw) {
 }
 export async function getDeliveryMe(req, res) {
     try {
-        const riderProfileId = req.deliveryAuth?.riderProfileId;
-        if (!riderProfileId) {
+        const riderUserId = req.deliveryAuth?.userId;
+        if (!riderUserId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
-        const rider = await prisma.riderProfile.findUnique({
-            where: { id: riderProfileId },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        email: true,
-                        phone: true,
-                        role: true,
-                        status: true,
-                        avatarUrl: true,
-                    },
-                },
-                coverageZones: {
-                    include: { coverageZone: true },
-                },
+        const rider = await prisma.user.findUnique({
+            where: { id: riderUserId },
+            select: {
+                id: true,
+                name: true,
+                username: true,
+                email: true,
+                phone: true,
+                role: true,
+                status: true,
+                avatarUrl: true,
+                lat: true,
+                lng: true,
             },
         });
         if (!rider) {
@@ -44,8 +39,8 @@ export async function getDeliveryMe(req, res) {
 }
 export async function listMyDeliveries(req, res) {
     try {
-        const riderProfileId = req.deliveryAuth?.riderProfileId;
-        if (!riderProfileId) {
+        const riderUserId = req.deliveryAuth?.userId;
+        if (!riderUserId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const statusFilter = parseDeliveryStatusQuery(req.query.status);
@@ -54,6 +49,7 @@ export async function listMyDeliveries(req, res) {
         }
         const deliveries = await prisma.delivery.findMany({
             where: {
+                riderUserId,
                 ...(statusFilter ? { status: statusFilter } : {}),
             },
             include: {
@@ -65,7 +61,7 @@ export async function listMyDeliveries(req, res) {
                                 title: true,
                                 deviceType: true,
                                 status: true,
-                                contactPhone: true,
+                                user: { select: { phone: true } },
                             },
                         },
                         shop: {
@@ -78,7 +74,6 @@ export async function listMyDeliveries(req, res) {
                         },
                     },
                 },
-                coverageZone: true,
             },
             orderBy: { updatedAt: "desc" },
         });
@@ -91,8 +86,8 @@ export async function listMyDeliveries(req, res) {
 }
 export async function acceptMyDelivery(req, res) {
     try {
-        const riderProfileId = req.deliveryAuth?.riderProfileId;
-        if (!riderProfileId) {
+        const riderUserId = req.deliveryAuth?.userId;
+        if (!riderUserId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const rawDeliveryId = req.params.id;
@@ -100,15 +95,11 @@ export async function acceptMyDelivery(req, res) {
             return res.status(400).json({ message: "Delivery id is required" });
         }
         const deliveryId = rawDeliveryId.trim();
-        const rider = await prisma.riderProfile.findUnique({
-            where: { id: riderProfileId },
-            include: {
-                user: {
-                    select: {
-                        name: true,
-                        phone: true,
-                    },
-                },
+        const rider = await prisma.user.findUnique({
+            where: { id: riderUserId },
+            select: {
+                name: true,
+                phone: true,
             },
         });
         if (!rider) {
@@ -116,12 +107,12 @@ export async function acceptMyDelivery(req, res) {
         }
         const existing = await prisma.delivery.findUnique({
             where: { id: deliveryId },
-            select: { id: true, deliveryAgentId: true, status: true },
+            select: { id: true, riderUserId: true, status: true },
         });
         if (!existing) {
             return res.status(404).json({ message: "Delivery not found" });
         }
-        if (existing.deliveryAgentId && existing.deliveryAgentId !== riderProfileId) {
+        if (existing.riderUserId && existing.riderUserId !== riderUserId) {
             return res.status(409).json({ message: "This order is already accepted by another rider" });
         }
         if (["DELIVERED", "FAILED", "CANCELLED"].includes(existing.status)) {
@@ -129,9 +120,9 @@ export async function acceptMyDelivery(req, res) {
         }
         const activeDelivery = await prisma.delivery.findFirst({
             where: {
-                deliveryAgentId: riderProfileId,
+                riderUserId,
                 status: {
-                    notIn: ["DELIVERED", "FAILED", "CANCELLED"],
+                    notIn: ["DELIVERED", "FAILED", "CANCELLED", "PENDING"],
                 },
                 id: {
                     not: deliveryId,
@@ -146,9 +137,9 @@ export async function acceptMyDelivery(req, res) {
         const updated = await prisma.delivery.update({
             where: { id: deliveryId },
             data: {
-                deliveryAgentId: riderProfileId,
-                riderName: rider.user.name ?? null,
-                riderPhone: rider.user.phone ?? null,
+                riderUserId,
+                riderName: rider.name ?? null,
+                riderPhone: rider.phone ?? null,
                 ...(existing.status === "PENDING" ? { status: "SCHEDULED", scheduledAt: now } : {}),
             },
             include: {
@@ -160,7 +151,7 @@ export async function acceptMyDelivery(req, res) {
                                 title: true,
                                 deviceType: true,
                                 status: true,
-                                contactPhone: true,
+                                user: { select: { phone: true } },
                             },
                         },
                         shop: {
@@ -173,7 +164,6 @@ export async function acceptMyDelivery(req, res) {
                         },
                     },
                 },
-                coverageZone: true,
             },
         });
         return res.json({ delivery: updated });
@@ -185,21 +175,21 @@ export async function acceptMyDelivery(req, res) {
 }
 export async function updateLocation(req, res) {
     try {
-        const riderProfileId = req.deliveryAuth?.riderProfileId;
-        if (!riderProfileId) {
+        const riderUserId = req.deliveryAuth?.userId;
+        if (!riderUserId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const { lat, lng } = req.body;
         if (typeof lat !== "number" || typeof lng !== "number") {
             return res.status(400).json({ message: "lat and lng must be numbers" });
         }
-        const updated = await prisma.riderProfile.update({
-            where: { id: riderProfileId },
-            data: { currentLat: lat, currentLng: lng },
+        const updated = await prisma.user.update({
+            where: { id: riderUserId },
+            data: { lat, lng },
             select: {
                 id: true,
-                currentLat: true,
-                currentLng: true,
+                lat: true,
+                lng: true,
                 updatedAt: true,
             },
         });
@@ -218,8 +208,8 @@ function parseDeliveryStatusBody(raw) {
 }
 export async function updateMyDeliveryStatus(req, res) {
     try {
-        const riderProfileId = req.deliveryAuth?.riderProfileId;
-        if (!riderProfileId) {
+        const riderUserId = req.deliveryAuth?.userId;
+        if (!riderUserId) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const rawDeliveryId = req.params.id;
@@ -232,7 +222,7 @@ export async function updateMyDeliveryStatus(req, res) {
             return res.status(400).json({ message: "Valid delivery status is required" });
         }
         const existing = await prisma.delivery.findFirst({
-            where: { id: deliveryId, deliveryAgentId: riderProfileId },
+            where: { id: deliveryId, riderUserId },
             select: { id: true },
         });
         if (!existing) {
@@ -243,7 +233,7 @@ export async function updateMyDeliveryStatus(req, res) {
             where: { id: deliveryId },
             data: {
                 status,
-                ...(status === "DISPATCHED" ? { dispatchedAt: now } : {}),
+                ...(status === "IN_TRANSIT" ? { scheduledAt: now } : {}), // Fallback since dispatchedAt is gone
                 ...(status === "PICKED_UP" ? { pickedUpAt: now } : {}),
                 ...(status === "DELIVERED" ? { deliveredAt: now } : {}),
             },
@@ -256,7 +246,7 @@ export async function updateMyDeliveryStatus(req, res) {
                                 title: true,
                                 deviceType: true,
                                 status: true,
-                                contactPhone: true,
+                                user: { select: { phone: true } },
                             },
                         },
                         shop: {
@@ -269,7 +259,6 @@ export async function updateMyDeliveryStatus(req, res) {
                         },
                     },
                 },
-                coverageZone: true,
             },
         });
         return res.json({ delivery: updated });

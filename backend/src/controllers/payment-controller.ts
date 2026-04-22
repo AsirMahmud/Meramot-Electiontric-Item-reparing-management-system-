@@ -387,8 +387,8 @@ async function markPaymentSuccessful(
     sendInvoiceLinkEmail({
       to: fullPayment.user.email,
       customerName: fullPayment.user.name || fullPayment.user.username,
-      transactionRef: fullPayment.transactionRef,
-      amount: fullPayment.amount,
+      transactionRef: fullPayment.transactionRef || fullPayment.id,
+      amount: Number(fullPayment.amount),
       currency: fullPayment.currency,
       invoiceUrl,
     }).catch(err => {
