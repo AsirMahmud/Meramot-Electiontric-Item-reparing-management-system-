@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { getAuthHeaders } from "@/lib/api";
+
 
 type FinancialSummary = {
   commissionRate: number;
@@ -51,7 +51,10 @@ export default function AdminFinancePage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/summary`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+       headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       });
       const data = await res.json();
       if (res.ok) {

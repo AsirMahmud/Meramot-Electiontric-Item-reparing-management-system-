@@ -202,16 +202,33 @@ model Shop {
   lng          Float?
   phone        String?
   email        String?
+
   ratingAvg    Float          @default(0)
   reviewCount  Int            @default(0)
   priceLevel   Int            @default(2)
+
   isFeatured   Boolean        @default(false)
   isActive     Boolean        @default(true)
+  isPublic     Boolean        @default(false)ad
+  setupComplete Boolean       @default(false)
+
   hasVoucher   Boolean        @default(false)
   freeDelivery Boolean        @default(false)
   hasDeals     Boolean        @default(false)
+
   categories   ShopCategory[]
   specialties  String[]
+
+  inspectionFee   Float?
+  baseLaborFee    Float?
+  pickupFee       Float?
+  expressFee      Float?
+
+  openingDays     String?
+  openingHours    String?
+  supportPhone    String?
+  whatsappNumber  String?
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
