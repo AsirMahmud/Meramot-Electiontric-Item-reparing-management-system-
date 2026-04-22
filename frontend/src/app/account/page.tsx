@@ -148,10 +148,10 @@ export default function AccountPage() {
             </Link>
 
             <Link
-feature/moderation-ui
               href="/"
               className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
             >
+
               Continue browsing
             </Link>
           </div>

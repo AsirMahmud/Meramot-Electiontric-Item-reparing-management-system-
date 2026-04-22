@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/moderation-ui
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env.js";
@@ -12,11 +8,6 @@ import supportTicketRoutes from "./routes/support-ticket-routes.js";
 import disputeRoutes from "./routes/dispute-routes.js";
 import refundRoutes from "./routes/refund-routes.js";
 import financialLedgerRoutes from "./routes/financial-ledger-routes.js";
-<<<<<<< HEAD
-import { apiRateLimiter } from "./middleware/rate-limit.js";
-=======
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
 import invoiceRoutes from "./routes/invoice-routes.js";
 import profileRoutes from "./routes/profile-routes.js";
 import requestRoutes from "./routes/request-routes.js";
@@ -27,15 +18,10 @@ import deliveryAuthRoutes from "./routes/delivery-auth-routes.js";
 import deliveryAdminRoutes from "./routes/delivery-admin-routes.js";
 import deliveryAdminAuthRoutes from "./routes/delivery-admin-auth-routes.js";
 import { apiRateLimiter } from "./middleware/rate-limit.js";
->>>>>>> feature/moderation-ui
 
 export function createApp() {
   const app = express();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/moderation-ui
   app.use(
     cors({
       origin: env.frontendOrigin,
@@ -55,8 +41,6 @@ export function createApp() {
   app.use("/api/admin", disputeRoutes);
   app.use("/api/admin", refundRoutes);
   app.use("/api/admin", financialLedgerRoutes);
-<<<<<<< HEAD
-=======
   app.use("/api", invoiceRoutes);
   
   // Mounted customer/vendor orphaned routes
@@ -70,7 +54,6 @@ export function createApp() {
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/delivery-admin/auth", deliveryAdminAuthRoutes);
   app.use("/api/delivery-admin", deliveryAdminRoutes);
->>>>>>> feature/moderation-ui
 
   app.use((_req, res) => {
     res.status(404).json({ error: "Not found" });
@@ -81,12 +64,6 @@ export function createApp() {
 
 const app = createApp();
 
-export default app;
-
-
-<<<<<<< HEAD
-=======
 export const APP_DISPLAY_NAME = "Meramot Electric Item Repairing Management System";
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui
+
+export default app;

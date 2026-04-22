@@ -89,12 +89,55 @@ export async function login(req, res) {
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
-                role: user.role,
             },
         });
     }
     catch (error) {
         console.error("login error:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
+}
+export async function adminDemoLogin(req, res) {
+    try {
+        if (env.nodeEnv === "production") {
+            return res.status(403).json({
+                message: "Demo admin login is disabled in production",
+            });
+        }
+        const { identifier, password } = req.body;
+        if (!identifier || !password) {
+            return res.status(400).json({
+                message: "identifier and password are required",
+            });
+        }
+        const normalizedIdentifier = identifier.trim().toLowerCase();
+        const expectedIdentifier = env.demoAdminIdentifier.trim().toLowerCase();
+        if (normalizedIdentifier !== expectedIdentifier ||
+            password !== env.demoAdminPassword) {
+            return res.status(401).json({ message: "Invalid demo admin credentials" });
+        }
+        const demoUser = {
+            id: "demo-admin-user",
+            name: env.demoAdminName,
+            username: "demo_admin",
+            email: env.demoAdminIdentifier,
+            phone: null,
+            role: "ADMIN",
+        };
+        const token = signToken({
+            id: demoUser.id,
+            username: demoUser.username,
+            email: demoUser.email,
+            role: demoUser.role,
+        });
+        return res.json({
+            message: "Demo admin login successful",
+            token,
+            user: demoUser,
+        });
+    }
+    catch (error) {
+        console.error("admin demo login error:", error);
         return res.status(500).json({ message: "Server error" });
     }
 }

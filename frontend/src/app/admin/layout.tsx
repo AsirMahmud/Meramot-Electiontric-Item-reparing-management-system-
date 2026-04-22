@@ -1,8 +1,9 @@
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
+import { ReactNode } from "react";
+import Link from "next/link";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
-feature/moderation-ui
+  { href: "/admin/finance", label: "Financial Ledger" },
   { href: "/admin/vendors", label: "Vendor Review" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/tickets", label: "Support Tickets" },
@@ -11,7 +12,6 @@ feature/moderation-ui
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
   return (
     <div className="min-h-screen bg-[#EEF5EA] text-[#244233]">
       <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[260px_1fr]">
@@ -24,7 +24,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <p className="mt-2 text-sm text-[#6B7C72]">
               Verify vendors, support users, and mediate disputes.
             </p>
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
           </div>
 
           <nav className="space-y-2">
@@ -38,7 +37,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
         </aside>
 
         <main className="rounded-[32px] border border-[#D7E2D2] bg-[#FAFAF7] p-6 shadow-sm md:p-8">
@@ -48,4 +46,3 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

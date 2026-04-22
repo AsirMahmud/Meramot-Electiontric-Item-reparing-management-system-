@@ -7,7 +7,6 @@ import PopularCategories from "@/components/home/PopularCategories";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import SidebarFilters from "@/components/home/SidebarFilters";
 import OfferCarousel from "@/components/home/OfferCarousel";
-feature/moderation-ui
 
 type StoredUser = {
   id: string;
@@ -19,9 +18,6 @@ type StoredUser = {
 
 export default function HomePage() {
   const [user, setUser] = useState<StoredUser | null>(null);
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui
   const [language, setLanguage] = useState<"en" | "bn">("en");
 
   useEffect(() => {
@@ -34,13 +30,10 @@ export default function HomePage() {
       }
   
       try {
-feature/moderation-ui
         setUser(JSON.parse(rawUser));
       } catch {
         localStorage.removeItem("meramot.user");
         setUser(null);
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
       }
     }
   
@@ -51,19 +44,15 @@ feature/moderation-ui
     return () => {
       window.removeEventListener("meramot-auth-changed", syncUserFromStorage);
     };
->>>>>>> feature/moderation-ui
   }, []);
 
   const firstName = useMemo(() => {
     return (
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
       user?.name?.trim()?.split(" ")[0] ||
       user?.username?.trim()?.split(" ")[0] ||
       "User"
     );
   }, [user]);
->>>>>>> feature/moderation-ui
 
   return (
     <main className="min-h-screen bg-background text-foreground">

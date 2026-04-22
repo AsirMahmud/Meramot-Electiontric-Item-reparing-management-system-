@@ -1,4 +1,5 @@
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
+import { Suspense } from "react";
+import ShopsResultsClient from "./ShopsResultsClient";
 
 export default function ShopsPage() {
   return (
@@ -7,4 +8,3 @@ export default function ShopsPage() {
     </Suspense>
   );
 }
-

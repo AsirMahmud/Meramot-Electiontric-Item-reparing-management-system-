@@ -1,6 +1,8 @@
-import { env } from "../config/env.js";
+import SSLCommerzPayment from 'sslcommerz-lts';
+import { env } from '../config/env.js';
 
-type SslCommerzInitPayload = {
+// Types for SSLCommerz Payload based on official documentation
+export type SslCommerzInitPayload = {
   total_amount: number;
   currency: string;
   tran_id: string;
@@ -9,8 +11,10 @@ type SslCommerzInitPayload = {
   cancel_url: string;
   ipn_url?: string;
   shipping_method: string;
+  num_of_item: number;
   product_name: string;
   product_category: string;
+  productcategory?: string; // Compatibility field
   product_profile: string;
   cus_name: string;
   cus_email: string;
@@ -33,160 +37,114 @@ type SslCommerzInitPayload = {
   value_b?: string;
   value_c?: string;
   value_d?: string;
+  multi_card_name?: string;
+  allowed_bin?: string;
+  emi_option?: number;
 };
 
-type SslCommerzValidatePayload = {
+export type SslCommerzValidatePayload = {
   val_id: string;
 };
 
-type SslCommerzRefundInitPayload = {
+export type SslCommerzRefundPayload = {
   refund_amount: number;
   refund_remarks: string;
   bank_tran_id: string;
   refe_id: string;
 };
 
-type SslCommerzRefundQueryPayload = {
+export type SslCommerzQueryPayload = {
+  tran_id?: string;
+  sessionkey?: string;
+};
+
+export type SslCommerzRefundQueryPayload = {
   refund_ref_id: string;
 };
 
-type SslCommerzTransactionBySessionPayload = {
-  sessionkey: string;
-};
+export class SslCommerzService {
+  private sslcz: any;
 
-type SslCommerzTransactionByTranIdPayload = {
-  tran_id: string;
-};
+  constructor() {
+    const storeId = env.sslCommerzStoreId;
+    const storePassword = env.sslCommerzStorePassword;
+    const isLive = env.sslCommerzLive;
 
-function assertConfigured() {
-  if (!env.sslCommerzStoreId || !env.sslCommerzStorePassword) {
-    throw new Error(
-      "SSLCommerz credentials are not configured. Set SSLCOMMERZ_STORE_ID and SSLCOMMERZ_STORE_PASSWORD.",
-    );
+
+    this.sslcz = new (SSLCommerzPayment as any)(storeId, storePassword, isLive);
   }
-}
 
-function baseUrl() {
-  return `https://${env.sslCommerzLive ? "securepay" : "sandbox"}.sslcommerz.com`;
-}
-
-async function postForm<T extends Record<string, string | number | undefined>>(
-  url: string,
-  payload: T,
-): Promise<unknown> {
-  const params = new URLSearchParams();
-
-  for (const [key, rawValue] of Object.entries(payload)) {
-    if (rawValue === undefined || rawValue === null) {
-      continue;
+  /**
+   * Initialize a payment session
+   */
+  async init(payload: SslCommerzInitPayload): Promise<any> {
+    try {
+      return await this.sslcz.init(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Init Error:', error);
+      throw error;
     }
-
-    params.append(key, String(rawValue));
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params,
-  });
-
-  return response.json();
-}
-
-async function getJson(
-  url: string,
-  query: Record<string, string | number | undefined>,
-): Promise<unknown> {
-  const parsedUrl = new URL(url);
-
-  for (const [key, rawValue] of Object.entries(query)) {
-    if (rawValue === undefined || rawValue === null) {
-      continue;
+  /**
+   * Validate a transaction after success/IPN callback
+   */
+  async validate(payload: SslCommerzValidatePayload): Promise<any> {
+    try {
+      return await this.sslcz.validate(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Validation Error:', error);
+      throw error;
     }
-
-    parsedUrl.searchParams.set(key, String(rawValue));
   }
 
-  const response = await fetch(parsedUrl.toString(), {
-    method: "GET",
-  });
+  /**
+   * Initiate a refund request
+   */
+  async initiateRefund(payload: SslCommerzRefundPayload): Promise<any> {
+    try {
+      return await this.sslcz.initiateRefund(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Refund Error:', error);
+      throw error;
+    }
+  }
 
-  return response.json();
+  /**
+   * Query the status of a refund request
+   */
+  async refundQuery(payload: SslCommerzRefundQueryPayload): Promise<any> {
+    try {
+      return await this.sslcz.refundQuery(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Refund Query Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Query transaction status by Transaction ID
+   */
+  async transactionQueryByTransactionId(payload: { tran_id: string }): Promise<any> {
+    try {
+      return await this.sslcz.transactionQueryByTransactionId(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Transaction Query Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Query transaction status by Session ID
+   */
+  async transactionQueryBySessionId(payload: { sessionkey: string }): Promise<any> {
+    try {
+      return await this.sslcz.transactionQueryBySessionId(payload);
+    } catch (error: any) {
+      console.error('SSLCommerz Session Query Error:', error);
+      throw error;
+    }
+  }
 }
 
-export const sslCommerzService = {
-  init(data: SslCommerzInitPayload) {
-    assertConfigured();
-
-    return postForm(`${baseUrl()}/gwprocess/v4/api.php`, {
-      ...data,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-    });
-  },
-
-  validate(data: SslCommerzValidatePayload) {
-    assertConfigured();
-
-    return getJson(`${baseUrl()}/validator/api/validationserverAPI.php`, {
-      val_id: data.val_id,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-      v: 1,
-      format: "json",
-    });
-  },
-
-  initiateRefund(data: SslCommerzRefundInitPayload) {
-    assertConfigured();
-
-    return getJson(`${baseUrl()}/validator/api/merchantTransIDvalidationAPI.php`, {
-      refund_amount: data.refund_amount,
-      refund_remarks: data.refund_remarks,
-      bank_tran_id: data.bank_tran_id,
-      refe_id: data.refe_id,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-      v: 1,
-      format: "json",
-    });
-  },
-
-  refundQuery(data: SslCommerzRefundQueryPayload) {
-    assertConfigured();
-
-    return getJson(`${baseUrl()}/validator/api/merchantTransIDvalidationAPI.php`, {
-      refund_ref_id: data.refund_ref_id,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-      v: 1,
-      format: "json",
-    });
-  },
-
-  transactionQueryBySessionId(data: SslCommerzTransactionBySessionPayload) {
-    assertConfigured();
-
-    return getJson(`${baseUrl()}/validator/api/merchantTransIDvalidationAPI.php`, {
-      sessionkey: data.sessionkey,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-      v: 1,
-      format: "json",
-    });
-  },
-
-  transactionQueryByTransactionId(data: SslCommerzTransactionByTranIdPayload) {
-    assertConfigured();
-
-    return getJson(`${baseUrl()}/validator/api/merchantTransIDvalidationAPI.php`, {
-      tran_id: data.tran_id,
-      store_id: env.sslCommerzStoreId,
-      store_passwd: env.sslCommerzStorePassword,
-      v: 1,
-      format: "json",
-    });
-  },
-};
+export const sslCommerzService = new SslCommerzService();

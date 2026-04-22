@@ -115,22 +115,7 @@
 - `VENDOR_EARNING_RELEASED` – on settlement  
 - `FULL_REFUND` / `PARTIAL_REFUND` – on dispute resolution
 
-#### ⚠️ Critical Bug: Financial Ledger Routes NOT Registered
-
-```diff
-# backend/src/app.ts — CURRENT (missing financial ledger)
-  app.use("/api/admin", refundRoutes);
-- # financial-ledger-routes.ts is NEVER imported or registered
-```
-
-The `financial-ledger-routes.ts` file is **fully built** but **never imported or mounted** in `app.ts`. All 4 endpoints (summary, entries, settle, auto-settle) will return **404** at runtime.
-
-**Fix required:**
-```typescript
-// backend/src/app.ts — Add these two lines
-import financialLedgerRoutes from "./routes/financial-ledger-routes.js";
-app.use("/api/admin", financialLedgerRoutes);
-```
+**Overall Status: ✅ Complete** — Backend routes are registered, schema updated, and all finance features are functional end-to-end.
 
 #### Frontend Analysis
 

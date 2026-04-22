@@ -51,5 +51,6 @@ export function createApp() {
     return app;
 }
 const app = createApp();
+export const APP_DISPLAY_NAME = "Meramot Electric Item Repairing Management System";
 export default app;
 //# sourceMappingURL=app.js.map

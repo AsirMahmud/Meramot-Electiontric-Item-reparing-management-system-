@@ -1,33 +1,19 @@
 import { Router } from "express";
-<<<<<<< HEAD
-<<<<<<< HEAD
 import {
-	adminDemoLogin,
-	login,
-	signup,
+  adminDemoLogin,
+  checkUsername,
+  googleExchange,
+  login,
+  signup,
 } from "../controllers/auth-controller.js";
 import { loginRateLimiter } from "../middleware/rate-limit.js";
-=======
-import { checkUsername, googleExchange, login, signup } from "../controllers/auth-controller";
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
-import { login, signup } from "../controllers/auth-controller.js";
-import { loginRateLimiter } from "../middleware/rate-limit.js";
->>>>>>> feature/moderation-ui
 
 const router = Router();
 
 router.post("/signup", signup);
-<<<<<<< HEAD
-<<<<<<< HEAD
 router.post("/login", loginRateLimiter, login);
 router.post("/admin-demo-login", loginRateLimiter, adminDemoLogin);
-=======
-router.post("/login", login);
+router.get("/check-username", checkUsername);
 router.post("/google-exchange", googleExchange);
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
-router.post("/login", loginRateLimiter, login);
->>>>>>> feature/moderation-ui
 
 export default router;

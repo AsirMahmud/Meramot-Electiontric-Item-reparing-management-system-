@@ -2,11 +2,31 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
+export const authOptions: NextAuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        identifier: { label: "Identifier", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.identifier || !credentials?.password) {
+          return null;
+        }
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const identifier = credentials.identifier.trim().toLowerCase();
+        
+        // Use demo login endpoint if identifier matches demo admin
+        const isDemoAdmin = identifier === "admin@meeramoot.demo";
+        const loginPath = isDemoAdmin ? "/api/auth/admin-demo-login" : "/api/auth/login";
 
-        const res = await fetch(`${apiBase}/api/auth/login`, {
+        const res = await fetch(`${apiBase}${loginPath}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -17,6 +37,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
           }),
         });
 
+
         const data = await res.json().catch(() => null);
 
         if (!res.ok || !data?.user || !data?.token) {
@@ -24,14 +45,14 @@ import CredentialsProvider from "next-auth/providers/credentials";
         }
 
         return {
-        id: data.user.id,
-        name: data.user.name || data.user.username || "User",
-        email: data.user.email || null,
-        username: data.user.username || null,
-        phone: data.user.phone || null,
-        role: data.user.role || null,
-        accessToken: data.token,
-      } as any;
+          id: data.user.id,
+          name: data.user.name || data.user.username || "User",
+          email: data.user.email || null,
+          username: data.user.username || null,
+          phone: data.user.phone || null,
+          role: data.user.role || null,
+          accessToken: data.token,
+        } as any;
       },
     }),
   ],
@@ -79,15 +100,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
       return token;
     },
 
-   async session({ session, token }) {
-    if (session.user) {
-      (session.user as any).id = token.id;
-      (session.user as any).username = token.username;
-      (session.user as any).phone = token.phone;
-      (session.user as any).role = token.role ?? null;
-      (session.user as any).accessToken = token.accessToken ?? null;
-    }
-    return session;
-  },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).username = token.username;
+        (session.user as any).phone = token.phone;
+        (session.user as any).role = token.role ?? null;
+        (session.user as any).accessToken = token.accessToken ?? null;
+      }
+      return session;
+    },
   },
 };

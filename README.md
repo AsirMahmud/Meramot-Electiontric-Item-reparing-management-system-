@@ -2,10 +2,6 @@
 
 This repository runs as **two separate apps**: an **Express + Prisma** API and a **Next.js** frontend. Each can be deployed on its own server. For local development they usually run on `http://localhost:4000` (API) and `http://localhost:3000` (web).
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/moderation-ui
 The API stores data in **PostgreSQL**. Prisma is configured with `provider = "postgresql"` and connects using **`DATABASE_URL`** (standard `postgresql://` URI). You can install PostgreSQL locally, use a cloud Postgres service, and manage databases with tools such as **pgAdmin** or Prisma Studio.
 
 ## Prerequisites
@@ -61,12 +57,6 @@ Path: `backend/`
    The first migration creates tables from `prisma/schema.prisma`. If you only want to sync the schema without migration history in early prototyping, you may use `npx prisma db push` instead of `prisma:migrate` (use migrations for anything you intend to deploy).
 
 ### Run the API (development)
-<<<<<<< HEAD
-=======
-First, run the development server:
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui
 
 ```bash
 cd backend
@@ -122,10 +112,6 @@ Path: `frontend/`
 
 1. Copy the environment example:
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/moderation-ui
    ```bash
    cd frontend
    copy .env.example .env.local
@@ -192,9 +178,3 @@ If you use the bundled Postgres container, stop it with `docker compose down` wh
 | `backend` | `npm run prisma:studio` | Open Prisma Studio (DB UI) |
 | `backend` | `npm run prisma:migrate` | Create/apply migrations   |
 | `frontend`| `npm run lint`       | Run ESLint                 |
-<<<<<<< HEAD
-=======
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui

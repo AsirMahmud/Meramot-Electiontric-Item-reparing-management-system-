@@ -6,6 +6,9 @@ export declare const env: {
     frontendOrigin: string;
     frontendPaymentResultPath: string;
     jwtSecret: string;
+    demoAdminIdentifier: string;
+    demoAdminPassword: string;
+    demoAdminName: string;
     enableEmailNotifications: boolean;
     resendApiKey: string;
     emailFrom: string;

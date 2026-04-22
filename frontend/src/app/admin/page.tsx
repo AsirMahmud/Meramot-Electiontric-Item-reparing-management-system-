@@ -1,6 +1,5 @@
 "use client";
 
-feature/moderation-ui
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 
@@ -50,15 +49,11 @@ export default function AdminDashboardPage() {
         { label: "Pending Refunds", value: stats.pendingRefunds },
       ]
     : [];
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui
 
   return (
     <section>
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">
-feature/moderation-ui
           Dashboard
         </p>
         <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Admin overview</h2>
@@ -87,7 +82,3 @@ feature/moderation-ui
     </section>
   );
 }
-4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
->>>>>>> feature/moderation-ui
-

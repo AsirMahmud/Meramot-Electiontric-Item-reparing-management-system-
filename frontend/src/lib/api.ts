@@ -428,6 +428,18 @@ export function checkUsername(username: string) {
   );
 }
 
+export function initSslCommerzPayment(data: SslCommerzInitPayload, token?: string) {
+  return authedRequest<SslCommerzInitResponse>("/payments/sslcommerz/init", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getAdminPayments(params: { status?: string } = {}, token?: string) {
+  const q = params.status ? `?status=${params.status}` : "";
+  return authedRequest<AdminPaymentsResponse>(`/payments/admin/list${q}`, token);
+}
+
 /* =========================================================
    SHOPS
 ========================================================= */
@@ -673,11 +685,32 @@ export function patchDeliveryLocation(token: string, lat: number, lng: number) {
 
 export const DELIVERY_ADMIN_TOKEN_STORAGE_KEY = "meeramoot_delivery_admin_token";
 
+export type DeliveryAdminMeResponse = {
+  user: {
+    id: string;
+    name?: string | null;
+    username: string;
+    email: string;
+    phone?: string | null;
+    role: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
 export function deliveryAdminLogin(data: { identifier: string; password: string }) {
-  return request("/delivery-admin/auth/login", {
+  return request<{
+    message: string;
+    token: string;
+    user: any;
+  }>("/delivery-admin/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
+}
+
+export function fetchDeliveryAdminMe(token: string) {
+  return authedRequest<DeliveryAdminMeResponse>("/delivery-admin/me", token);
 }
 
 export function fetchDeliveryAdminStats(token: string) {

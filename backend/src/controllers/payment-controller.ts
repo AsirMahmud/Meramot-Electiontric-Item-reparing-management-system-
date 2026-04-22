@@ -274,10 +274,13 @@ export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: 
       cancel_url: `${callbackBaseUrl()}/cancel`,
       ipn_url: `${callbackBaseUrl()}/ipn`,
       shipping_method: "NO",
+      num_of_item: 1,
       product_name: productName,
       product_category: "Repair",
+      productcategory: "Repair",
       product_profile: "general",
       cus_name: user.name || "Customer",
+
       cus_email: user.email,
       cus_add1: user.address || "Dhaka",
       cus_add2: user.address || "Dhaka",
