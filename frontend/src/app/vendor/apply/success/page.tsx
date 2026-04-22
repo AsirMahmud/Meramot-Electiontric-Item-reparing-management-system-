@@ -15,7 +15,7 @@ export default async function VendorApplySuccessPage({
         </h1>
 
         <p className="mt-3 text-sm text-muted-foreground">
-          Your vendor account has been created successfully.
+          Your vendor application has been submitted successfully.
         </p>
 
        <p className="mt-2 text-sm text-muted-foreground">

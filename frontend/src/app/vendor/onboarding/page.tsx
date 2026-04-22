@@ -96,11 +96,11 @@ export default function VendorOnboardingPage() {
           ? "Vendor Application Rejected"
           : "Vendor Application";
 
-  const description =
+    const description =
     app?.status === "APPROVED"
       ? "Your application has been approved. Complete your shop setup before you start operating as a vendor."
       : app?.status === "PENDING"
-        ? "Your vendor application is still under admin review. You can go back to home for now."
+        ? "Your vendor application is still under admin review."
         : app?.status === "REJECTED"
           ? "Your vendor application was rejected. Review the status page for details and update it if needed."
           : "Your vendor application status is being checked.";

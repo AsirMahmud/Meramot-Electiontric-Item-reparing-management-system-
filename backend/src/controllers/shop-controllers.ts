@@ -175,6 +175,7 @@ export async function getFeaturedShops(_req: Request, res: Response) {
       where: {
         isActive: true,
         isFeatured: true,
+        isPublic: true,
       },
       orderBy: [{ ratingAvg: "desc" }, { reviewCount: "desc" }],
       take: 8,
@@ -211,34 +212,38 @@ export async function getShopBySlug(req: Request, res: Response) {
   try {
     const { slug } = req.params;
 
-    const shop = await prisma.shop.findUnique({
-      where: { slug },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        logoUrl: true,
-        bannerUrl: true,
-        address: true,
-        city: true,
-        area: true,
-        lat: true,
-        lng: true,
-        phone: true,
-        email: true,
-        ratingAvg: true,
-        reviewCount: true,
-        priceLevel: true,
-        isFeatured: true,
-        hasVoucher: true,
-        freeDelivery: true,
-        hasDeals: true,
-        categories: true,
-        specialties: true,
-        createdAt: true,
-      },
-    });
+    const shop = await prisma.shop.findFirst({
+    where: {
+      slug,
+      isActive: true,
+      isPublic: true,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      logoUrl: true,
+      bannerUrl: true,
+      address: true,
+      city: true,
+      area: true,
+      lat: true,
+      lng: true,
+      phone: true,
+      email: true,
+      ratingAvg: true,
+      reviewCount: true,
+      priceLevel: true,
+      isFeatured: true,
+      hasVoucher: true,
+      freeDelivery: true,
+      hasDeals: true,
+      categories: true,
+      specialties: true,
+      createdAt: true,
+    },
+  });
 
     if (!shop) {
       return res.status(404).json({ message: "Shop not found" });
