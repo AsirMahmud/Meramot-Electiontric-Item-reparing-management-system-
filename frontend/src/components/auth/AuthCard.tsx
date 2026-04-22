@@ -237,7 +237,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   }
 
   async function handleGoogleSignIn() {
-    await signIn("google", { callbackUrl: "/admin/vendor" });
+    await signIn("google", { callbackUrl: "/admin/vendors" });
   }
 
   const showPasswordBar =
