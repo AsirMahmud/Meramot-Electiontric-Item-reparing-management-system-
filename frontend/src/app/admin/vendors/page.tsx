@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
 
 type VendorApplication = {
@@ -141,6 +142,12 @@ export default function AdminVendorsPage() {
                   >
                     Reject
                   </button>
+                  <Link
+                    href={`/admin/vendors/${vendor.id}`}
+                    className="rounded-full bg-[#E6F0E2] px-5 py-3 text-sm font-semibold text-[#1F4D2E] transition hover:bg-[#D7E2D2]"
+                  >
+                    View Details
+                  </Link>
                 </div>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
 
 type Ticket = {
@@ -65,6 +66,7 @@ export default function AdminTicketsPage() {
                   <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Priority</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,6 +88,14 @@ export default function AdminTicketsPage() {
                       <span className="rounded-full bg-[#E6F0E2] px-3 py-1 text-xs font-semibold text-[#1F4D2E]">
                         {ticket.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <Link
+                        href={`/admin/tickets/${ticket.id}`}
+                        className="rounded-full bg-[#1F4D2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#183D24]"
+                      >
+                        View
+                      </Link>
                     </td>
                   </tr>
                 ))}

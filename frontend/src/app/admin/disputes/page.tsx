@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
 
 type Dispute = {
@@ -80,8 +81,16 @@ export default function AdminDisputesPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-[#E6F0E2] px-4 py-3 text-sm font-medium text-[#1F4D2E]">
-                  {new Date(dispute.createdAt).toLocaleDateString()}
+                <div className="flex flex-col items-end gap-3">
+                  <div className="rounded-2xl bg-[#E6F0E2] px-4 py-3 text-sm font-medium text-[#1F4D2E]">
+                    {new Date(dispute.createdAt).toLocaleDateString()}
+                  </div>
+                  <Link
+                    href={`/admin/disputes/${dispute.id}`}
+                    className="rounded-full bg-[#1F4D2E] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#183D24]"
+                  >
+                    View Details
+                  </Link>
                 </div>
               </div>
             </div>

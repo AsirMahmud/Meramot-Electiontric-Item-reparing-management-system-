@@ -82,7 +82,7 @@
 | Financial Ledger & Commission | ✅ | ✅ | ✅ Complete |
 | User Moderation (Ban/Suspend) | ✅ | ✅ | ✅ Complete |
 | Review/Content Moderation | ✅ | ✅ | ✅ Complete |
-| Shop Suspension | ✅ | ❌ | ⚠️ Backend complete, UI missing |
+| Shop Suspension | ✅ | ✅ | ✅ Complete |
 | Invoice Generation | ✅ | ✅ | ✅ Complete |
 | Stripe Integration | ❌ | ❌ | ❌ Not implemented (SSLCommerz only) |
 | Email Notifications | ✅ | N/A | ✅ Service wired (Resend/SMTP) |
@@ -229,12 +229,12 @@ cd backend && npx prisma db push
 | Action | Backend | Frontend | Status |
 |---|---|---|---|
 | Suspend vendor (disables account) | ✅ via `vendor/:id/suspend` | ✅ via vendors page | ✅ Complete |
-| Directly set `shop.isActive = false` | ✅ `PATCH /api/admin/shops/:id/active` | ❌ No UI | ⚠️ Partial |
+| Directly set `shop.isActive = false` | ✅ `PATCH /api/admin/shops/:id/active` | ✅ `app/admin/vendors/[id]` | ✅ Complete |
 | View shops sorted by rating | ✅ via shop queries | ⚠️ No admin-only filtered view | ⚠️ Partial |
 
-**Overall Status: ⚠️ Partially Implemented**
+**Overall Status: ✅ Implemented**
 - Backend endpoints for user, review, and shop moderation are fully implemented.
-- Frontend UI is still missing for these admin features.
+- Frontend UI is complete for all moderation features.
 
 ---
 
@@ -306,14 +306,14 @@ FRONTEND_PAYMENT_RESULT_PATH=/payment/result
 
 ### Short-term (Content Moderation)
 
-- [ ] Add `PATCH /api/admin/shops/:id/active` endpoint (toggle shop suspension) UI logic to the Vendors list.
+- [x] Add `PATCH /api/admin/shops/:id/active` endpoint (toggle shop suspension) UI logic to the Vendors list.
 
 ### Medium-term (Disputes & Moderation UX)
 
-- [ ] Enhance `app/admin/disputes/page.tsx` — add resolve/note/refund action panel
-- [ ] Add `app/admin/disputes/[id]/page.tsx` — detailed dispute view with notes timeline
-- [ ] Add `app/admin/tickets/[id]/page.tsx` — detailed ticket view with reply & escalation buttons
-- [ ] Create `app/admin/vendors/[id]/page.tsx` — detailed vendor review with suspend button
+- [x] Enhance `app/admin/disputes/page.tsx` — add resolve/note/refund action panel
+- [x] Add `app/admin/disputes/[id]/page.tsx` — detailed dispute view with notes timeline
+- [x] Add `app/admin/tickets/[id]/page.tsx` — detailed ticket view with reply & escalation buttons
+- [x] Create `app/admin/vendors/[id]/page.tsx` — detailed vendor review with suspend button
 
 ### Long-term (Payments & Invoices)
 
@@ -333,9 +333,9 @@ FRONTEND_PAYMENT_RESULT_PATH=/payment/result
 | Admin Dashboard & Management | ~75% |
 | Financial Ledger & Settlement | ~100% |
 | Vendor Management & Suspension | ~80% |
-| User & Content Moderation | ~90% (Shop suspension UI remaining) |
-| Dispute & Ticket Management | ~65% (backend good, frontend read-only) |
+| User & Content Moderation | ~100% |
+| Dispute & Ticket Management | ~100% |
 | Delivery System | ~80% |
 | Email Notifications | ~60% (service exists, triggers partial) |
 
-**Overall Project Completion: ~70%**
+**Overall Project Completion: ~85%**
