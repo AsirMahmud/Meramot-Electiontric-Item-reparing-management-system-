@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
-import { checkUsername, signup } from "@/lib/api";
+import {
+  checkUsername,
+  signup,
+  getVendorApplicationStatus,
+} from "@/lib/api";
 
 type Mode = "login" | "signup";
 type UsernameStatus = "idle" | "checking" | "available" | "taken";
@@ -59,6 +63,11 @@ function getPasswordBar(password: string) {
   };
 }
 
+type SessionUser = {
+  role?: string | null;
+  accessToken?: string | null;
+};
+
 export default function AuthCard({ mode }: { mode: Mode }) {
   const router = useRouter();
   const isSignup = mode === "signup";
@@ -74,7 +83,8 @@ export default function AuthCard({ mode }: { mode: Mode }) {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  const [usernameStatus, setUsernameStatus] =
+    useState<UsernameStatus>("idle");
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   const passwordChecks = useMemo(
@@ -108,6 +118,51 @@ export default function AuthCard({ mode }: { mode: Mode }) {
 
     return () => clearTimeout(timer);
   }, [form.username, isSignup]);
+
+  async function getCurrentSessionUser(): Promise<SessionUser | undefined> {
+    const sessionResponse = await fetch("/api/auth/session");
+    const sessionData = await sessionResponse.json();
+    return sessionData?.user as SessionUser | undefined;
+  }
+
+  async function redirectByRole(user?: SessionUser) {
+    if (!user) {
+      router.push("/");
+      router.refresh();
+      return;
+    }
+
+    if (user.accessToken) {
+      try {
+        const vendorStatus = await getVendorApplicationStatus(user.accessToken);
+        const application = vendorStatus?.application;
+
+        if (
+          application?.status === "PENDING" ||
+          application?.status === "REJECTED"
+        ) {
+          router.push("/vendor/status");
+          return;
+        }
+
+        if (application?.status === "APPROVED") {
+          router.push("/vendor/onboarding");
+          return;
+        }
+      } catch {
+        // ignore vendor status lookup failure and continue normal role redirect
+      }
+    }
+
+    if (user.role === "ADMIN") {
+      router.push("/admin/vendors");
+      router.refresh();
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -148,6 +203,10 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         if (loginResult?.error) {
           throw new Error("Signup worked, but automatic login failed.");
         }
+
+        const user = await getCurrentSessionUser();
+        await redirectByRole(user);
+        return;
       } else {
         if (!form.email.trim()) {
           throw new Error("Username or email is required.");
@@ -165,10 +224,11 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         if (loginResult?.error) {
           throw new Error("Invalid credentials.");
         }
-      }
 
-      router.push("/");
-      router.refresh();
+        const user = await getCurrentSessionUser();
+        await redirectByRole(user);
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not authenticate.");
     } finally {
@@ -177,10 +237,11 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   }
 
   async function handleGoogleSignIn() {
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/admin/vendor" });
   }
 
-  const showPasswordBar = isSignup && (passwordFocused || form.password.length > 0);
+  const showPasswordBar =
+    isSignup && (passwordFocused || form.password.length > 0);
 
   return (
     <div className="w-full max-w-[440px]">

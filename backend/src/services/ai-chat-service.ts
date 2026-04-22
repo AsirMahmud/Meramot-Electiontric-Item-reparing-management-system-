@@ -41,41 +41,31 @@ export async function generateAiRepairReply(input: AiChatInput) {
     };
   }
 
-  if (!env.geminiApiKey) {
-    throw new Error("GEMINI_API_KEY is missing");
+  if (!env.groqApiKey) {
+    throw new Error("GROQ_API_KEY is missing");
   }
 
-  const historyParts =
-    input.history?.flatMap((turn) => [
-      {
-        text: `${turn.role === "assistant" ? "Assistant" : "User"}: ${turn.text}`,
-      },
-    ]) ?? [];
-
-  const contents = [
-    {
-      role: "user",
-      parts: [
-        { text: SYSTEM_PROMPT },
-        ...historyParts,
-        { text: `User: ${input.message}` },
-      ],
-    },
+  const messages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...(input.history ?? []).map((turn) => ({
+      role: turn.role,
+      content: turn.text,
+    })),
+    { role: "user", content: input.message },
   ];
 
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": env.geminiApiKey,
-      },
-      body: JSON.stringify({
-        contents,
-      }),
-    }
-  );
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.groqApiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages,
+      temperature: 0.4,
+    }),
+  });
 
   const data = await response.json().catch(() => ({}));
 
@@ -83,12 +73,12 @@ export async function generateAiRepairReply(input: AiChatInput) {
     throw new Error(
       data?.error?.message ||
         data?.message ||
-        `Gemini request failed with status ${response.status}`
+        `Groq request failed with status ${response.status}`
     );
   }
 
   const reply =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+    data?.choices?.[0]?.message?.content?.trim() ||
     "Sorry, I could not generate a response right now.";
 
   return {

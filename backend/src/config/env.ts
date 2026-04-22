@@ -17,7 +17,7 @@ export const env = {
   emailFrom: process.env.EMAIL_FROM ?? "",
 
   enableAiChat: process.env.ENABLE_AI_CHAT === "true",
-  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  groqApiKey: process.env.GROQ_API_KEY ?? "",
 
   jwtSecretDelivery: process.env.JWT_SECRET_DELIVERY ?? "dev-delivery-secret",
   jwtSecretDeliveryAdmin:

@@ -631,3 +631,20 @@ export async function checkoutCart(
     body: JSON.stringify(payload),
   });
 }
+
+/* =========================================================
+   Ai Chat
+========================================================= */
+
+export async function chatWithAi(payload: {
+  message: string;
+  history?: { role: "user" | "assistant"; text: string }[];
+}) {
+  return request<{ ok: true; reply: string }>("/ai/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
