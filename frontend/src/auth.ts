@@ -2,40 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-<<<<<<< HEAD
-const providers: any[] = [
-  CredentialsProvider({
-    name: "Credentials",
-    credentials: {
-      identifier: { label: "Username or email", type: "text" },
-      password: { label: "Password", type: "password" },
-    },
-    async authorize(credentials) {
-      if (!credentials?.identifier || !credentials?.password) {
-        return null;
-      }
-=======
-export const authOptions: NextAuthOptions = {
-  secret: process.env.AUTH_SECRET,
-  session: {
-    strategy: "jwt",
-  },
-  providers: [
-    GoogleProvider({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        identifier: { label: "Username or email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.identifier || !credentials?.password) {
-          return null;
-        }
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
+4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 

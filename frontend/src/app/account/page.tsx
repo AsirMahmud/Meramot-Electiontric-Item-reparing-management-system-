@@ -148,16 +148,7 @@ export default function AccountPage() {
             </Link>
 
             <Link
-<<<<<<< HEAD
-=======
-              href="/checkout"
-              className="rounded-full bg-[#2f6a46] px-6 py-3 text-sm font-semibold text-white"
-            >
-              Pay with SSLCommerz
-            </Link>
-
-            <Link
->>>>>>> feature/moderation-ui
+feature/moderation-ui
               href="/"
               className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
             >
