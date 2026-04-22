@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { popularCategories } from "@/lib/mock-data";
 
 export default function PopularCategories() {
@@ -10,7 +11,7 @@ export default function PopularCategories() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {popularCategories.map((item) => (
-          <article key={item.label} className="flex items-center gap-4 rounded-[1.75rem] border border-border bg-card p-4 shadow-sm">
+          <Link key={item.label} href={item.href} className="flex items-center gap-4 rounded-[1.75rem] border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div className="grid h-16 w-16 place-items-center rounded-2xl bg-mint-200 text-3xl shadow-inner">
               {item.sprite}
             </div>
@@ -18,7 +19,7 @@ export default function PopularCategories() {
               <h3 className="text-lg font-semibold text-accent-dark">{item.label}</h3>
               <p className="text-sm text-muted-foreground">{item.trend}</p>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </section>

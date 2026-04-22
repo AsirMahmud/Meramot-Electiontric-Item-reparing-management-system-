@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 type NavbarProps = {
   isLoggedIn?: boolean;
@@ -11,6 +12,12 @@ type NavbarProps = {
   language?: "en" | "bn";
   onLanguageChange?: (lang: "en" | "bn") => void;
 };
+
+const categoryTabs = [
+  { label: "Courier Pickup", value: "COURIER_PICKUP" },
+  { label: "In-shop Repair", value: "IN_SHOP_REPAIR" },
+  { label: "Spare Parts", value: "SPARE_PARTS" },
+] as const;
 
 export default function Navbar({
   isLoggedIn = false,
@@ -24,18 +31,19 @@ export default function Navbar({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const activeCategory = pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
   const displayName = useMemo(() => {
     return firstName?.trim() || "User";
   }, [firstName]);
 
-  const confirmLogout = () => {
-    localStorage.removeItem("meramot.token");
-    localStorage.removeItem("meramot.user");
-    window.dispatchEvent(new Event("meramot-auth-changed"));
+  const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
   };
 
   const handleSearchSubmit = (e: FormEvent) => {
@@ -86,11 +94,19 @@ export default function Navbar({
                   {isUserMenuOpen && (
                     <div className="absolute right-0 z-30 mt-2 w-56 rounded-3xl border border-[#d9e5d5] bg-white p-3 shadow-lg">
                       <Link
-                        href="/account"
+                        href="/profile"
                         className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Account details
+                        View profile
+                      </Link>
+
+                      <Link
+                        href="/orders"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Requests history
                       </Link>
 
                       <Link
@@ -154,18 +170,23 @@ export default function Navbar({
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-4 text-[#1d3528] font-semibold">
-              <Link href="/shops?category=COURIER_PICKUP" className="hover:underline">
-                Courier Pickup
-              </Link>
-
-              <Link href="/shops?category=IN_SHOP_REPAIR" className="hover:underline">
-                In-shop Repair
-              </Link>
-
-              <Link href="/shops?category=SPARE_PARTS" className="hover:underline">
-                Spare Parts
-              </Link>
+            <div className="flex flex-wrap items-end gap-6 font-semibold text-[#1d3528]">
+              {categoryTabs.map((tab) => {
+                const active = activeCategory === tab.value;
+                return (
+                  <Link
+                    key={tab.value}
+                    href={`/shops?category=${tab.value}`}
+                    className={`inline-flex border-b-[3px] pb-1 transition ${
+                      active
+                        ? "border-[#214c34] text-[#214c34]"
+                        : "border-transparent text-[#1d3528] hover:border-[#214c34]/40"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
             </div>
 
             <form onSubmit={handleSearchSubmit} className="w-full md:w-[520px]">

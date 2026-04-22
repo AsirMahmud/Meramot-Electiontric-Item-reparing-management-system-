@@ -127,3 +127,83 @@ export async function login(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function checkUsername(req: Request, res: Response) {
+  try {
+    const username = String(req.query.username || "").trim();
+
+    if (!username) {
+      return res.status(400).json({ message: "username is required" });
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { username },
+      select: { id: true },
+    });
+
+    return res.json({ available: !existing });
+  } catch (error) {
+    console.error("checkUsername error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function googleExchange(req: Request, res: Response) {
+  try {
+    const { email, name } = req.body as {
+      email?: string;
+      name?: string;
+      image?: string;
+    };
+
+    if (!email) {
+      return res.status(400).json({ message: "email is required" });
+    }
+
+    let user = await prisma.user.findFirst({
+      where: { email: email.trim() },
+    });
+
+    if (!user) {
+      const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "user";
+      let username = baseUsername;
+      let counter = 1;
+
+      while (
+        await prisma.user.findFirst({
+          where: { username },
+          select: { id: true },
+        })
+      ) {
+        username = `${baseUsername}${counter++}`;
+      }
+
+      user = await prisma.user.create({
+        data: {
+          name: name?.trim() || baseUsername,
+          username,
+          email: email.trim(),
+          phone: `temp-${Date.now()}`,
+          passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+        },
+      });
+    }
+
+    const token = signToken(user);
+
+    return res.json({
+      message: "Google exchange successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (error) {
+    console.error("googleExchange error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
