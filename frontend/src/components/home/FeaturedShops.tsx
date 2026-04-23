@@ -1,17 +1,8 @@
-<<<<<<< HEAD
 import type { Shop } from "@/lib/api";
 import ShopCard from "@/components/shops/shop-card";
 
 type FeaturedShopsProps = {
   shops: Shop[];
-=======
-import { useEffect, useState } from "react";
-import { type Shop, getFeaturedShops } from "@/lib/api";
-import ShopCard from "@/components/shops/shop-card";
-
-type FeaturedShopsProps = {
-  shops?: Shop[];
->>>>>>> origin/main
 };
 
 
@@ -68,9 +59,4 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
       </div>
     </section>
   );
-<<<<<<< HEAD
 }
-=======
-}
-
->>>>>>> origin/main

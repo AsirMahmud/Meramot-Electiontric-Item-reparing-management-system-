@@ -122,7 +122,6 @@ export default function Navbar({
                       </Link>
 
                       <Link
-<<<<<<< HEAD
                         href="/cart"
                         className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         onClick={() => setIsUserMenuOpen(false)}
@@ -136,13 +135,6 @@ export default function Navbar({
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         AI help chat
-=======
-                        href="/checkout"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Pay with SSLCommerz
->>>>>>> origin/main
                       </Link>
 
                       <button

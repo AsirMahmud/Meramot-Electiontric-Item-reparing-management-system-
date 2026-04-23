@@ -13,7 +13,6 @@ import {
   type Shop,
 } from "@/lib/api";
 
-<<<<<<< HEAD
 type Review = {
   id: string;
   score: number;
@@ -35,15 +34,6 @@ type ShopDetails = Shop & {
   email?: string | null;
   specialties?: string[];
 };
-=======
-function formatPrice(basePrice?: number | null, priceMax?: number | null, pricingType?: string | null) {
-  if (pricingType === "INSPECTION_REQUIRED") return "Inspection required";
-  if (basePrice == null) return "Contact shop";
-  if (priceMax != null && priceMax > basePrice) return `৳${basePrice.toLocaleString()} - ৳${priceMax.toLocaleString()}`;
-  if (pricingType === "STARTING_FROM") return `From ৳${basePrice.toLocaleString()}`;
-  return `৳${basePrice.toLocaleString()}`;
-}
->>>>>>> origin/main
 
 function getServiceSummary(service: string) {
   const lower = service.toLowerCase();
