@@ -22,6 +22,10 @@ type VendorStatusPayload = {
   message?: string;
 };
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function VendorOnboardingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -33,6 +37,7 @@ export default function VendorOnboardingPage() {
 
   const [data, setData] = useState<VendorStatusPayload | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -48,23 +53,46 @@ export default function VendorOnboardingPage() {
         return;
       }
 
+      setError("");
+      setLoadingStatus(true);
+
       try {
-        if (!token) {
-          setLoadingStatus(false);
-          return;
+        let resolvedToken = token;
+
+        // wait a bit in case session token is not hydrated immediately
+        for (let i = 0; i < 6 && !resolvedToken; i++) {
+          await sleep(250);
+          resolvedToken =
+            (session?.user as { accessToken?: string } | undefined)?.accessToken;
         }
 
-        const result = await getVendorApplicationStatus(token);
+        if (!resolvedToken) {
+          throw new Error("Vendor session token is missing. Please log in again.");
+        }
+
+        const result = await getVendorApplicationStatus(resolvedToken);
+        console.log("vendor onboarding result =", result);
+
         const app = result?.application;
 
-        if (app?.status === "APPROVED" && app?.setupComplete) {
+        if (!app) {
+          throw new Error("Vendor application data was not returned by the server.");
+        }
+
+        if (app.status === "APPROVED" && app.setupComplete) {
           router.replace("/");
           return;
         }
 
         setData(result);
-      } catch {
+      } catch (err) {
+        console.log("vendor onboarding load failed =", err);
         setData(null);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not load your vendor application status."
+        );
       } finally {
         setLoadingStatus(false);
       }
@@ -85,6 +113,35 @@ export default function VendorOnboardingPage() {
     return null;
   }
 
+  if (error) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
+        <div className="w-full max-w-xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
+            Vendor
+          </p>
+
+          <h1 className="mt-2 text-3xl font-bold text-accent-dark">
+            Vendor Application
+          </h1>
+
+          <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              href="/login"
+              className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
+            >
+              Back to login
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const app = data?.application;
 
   const heading =
@@ -96,7 +153,7 @@ export default function VendorOnboardingPage() {
           ? "Vendor Application Rejected"
           : "Vendor Application";
 
-    const description =
+  const description =
     app?.status === "APPROVED"
       ? "Your application has been approved. Complete your shop setup before you start operating as a vendor."
       : app?.status === "PENDING"

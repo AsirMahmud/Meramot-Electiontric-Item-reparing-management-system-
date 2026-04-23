@@ -124,62 +124,67 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     const sessionData = await sessionResponse.json();
     return sessionData?.user as SessionUser | undefined;
   }
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
- async function redirectByRole(user?: SessionUser) {
+async function getCurrentSessionUserWithRetry(): Promise<SessionUser | undefined> {
+  for (let i = 0; i < 8; i++) {
+    const user = await getCurrentSessionUser();
+
+    if (user?.role || user?.accessToken) {
+      return user;
+    }
+
+    await sleep(250);
+  }
+
+  return getCurrentSessionUser();
+}
+async function redirectByRole(user?: SessionUser) {
   console.log("redirectByRole user =", user);
 
   if (!user) {
-    router.push("/");
+    router.replace("/");
     router.refresh();
     return;
   }
 
   if (user.role === "ADMIN") {
-    router.push("/admin/vendors");
+    router.replace("/admin/vendors");
     router.refresh();
     return;
   }
 
-  // Vendor flow should depend on application status, not just role alone.
   if (user.role === "VENDOR") {
-    if (user?.accessToken) {
-      try {
-        const vendorStatus = await getVendorApplicationStatus(user.accessToken);
-        console.log("vendorStatus =", vendorStatus);
-
-        const application = vendorStatus?.application;
-        console.log("application =", application);
-
-        // If approved and setup is done, vendor goes home.
-        if (application?.status === "APPROVED" && application?.setupComplete) {
-          router.push("/");
-          router.refresh();
-          return;
-        }
-
-        // Any other vendor application state stays in onboarding.
-        // This covers:
-        // - PENDING
-        // - APPROVED but setup not done
-        // - REJECTED
-        // - any existing application not fully completed
-        if (application) {
-          router.push("/vendor/onboarding");
-          return;
-        }
-      } catch (error) {
-        console.log("getVendorApplicationStatus failed =", error);
-      }
-    } else {
-      console.log("No accessToken found on session user");
+    if (!user.accessToken) {
+      router.replace("/vendor/onboarding");
+      return;
     }
 
-    // Safe fallback: never send a vendor straight home if status lookup fails.
-    router.push("/vendor/onboarding");
-    return;
+    try {
+      const vendorStatus = await getVendorApplicationStatus(user.accessToken);
+      console.log("vendorStatus =", vendorStatus);
+
+      const application = vendorStatus?.application;
+      console.log("application =", application);
+
+      if (application?.status === "APPROVED" && application?.setupComplete) {
+        router.replace("/");
+        router.refresh();
+        return;
+      }
+
+      router.replace("/vendor/onboarding");
+      return;
+    } catch (error) {
+      console.log("getVendorApplicationStatus failed =", error);
+      router.replace("/vendor/onboarding");
+      return;
+    }
   }
 
-  router.push("/");
+  router.replace("/");
   router.refresh();
 }
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -225,7 +230,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           throw new Error("Signup worked, but automatic login failed.");
         }
 
-        const user = await getCurrentSessionUser();
+        const user = await getCurrentSessionUserWithRetry();
         await redirectByRole(user);
         return;
       }
@@ -248,7 +253,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         throw new Error("Invalid credentials.");
       }
 
-      const user = await getCurrentSessionUser();
+      const user = await getCurrentSessionUserWithRetry();
       await redirectByRole(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not authenticate.");
