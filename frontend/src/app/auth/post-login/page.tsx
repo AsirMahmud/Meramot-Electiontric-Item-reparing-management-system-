@@ -83,10 +83,7 @@ export default function PostLoginPage() {
             return;
           }
 
-          if (application?.status === "APPROVED") {
-            router.replace("/vendor/setup-shop");
-            return;
-          }
+          // Let approved-but-not-setup vendors fall through to /vendor/onboarding
 
           router.replace("/vendor/onboarding");
           return;

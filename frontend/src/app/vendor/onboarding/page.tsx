@@ -144,7 +144,7 @@ export default function VendorOnboardingPage() {
 
   const description =
     app?.status === "APPROVED"
-      ? "Your application has been approved. Complete your shop setup and skill tags to begin receiving matching repair requests."
+      ? "Your application has been approved. You need to set up your shop first in order to make your shop live in the website."
       : app?.status === "PENDING"
         ? "Your vendor application is still under review. Once approved, you can set up your shop profile and start bidding."
         : app?.status === "REJECTED"

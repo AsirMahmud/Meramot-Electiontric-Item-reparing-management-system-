@@ -192,14 +192,6 @@ export default function Navbar({
                               >
                                 View profile
                               </Link>
-
-                              <Link
-                                href="/vendor/status"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View application status
-                              </Link>
                             </>
                           ) : isVendorSetupIncomplete ? (
                             <>
@@ -210,22 +202,14 @@ export default function Navbar({
                               >
                                 Set up your shop
                               </Link>
-
-                              <Link
-                                href="/vendor/status"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View application status
-                              </Link>
                             </>
                           ) : (
                             <Link
-                              href="/vendor/status"
+                              href="/vendor/onboarding"
                               className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
-                              View application status
+                              Vendor onboarding
                             </Link>
                           )}
                         </>
