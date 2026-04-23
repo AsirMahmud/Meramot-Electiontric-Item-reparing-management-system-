@@ -419,12 +419,6 @@ export default function VendorDashboardPage() {
               >
                 Complete shop setup
               </Link>
-              <Link
-                href="/vendor/status"
-                className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
-              >
-                View application status
-              </Link>
             </div>
           </div>
         </div>
@@ -458,12 +452,6 @@ export default function VendorDashboardPage() {
               className="rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
             >
               Edit shop setup
-            </Link>
-            <Link
-              href="/vendor/status"
-              className="rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white"
-            >
-              Application status
             </Link>
           </div>
         </div>
@@ -543,7 +531,6 @@ export default function VendorDashboardPage() {
         <section className="mt-8">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Module 2</p>
               <h2 className="text-2xl font-bold text-[#173726]">Relevant repair requests</h2>
             </div>
             <button
@@ -746,7 +733,6 @@ export default function VendorDashboardPage() {
 
         <section className="mt-8">
           <div className="mb-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Module 2</p>
             <h2 className="text-2xl font-bold text-[#173726]">Assigned jobs and final quote</h2>
           </div>
 
