@@ -134,39 +134,48 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     return;
   }
 
-  if (user?.accessToken) {
-    try {
-      const vendorStatus = await getVendorApplicationStatus(user.accessToken);
-      console.log("vendorStatus =", vendorStatus);
+  if (user.role === "ADMIN") {
+    router.push("/admin/vendors");
+    router.refresh();
+    return;
+  }
 
-      const application = vendorStatus?.application;
-      console.log("application =", application);
+  // Vendor flow should depend on application status, not just role alone.
+  if (user.role === "VENDOR") {
+    if (user?.accessToken) {
+      try {
+        const vendorStatus = await getVendorApplicationStatus(user.accessToken);
+        console.log("vendorStatus =", vendorStatus);
 
-      if (application?.status === "PENDING" || application?.status === "REJECTED") {
-        router.push("/vendor/status");
-        return;
-      }
+        const application = vendorStatus?.application;
+        console.log("application =", application);
 
-            if (application?.status === "APPROVED") {
-        if (application?.setupComplete) {
+        // If approved and setup is done, vendor goes home.
+        if (application?.status === "APPROVED" && application?.setupComplete) {
           router.push("/");
           router.refresh();
           return;
         }
 
-        router.push("/vendor/onboarding");
-        return;
+        // Any other vendor application state stays in onboarding.
+        // This covers:
+        // - PENDING
+        // - APPROVED but setup not done
+        // - REJECTED
+        // - any existing application not fully completed
+        if (application) {
+          router.push("/vendor/onboarding");
+          return;
+        }
+      } catch (error) {
+        console.log("getVendorApplicationStatus failed =", error);
       }
-    } catch (error) {
-      console.log("getVendorApplicationStatus failed =", error);
+    } else {
+      console.log("No accessToken found on session user");
     }
-  } else {
-    console.log("No accessToken found on session user");
-  }
 
-  if (user.role === "ADMIN") {
-    router.push("/admin/vendors");
-    router.refresh();
+    // Safe fallback: never send a vendor straight home if status lookup fails.
+    router.push("/vendor/onboarding");
     return;
   }
 
