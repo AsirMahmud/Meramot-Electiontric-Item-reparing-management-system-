@@ -1,63 +1,78 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
 import FeaturedShops from "@/components/home/FeaturedShops";
 import Navbar from "@/components/home/Navbar";
 import PopularCategories from "@/components/home/PopularCategories";
 import RecentlyViewed from "@/components/home/RecentlyViewed";
 import SidebarFilters from "@/components/home/SidebarFilters";
 import OfferCarousel from "@/components/home/OfferCarousel";
-import { getShops } from "@/lib/api";
+
+type StoredUser = {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
 
 export default function HomePage() {
-  const [shops, setShops] = useState([]);
-  const [shopsError, setShopsError] = useState<string | null>(null);
-  const [shopsLoading, setShopsLoading] = useState(true);
+  const [user, setUser] = useState<StoredUser | null>(null);
   const [language, setLanguage] = useState<"en" | "bn">("en");
-  const { data: session } = useSession();
 
   useEffect(() => {
-    async function loadShops() {
+    function syncUserFromStorage() {
+      const rawUser = localStorage.getItem("meramot.user");
+  
+      if (!rawUser) {
+        setUser(null);
+        return;
+      }
+  
       try {
-        setShopsLoading(true);
-        const data = await getShops();
-        setShops(data);
-        setShopsError(null);
-      } catch (err) {
-        setShops([]);
-        setShopsError("Could not load shops. Check that the backend is running and the API is configured correctly.");
-      } finally {
-        setShopsLoading(false);
+        setUser(JSON.parse(rawUser));
+      } catch {
+        localStorage.removeItem("meramot.user");
+        setUser(null);
       }
     }
   
-    loadShops();
+    syncUserFromStorage();
+  
+    window.addEventListener("meramot-auth-changed", syncUserFromStorage);
+  
+    return () => {
+      window.removeEventListener("meramot-auth-changed", syncUserFromStorage);
+    };
   }, []);
 
   const firstName = useMemo(() => {
     return (
-      session?.user?.name?.trim()?.split(" ")[0] ||
-      (session?.user as any)?.username?.trim()?.split(" ")[0] ||
+      user?.name?.trim()?.split(" ")[0] ||
+      user?.username?.trim()?.split(" ")[0] ||
       "User"
     );
-  }, [session]);
+  }, [user]);
 
   return (
-    <main className="min-h-screen bg-[#E4FCD5] text-foreground">
+<<<<<<< HEAD
+    <main className="min-h-screen bg-[var(--background)] text-foreground">
+=======
+    <main className="min-h-screen bg-background text-foreground">
+>>>>>>> origin/main
       <Navbar
-        isLoggedIn={!!session?.user}
+        isLoggedIn={!!user}
         firstName={firstName}
         language={language}
         onLanguageChange={setLanguage}
       />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <SidebarFilters targetPath="/shops" />
+        <SidebarFilters />
 
         <div className="space-y-8">
           <OfferCarousel />
-          <FeaturedShops shops={shops} />
+          <FeaturedShops />
           <PopularCategories />
           <RecentlyViewed />
         </div>

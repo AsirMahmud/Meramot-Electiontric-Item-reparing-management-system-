@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
-import type { AuthedRequest } from "../middleware/auth.js";
+import type { AuthenticatedRequest as AuthedRequest } from "../middleware/require-auth.js";
 
 export async function getProfile(req: AuthedRequest, res: Response) {
   try {

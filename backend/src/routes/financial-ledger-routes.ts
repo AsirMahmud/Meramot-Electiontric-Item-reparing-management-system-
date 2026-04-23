@@ -313,6 +313,87 @@ router.get("/financial-ledger/summary", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/financial-ledger/chart-data", async (req: Request, res: Response) => {
+  try {
+    const days = Number(req.query.days ?? 30);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const [entries, actionDistribution] = await Promise.all([
+      prisma.escrowLedger.findMany({
+        where: {
+          createdAt: { gte: startDate },
+        },
+        orderBy: { createdAt: "asc" },
+        select: {
+          amount: true,
+          action: true,
+          createdAt: true,
+        },
+      }),
+      prisma.escrowLedger.groupBy({
+        by: ["action"],
+        where: {
+          createdAt: { gte: startDate },
+        },
+        _sum: {
+          amount: true,
+        },
+        _count: {
+          id: true,
+        },
+      }),
+    ]);
+
+    // Daily aggregation
+    const dailyData: Record<string, { date: string; revenue: number; commission: number; payouts: number }> = {};
+    
+    // Initialize last X days
+    for (let i = 0; i <= days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      dailyData[dateStr] = { date: dateStr, revenue: 0, commission: 0, payouts: 0 };
+    }
+
+    entries.forEach((entry) => {
+      const dateStr = entry.createdAt.toISOString().split("T")[0];
+      if (dailyData[dateStr]) {
+        const amt = toMoneyNumber(entry.amount);
+        if (entry.action === "PAYMENT_HELD") {
+          dailyData[dateStr].revenue += amt;
+        } else if (entry.action === "PLATFORM_COMMISSION_DEDUCTED") {
+          dailyData[dateStr].commission += amt;
+        } else if (entry.action === "VENDOR_EARNING_RELEASED") {
+          dailyData[dateStr].payouts += amt;
+        }
+      }
+    });
+
+    const timeline = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+
+    const distribution = actionDistribution.map((item) => ({
+      name: item.action,
+      value: toMoneyNumber(item._sum.amount),
+      count: item._count.id,
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        timeline,
+        distribution,
+      },
+    });
+  } catch (error) {
+    console.error("GET /financial-ledger/chart-data error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load chart data",
+    });
+  }
+});
+
 router.get("/financial-ledger/entries", async (req: Request, res: Response) => {
   try {
     const action = typeof req.query.action === "string" ? req.query.action.trim() : "";

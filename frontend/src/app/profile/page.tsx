@@ -3,13 +3,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getProfile, updateProfile, type Profile } from "@/lib/api";
+import { getProfile, updateProfile } from "@/lib/api";
+
+type Profile = {
+  id?: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  area?: string | null;
+};
 
 export default function ProfilePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -17,39 +27,35 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<Partial<Profile>>({});
 
-  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+  const token = (session?.user as { accessToken?: string } | undefined)
+    ?.accessToken;
 
   useEffect(() => {
     if (!token) return;
 
     getProfile(token)
-      .then((data: Profile) => {
-        setProfile(data);
-        setDraft(data);
-
-        const forceComplete = searchParams.get("complete") === "1";
-        const missingPhone = !data.phone?.trim();
-
-        if (forceComplete || missingPhone) {
-          setEditing(true);
-          setMessage("Please complete your profile before continuing.");
-        }
+      .then((data: any) => {
+        const nextProfile = data?.user ?? data;
+        setProfile(nextProfile);
+        setDraft(nextProfile);
       })
       .catch(() => setMessage("Could not load profile."));
-  }, [token, searchParams]);
+  }, [token]);
 
   const firstName = useMemo(() => {
     return (
       profile?.name?.trim()?.split(" ")[0] ||
-      (session?.user as { username?: string } | undefined)?.username?.trim()?.split(" ")[0] ||
+      (session?.user as { username?: string } | undefined)?.username
+        ?.trim()
+        ?.split(" ")[0] ||
       "User"
     );
   }, [profile, session]);
 
   if (status === "loading") {
     return (
-      <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
-        <div className="mx-auto max-w-4xl text-[#173726]">Loading profile...</div>
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)]">
+        <div className="mx-auto max-w-4xl">Loading profile...</div>
       </main>
     );
   }
@@ -60,12 +66,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
+    <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)]">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 text-[#214c34] hover:opacity-90"
+            className="inline-flex items-center gap-3 text-[var(--accent-dark)] hover:opacity-90"
           >
             <Image
               src="/images/meramot.svg"
@@ -79,25 +85,27 @@ export default function ProfilePage() {
 
           <Link
             href="/"
-            className="rounded-full border border-[#214c34] bg-white px-5 py-2 text-sm font-semibold text-[#214c34]"
+            className="rounded-full border border-[var(--accent-dark)] bg-[var(--card)] px-5 py-2 text-sm font-semibold text-[var(--accent-dark)]"
           >
             Back to home
           </Link>
         </div>
 
-        <div className="rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+        <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
                 Profile
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-[#173726]">Hi, {firstName}</h1>
-              <p className="mt-2 text-sm text-[#5b7262]">
+              <h1 className="mt-2 text-3xl font-bold text-[var(--foreground)]">
+                Hi, {firstName}
+              </h1>
+              <p className="mt-2 text-sm text-[var(--muted-foreground)]">
                 Manage your customer details here.
               </p>
             </div>
 
-            <div className="grid h-20 w-20 place-items-center rounded-3xl bg-[#d5ead8] text-3xl font-bold text-[#214c34]">
+            <div className="grid h-20 w-20 place-items-center rounded-3xl bg-[var(--mint-100)] text-3xl font-bold text-[var(--accent-dark)]">
               {firstName.charAt(0).toUpperCase()}
             </div>
           </div>
@@ -112,8 +120,11 @@ export default function ProfilePage() {
               ["City", "city"],
               ["Area", "area"],
             ].map(([label, key]) => (
-              <div key={key} className="rounded-3xl bg-[#f6faf4] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">
+              <div
+                key={key}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--mint-50)] p-5"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
                   {label}
                 </p>
 
@@ -121,16 +132,13 @@ export default function ProfilePage() {
                   <input
                     value={String(draft[key as keyof Profile] ?? "")}
                     onChange={(e) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        [key]: e.target.value,
-                      }))
+                      setDraft((prev) => ({ ...prev, [key]: e.target.value }))
                     }
-                    className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-3 text-base font-medium text-[#173726]"
+                    className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-base font-medium text-[var(--foreground)]"
                   />
                 ) : (
-                  <p className="mt-2 text-base font-medium text-[#173726]">
-                    {String(profile?.[key as keyof Profile] ?? "").trim() || "Not provided"}
+                  <p className="mt-2 text-base font-medium text-[var(--foreground)]">
+                    {String(profile?.[key as keyof Profile] ?? "Not provided")}
                   </p>
                 )}
               </div>
@@ -141,7 +149,7 @@ export default function ProfilePage() {
             {!editing ? (
               <button
                 onClick={() => setEditing(true)}
-                className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white"
               >
                 Edit profile
               </button>
@@ -151,26 +159,13 @@ export default function ProfilePage() {
                   onClick={async () => {
                     if (!token) return;
 
-                    if (!String(draft.phone ?? "").trim()) {
-                      setMessage("Phone number is required.");
-                      return;
-                    }
-
                     try {
-                      const updated: { user: Profile } = await updateProfile(token, {
-                      ...draft,
-                      phone: String(draft.phone ?? "").trim(),
-                      name: String(draft.name ?? "").trim() || null,
-                      address: String(draft.address ?? "").trim() || null,
-                      city: String(draft.city ?? "").trim() || null,
-                      area: String(draft.area ?? "").trim() || null,
-                    });
-
-                      setProfile(updated.user);
-                      setDraft(updated.user);
+                      const updated: any = await updateProfile(token, draft);
+                      const nextProfile = updated?.user ?? updated;
+                      setProfile(nextProfile);
+                      setDraft(nextProfile);
                       setEditing(false);
                       setMessage("Profile updated.");
-                      router.replace("/profile");
                     } catch (error) {
                       setMessage(
                         error instanceof Error
@@ -179,7 +174,7 @@ export default function ProfilePage() {
                       );
                     }
                   }}
-                  className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white"
                 >
                   Save changes
                 </button>
@@ -188,9 +183,8 @@ export default function ProfilePage() {
                   onClick={() => {
                     setDraft(profile || {});
                     setEditing(false);
-                    setMessage("");
                   }}
-                  className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
+                  className="rounded-full border border-[var(--accent-dark)] bg-[var(--card)] px-6 py-3 text-sm font-semibold text-[var(--accent-dark)]"
                 >
                   Cancel
                 </button>
@@ -199,13 +193,15 @@ export default function ProfilePage() {
 
             <Link
               href="/orders"
-              className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
+              className="rounded-full border border-[var(--accent-dark)] bg-[var(--card)] px-6 py-3 text-sm font-semibold text-[var(--accent-dark)]"
             >
               My orders
             </Link>
           </div>
 
-          {message && <p className="mt-4 text-sm text-[#214c34]">{message}</p>}
+          {message && (
+            <p className="mt-4 text-sm text-[var(--accent-dark)]">{message}</p>
+          )}
         </div>
       </div>
     </main>

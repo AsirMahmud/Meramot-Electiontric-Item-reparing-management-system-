@@ -1,11 +1,19 @@
 import { Router } from "express";
-import { checkUsername, googleExchange, login, signup } from "../controllers/auth-controller";
+import {
+  adminDemoLogin,
+  checkUsername,
+  googleExchange,
+  login,
+  signup,
+} from "../controllers/auth-controller.js";
+import { loginRateLimiter } from "../middleware/rate-limit.js";
 
 const router = Router();
 
-router.get("/check-username", checkUsername);
 router.post("/signup", signup);
-router.post("/login", login);
+router.post("/login", loginRateLimiter, login);
+router.post("/admin-demo-login", loginRateLimiter, adminDemoLogin);
+router.get("/check-username", checkUsername);
 router.post("/google-exchange", googleExchange);
 
 export default router;

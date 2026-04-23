@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../models/prisma";
+import prisma from "../models/prisma.js";
 
 function toNumber(value: unknown, fallback?: number) {
   const n = Number(value);
@@ -122,7 +122,7 @@ export async function getShops(req: Request, res: Response) {
     });
 
     const enriched = shops
-      .map((shop) => {
+      .map((shop: any) => {
         const distanceKm = haversineDistanceKm(originLat, originLng, shop.lat, shop.lng);
         const etaMinutes = distanceKm == null ? null : Math.max(45, Math.round(distanceKm * 18));
         return {
@@ -138,10 +138,10 @@ export async function getShops(req: Request, res: Response) {
           }),
         };
       })
-      .filter((shop) => matchesQuery(shop, query))
-      .filter((shop) => shop.distanceKm == null || shop.distanceKm <= maxDistanceKm);
+      .filter((shop: any) => matchesQuery(shop, query))
+      .filter((shop: any) => shop.distanceKm == null || shop.distanceKm <= maxDistanceKm);
 
-    const sorted = enriched.sort((a, b) => {
+    const sorted = enriched.sort((a: any, b: any) => {
       if (sort === "price") {
         if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
         return b.ratingAvg - a.ratingAvg;
@@ -208,7 +208,7 @@ export async function getFeaturedShops(_req: Request, res: Response) {
 
 export async function getShopBySlug(req: Request, res: Response) {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params.slug);
 
     const shop = await prisma.shop.findUnique({
       where: { slug },

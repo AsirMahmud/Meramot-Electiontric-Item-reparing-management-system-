@@ -1,7 +1,7 @@
 import { DeliveryType, RepairJobStatus, RequestMode, RequestStatus } from "@prisma/client";
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
-import type { AuthedRequest } from "../middleware/auth.js";
+import type { AuthenticatedRequest as AuthedRequest } from "../middleware/require-auth.js";
 import { sendOrderStatusEmail } from "../services/email-service.js";
 
 function normalizeRequestStatus(status?: string): RequestStatus | undefined {
@@ -115,7 +115,7 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
       await sendOrderStatusEmail({
         to: user.email,
         customerName: user.name,
-        orderTitle: created.request.title,
+        orderRef: created.request.id,
         status: created.request.status,
         shopName: matchedShop?.name,
       }).catch((error) => console.error("request created email failed", error));
@@ -138,7 +138,8 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const status = normalizeRequestStatus(typeof req.query.status === "string" ? req.query.status : undefined);
+    const statusRaw = req.query.status as string | undefined;
+    const status = normalizeRequestStatus(statusRaw);
 
     const requests = await prisma.repairRequest.findMany({
       where: {
@@ -200,7 +201,7 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { requestId } = req.params;
+    const requestId = req.params.requestId as string;
     const { status } = req.body as { status?: string };
 
     const nextStatus = normalizeRequestStatus(status);
@@ -259,7 +260,7 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
       await sendOrderStatusEmail({
         to: existing.user.email,
         customerName: existing.user.name,
-        orderTitle: existing.title,
+        orderRef: existing.id,
         status: updated.status,
         shopName: existing.repairJob?.shop.name,
       }).catch((error) => console.error("status email failed", error));

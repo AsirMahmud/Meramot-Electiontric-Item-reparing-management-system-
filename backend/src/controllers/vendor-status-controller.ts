@@ -42,8 +42,8 @@ export async function getVendorApplicationStatus(req: Request, res: Response) {
       return res.status(403).json({ message: "Only vendors can access this resource" });
     }
 
-    const application = await prisma.vendorApplication.findUnique({
-        where: { userId: user.id },
+    const application = await prisma.vendorApplication.findFirst({
+        where: { applicantUserId: user.id },
         select: {
             id: true,
             status: true,
@@ -60,8 +60,7 @@ export async function getVendorApplicationStatus(req: Request, res: Response) {
             inShopRepair: true,
             spareParts: true,
             notes: true,
-            rejectionReason: true,
-            rejectionVisibleUntil: true,
+            reviewNotes: true,
             createdAt: true,
         },
         });
@@ -111,8 +110,8 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
       return res.status(403).json({ message: "Only vendors can access this resource" });
     }
 
-    const existing = await prisma.vendorApplication.findUnique({
-      where: { userId: user.id },
+    const existing = await prisma.vendorApplication.findFirst({
+      where: { applicantUserId: user.id },
       select: { id: true, status: true },
     });
 
@@ -159,7 +158,7 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
       : parseCsvList(specialties);
 
     const updated = await prisma.vendorApplication.update({
-      where: { userId: user.id },
+      where: { id: existing.id },
       data: {
         ownerName: ownerName.trim(),
         phone: phone.trim(),

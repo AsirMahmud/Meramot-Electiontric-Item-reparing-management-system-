@@ -24,7 +24,7 @@ export async function deliveryAdminLogin(req, res) {
                 OR: [{ email: cleanIdentifier.toLowerCase() }, { username: cleanIdentifier }],
             },
         });
-        if (!user || user.role !== "DELIVERY_ADMIN") {
+        if (!user || user.role !== "ADMIN") {
             return res.status(401).json({ message: "Invalid delivery admin credentials" });
         }
         const valid = await bcrypt.compare(password, user.passwordHash);

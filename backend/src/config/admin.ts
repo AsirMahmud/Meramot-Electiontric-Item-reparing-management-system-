@@ -1,7 +1,7 @@
 const DEFAULT_ADMIN_EMAILS = [
   "asirmahmuhddd@gmail.com",
   "mustahid000@gmail.com",
-  "siamkhandaker616@gmail.com",
+  "siam.khandaker@g.bracu.ac.bd",
   "farhan.tanvir3@g.bracu.ac.bd"
 ];
 

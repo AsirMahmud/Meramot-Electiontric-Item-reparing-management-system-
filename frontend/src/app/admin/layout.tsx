@@ -1,15 +1,35 @@
-import type { ReactNode } from "react";
+import { ReactNode } from "react";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/auth";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/finance", label: "Finance Ledger" },
+  { href: "/admin/finance", label: "Financial Ledger" },
   { href: "/admin/vendors", label: "Vendor Review" },
+  { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/tickets", label: "Support Tickets" },
   { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/payments", label: "Payments" },
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
+  const role = session?.user?.role;
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (role !== "ADMIN") {
+    redirect("/");
+  }
+
   return (
     <div className="min-h-screen bg-[#EEF5EA] text-[#244233]">
       <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[260px_1fr]">
@@ -18,7 +38,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">
               Meramot
             </p>
-            <h1 className="mt-3 text-3xl font-bold text-[#1F4D2E]">Admin Panel</h1>
+            <h1 className="mt-3 text-3xl font-bold text-[#1F4D2E]">
+              Admin Panel
+            </h1>
             <p className="mt-2 text-sm text-[#6B7C72]">
               Verify vendors, support users, and mediate disputes.
             </p>
