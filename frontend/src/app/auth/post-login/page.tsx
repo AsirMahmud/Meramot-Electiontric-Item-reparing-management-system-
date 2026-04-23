@@ -109,8 +109,8 @@ export default function PostLoginPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
       <div className="flex w-full max-w-md flex-col gap-6">
-        <div>
-          <Link href="/" className="inline-block transition-transform hover:scale-105">
+        <div className="flex w-full items-center justify-center">
+          <Link href="/" className="inline-block -translate-x-3 transition-transform hover:scale-105">
             <Image
               src="/images/meramot.svg"
               alt="Meramot"
