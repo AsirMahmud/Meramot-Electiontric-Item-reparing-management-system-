@@ -13,7 +13,6 @@ import {
   type Shop,
 } from "@/lib/api";
 
-<<<<<<< HEAD
 type Review = {
   id: string;
   score: number;
@@ -24,26 +23,11 @@ type Review = {
   } | null;
 };
 
-type ReviewEligibilityState = {
-  eligible: boolean;
-  hasCompletedJob: boolean;
-  hasExistingReview: boolean;
-};
-
 type ShopDetails = Shop & {
   phone?: string | null;
   email?: string | null;
   specialties?: string[];
 };
-=======
-function formatPrice(basePrice?: number | null, priceMax?: number | null, pricingType?: string | null) {
-  if (pricingType === "INSPECTION_REQUIRED") return "Inspection required";
-  if (basePrice == null) return "Contact shop";
-  if (priceMax != null && priceMax > basePrice) return `৳${basePrice.toLocaleString()} - ৳${priceMax.toLocaleString()}`;
-  if (pricingType === "STARTING_FROM") return `From ৳${basePrice.toLocaleString()}`;
-  return `৳${basePrice.toLocaleString()}`;
-}
->>>>>>> origin/main
 
 function getServiceSummary(service: string) {
   const lower = service.toLowerCase();
@@ -100,14 +84,15 @@ export default function ShopDetailsPage({
   const [slug, setSlug] = useState("");
   const [shop, setShop] = useState<ShopDetails | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [eligibility, setEligibility] = useState<ReviewEligibilityState | null>(
-    null
-  );
+  const [eligibility, setEligibility] = useState<{
+    eligible: boolean;
+    hasCompletedJob: boolean;
+    hasExistingReview: boolean;
+  } | null>(null);
   const [score, setScore] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [message, setMessage] = useState("");
   const [cartToast, setCartToast] = useState("");
-  const [reviewToast, setReviewToast] = useState("");
   const [addingService, setAddingService] = useState<string | null>(null);
 
   const { data: session } = useSession();
@@ -144,35 +129,10 @@ export default function ShopDetailsPage({
   }, [cartToast]);
 
   useEffect(() => {
-    if (!reviewToast) return;
-  
-    const timeout = setTimeout(() => {
-      setReviewToast("");
-    }, 2800);
-  
-    return () => clearTimeout(timeout);
-  }, [reviewToast]);
-
-  useEffect(() => {
     if (!slug || !token) return;
-
     getReviewEligibility(slug, token)
-      .then((result) => {
-        // TESTING MODE:
-        // allow review for any logged-in user as long as they have not already reviewed
-        setEligibility({
-          eligible: !result.hasExistingReview,
-          hasCompletedJob: result.hasCompletedJob,
-          hasExistingReview: result.hasExistingReview,
-        });
-      })
-      .catch(() =>
-        setEligibility({
-          eligible: true,
-          hasCompletedJob: false,
-          hasExistingReview: false,
-        })
-      );
+      .then(setEligibility)
+      .catch(() => setEligibility(null));
   }, [slug, token]);
 
   const serviceItems = useMemo(() => {
@@ -209,14 +169,6 @@ export default function ShopDetailsPage({
         <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
           <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
             {cartToast}
-          </div>
-        </div>
-      )}
-
-      {reviewToast && (
-        <div className="pointer-events-none fixed inset-x-0 top-20 z-[101] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
-            {reviewToast}
           </div>
         </div>
       )}
@@ -421,13 +373,14 @@ export default function ShopDetailsPage({
 
             {!session?.user && (
               <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-                Log in to review this shop.
+                Log in to review a shop after a completed service.
               </p>
             )}
 
             {session?.user && eligibility && !eligibility.eligible && (
               <p className="mt-3 text-sm text-[var(--muted-foreground)]">
-                You have already submitted a review for this shop.
+                You can review this shop only after a completed service, and
+                only once.
               </p>
             )}
 
@@ -444,16 +397,13 @@ export default function ShopDetailsPage({
                       { score, review: reviewText },
                       token
                     );
-
-                    setMessage("");
-                    setReviewToast("Review submitted successfully.");
+                    setMessage("Review submitted successfully.");
                     setReviewText("");
                     setEligibility({
                       eligible: false,
-                      hasCompletedJob: false,
+                      hasCompletedJob: true,
                       hasExistingReview: true,
                     });
-
                     setReviews(await getShopReviews(shop.slug));
                   } catch (error) {
                     setMessage(

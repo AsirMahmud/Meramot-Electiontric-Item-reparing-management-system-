@@ -70,7 +70,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+<<<<<<< HEAD
+
+
+.env
+.env.*
+backend/.env
+frontend/.env
+=======
 >>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
 =======
 SSLCommerz-NodeJS-master
 >>>>>>> feature/moderation-ui
+>>>>>>> origin/main

@@ -1,10 +1,10 @@
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
-import type { AuthenticatedRequest as AuthedRequest } from "../middleware/require-auth.js";
+import type { AuthedRequest } from "../middleware/auth.js";
 
 export async function getShopReviews(req: AuthedRequest, res: Response) {
   try {
-    const shopSlug = req.params.shopSlug as string;
+    const { shopSlug } = req.params;
     const shop = await prisma.shop.findUnique({ where: { slug: shopSlug }, select: { id: true } });
     if (!shop) return res.status(404).json({ message: "Shop not found" });
 
@@ -32,12 +32,7 @@ export async function canReviewShop(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-<<<<<<< HEAD
     const { shopSlug } = req.params;
-    const shop = await prisma.shop.findUnique({
-      where: { slug: shopSlug },
-=======
-    const shopSlug = req.params.shopSlug as string;
     const shop = await prisma.shop.findUnique({ where: { slug: shopSlug }, select: { id: true } });
     if (!shop) return res.status(404).json({ message: "Shop not found" });
 
@@ -47,21 +42,15 @@ export async function canReviewShop(req: AuthedRequest, res: Response) {
         status: "COMPLETED",
         repairRequest: { userId },
       },
->>>>>>> origin/main
       select: { id: true },
     });
-    if (!shop) return res.status(404).json({ message: "Shop not found" });
 
     const existingReview = await prisma.rating.findUnique({
       where: { userId_shopId: { userId, shopId: shop.id } },
       select: { id: true },
     });
 
-    return res.json({
-      eligible: !existingReview,
-      hasCompletedJob: true, // fake true for testing so frontend stays happy
-      hasExistingReview: Boolean(existingReview),
-    });
+    return res.json({ eligible: Boolean(completedJob) && !existingReview, hasCompletedJob: Boolean(completedJob), hasExistingReview: Boolean(existingReview) });
   } catch (error) {
     console.error("canReviewShop error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -73,27 +62,28 @@ export async function createReview(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const shopSlug = req.params.shopSlug as string;
+    const { shopSlug } = req.params;
     const { score, review } = req.body as { score?: number; review?: string };
 
     if (!score || score < 1 || score > 5) {
       return res.status(400).json({ message: "score must be between 1 and 5" });
     }
 
-    const shop = await prisma.shop.findUnique({
-      where: { slug: shopSlug },
-      select: { id: true },
-    });
+    const shop = await prisma.shop.findUnique({ where: { slug: shopSlug }, select: { id: true, ratingAvg: true, reviewCount: true } });
     if (!shop) return res.status(404).json({ message: "Shop not found" });
 
-    const existingReview = await prisma.rating.findUnique({
-      where: { userId_shopId: { userId, shopId: shop.id } },
+    const completedJob = await prisma.repairJob.findFirst({
+      where: {
+        shopId: shop.id,
+        status: "COMPLETED",
+        repairRequest: { userId },
+      },
       select: { id: true },
     });
 
-    if (existingReview) {
-      return res.status(409).json({ message: "You have already reviewed this shop" });
-    }
+    //if (!completedJob) {
+     // return res.status(403).json({ message: "You can only review shops you have completed service with" });
+    // }
 
     const created = await prisma.$transaction(async (tx) => {
       const rating = await tx.rating.create({

@@ -6,7 +6,7 @@ export async function sendTestOrderStatusNotification(req: Request, res: Respons
     const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : undefined;
     const status = typeof req.body?.status === "string" ? req.body.status.trim() : "PROCESSING";
-    const orderRef = typeof req.body?.orderRef === "string" ? req.body.orderRef.trim() : `MR-${Date.now()}`;
+    const orderTitle = typeof req.body?.orderTitle === "string" ? req.body.orderTitle.trim() : `MR-${Date.now()}`;
 
     if (!email) {
       return res.status(400).json({ message: "email is required" });
@@ -16,7 +16,7 @@ export async function sendTestOrderStatusNotification(req: Request, res: Respons
       to: email,
       customerName: name,
       status,
-      orderRef,
+      orderTitle,
       shopName: "Meramot Demo Shop",
     });
 
@@ -26,7 +26,7 @@ export async function sendTestOrderStatusNotification(req: Request, res: Respons
       preview: {
         to: email,
         status,
-        orderRef,
+        orderTitle,
       },
     });
   } catch (error) {

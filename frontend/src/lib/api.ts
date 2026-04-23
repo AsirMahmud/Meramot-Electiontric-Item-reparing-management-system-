@@ -733,3 +733,122 @@ export function rejectDeliveryPartnerAdmin(token: string, id: string) {
     method: "PATCH",
   });
 }
+<<<<<<< HEAD
+
+
+/* =========================================================
+   Cart Management
+========================================================= */
+
+export type CartItem = {
+  id: string;
+  cartId: string;
+  serviceName: string;
+  description?: string | null;
+  price: number | string;
+  quantity: number;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Cart = {
+  id: string;
+  userId: string;
+  shopId: string;
+  status: "ACTIVE" | "CHECKED_OUT" | "ABANDONED";
+  createdAt: string;
+  updatedAt: string;
+  subtotal: number;
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    address: string;
+    ratingAvg: number;
+    reviewCount: number;
+  };
+  items: CartItem[];
+};
+
+
+
+export async function addServiceToCart(
+  payload: {
+    shopSlug: string;
+    serviceName: string;
+    description?: string;
+    price: number;
+    quantity?: number;
+    metadata?: Record<string, unknown>;
+  },
+  token: string
+) {
+  return authedRequest<{ message: string; cart: Cart }>("/cart/items", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMyCarts(token: string) {
+  return authedRequest<Cart[]>("/cart", token);
+}
+
+export async function updateCartItem(
+  itemId: string,
+  quantity: number,
+  token: string
+) {
+  return authedRequest(`/cart/items/${itemId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ quantity }),
+  });
+}
+
+export async function removeCartItem(itemId: string, token: string) {
+  return authedRequest(`/cart/items/${itemId}`, token, {
+    method: "DELETE",
+  });
+}
+
+export async function checkoutCart(
+  cartId: string,
+  payload: {
+    scheduleType: "NOW" | "LATER";
+    scheduledAt?: string;
+    paymentMethod: "CASH" | "BKASH";
+    addressMode: "PROFILE" | "MANUAL" | "MAP";
+    address: string;
+    city?: string;
+    area?: string;
+    lat?: number;
+    lng?: number;
+    deliveryType?: "REGULAR" | "EXPRESS";
+    problemNote?: string;
+  },
+  token: string
+) {
+  return authedRequest(`/cart/${cartId}/checkout`, token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/* =========================================================
+   Ai Chat
+========================================================= */
+
+export async function chatWithAi(payload: {
+  message: string;
+  history?: { role: "user" | "assistant"; text: string }[];
+}) {
+  return request<{ ok: true; reply: string }>("/ai/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+=======
+>>>>>>> origin/main
