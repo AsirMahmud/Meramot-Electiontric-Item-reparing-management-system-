@@ -301,6 +301,7 @@ model RepairJob {
   status            RepairJobStatus @default(CREATED)
   diagnosisNotes    String?
   finalQuotedAmount Float?
+  finalQuoteItems   Json?
   customerApproved  Boolean?
   startedAt         DateTime?
   completedAt       DateTime?

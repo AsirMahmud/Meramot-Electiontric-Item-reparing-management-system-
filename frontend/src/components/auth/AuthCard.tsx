@@ -142,8 +142,6 @@ async function getCurrentSessionUserWithRetry(): Promise<SessionUser | undefined
   return getCurrentSessionUser();
 }
 async function redirectByRole(user?: SessionUser) {
-  console.log("redirectByRole user =", user);
-
   if (!user) {
     router.replace("/");
     router.refresh();
@@ -164,21 +162,22 @@ async function redirectByRole(user?: SessionUser) {
 
     try {
       const vendorStatus = await getVendorApplicationStatus(user.accessToken);
-      console.log("vendorStatus =", vendorStatus);
-
       const application = vendorStatus?.application;
-      console.log("application =", application);
 
       if (application?.status === "APPROVED" && application?.setupComplete) {
-        router.replace("/");
+        router.replace("/vendor/dashboard");
         router.refresh();
+        return;
+      }
+
+      if (application?.status === "APPROVED") {
+        router.replace("/vendor/setup-shop");
         return;
       }
 
       router.replace("/vendor/onboarding");
       return;
-    } catch (error) {
-      console.log("getVendorApplicationStatus failed =", error);
+    } catch {
       router.replace("/vendor/onboarding");
       return;
     }

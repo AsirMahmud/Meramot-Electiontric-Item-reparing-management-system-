@@ -1,4 +1,10 @@
-import { DeliveryType, RepairJobStatus, RequestMode, RequestStatus } from "@prisma/client";
+import {
+  BidStatus,
+  DeliveryType,
+  RepairJobStatus,
+  RequestMode,
+  RequestStatus,
+} from "@prisma/client";
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
 import type { AuthedRequest } from "../middleware/auth.js";
@@ -25,6 +31,14 @@ function normalizeRequestMode(input?: string): RequestMode {
   return RequestMode.CHECKUP_AND_REPAIR;
 }
 
+function normalizeQuoteResponseAction(input?: string) {
+  const action = (input || "").trim().toUpperCase();
+  if (action === "ACCEPT" || action === "DECLINE") {
+    return action;
+  }
+  return null;
+}
+
 export async function createRepairRequest(req: AuthedRequest, res: Response) {
   try {
     const userId = req.user?.id;
@@ -45,7 +59,9 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
     } = req.body as Record<string, string | boolean | undefined>;
 
     if (!title || !deviceType || !problem) {
-      return res.status(400).json({ message: "title, deviceType and problem are required" });
+      return res
+        .status(400)
+        .json({ message: "title, deviceType and problem are required" });
     }
 
     const user = await prisma.user.findUnique({
@@ -86,7 +102,9 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
           imageUrls: [],
           mode: normalizeRequestMode(typeof mode === "string" ? mode : undefined),
           preferredPickup: Boolean(preferredPickup),
-          deliveryType: normalizeDeliveryType(typeof deliveryType === "string" ? deliveryType : undefined),
+          deliveryType: normalizeDeliveryType(
+            typeof deliveryType === "string" ? deliveryType : undefined,
+          ),
           status: isDirectFlow ? RequestStatus.ASSIGNED : RequestStatus.BIDDING,
         },
       });
@@ -140,7 +158,9 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const status = normalizeRequestStatus(typeof req.query.status === "string" ? req.query.status : undefined);
+    const status = normalizeRequestStatus(
+      typeof req.query.status === "string" ? req.query.status : undefined,
+    );
 
     const requests = await prisma.repairRequest.findMany({
       where: {
@@ -151,19 +171,65 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
       select: {
         id: true,
         title: true,
+        description: true,
         deviceType: true,
         brand: true,
         model: true,
+        issueCategory: true,
         problem: true,
         mode: true,
         status: true,
         preferredPickup: true,
         deliveryType: true,
+        quotedFinalAmount: true,
+        approvedAt: true,
+        rejectedAt: true,
         createdAt: true,
+        updatedAt: true,
+        bids: {
+          orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            partsCost: true,
+            laborCost: true,
+            totalCost: true,
+            estimatedDays: true,
+            notes: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            shop: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                specialties: true,
+                ratingAvg: true,
+              },
+            },
+          },
+        },
         repairJob: {
           select: {
             id: true,
             status: true,
+            diagnosisNotes: true,
+            finalQuotedAmount: true,
+            finalQuoteItems: true,
+            customerApproved: true,
+            acceptedBid: {
+              select: {
+                id: true,
+                partsCost: true,
+                laborCost: true,
+                totalCost: true,
+                estimatedDays: true,
+                notes: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
             shop: {
               select: {
                 id: true,
@@ -193,6 +259,324 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
     return res.json(requests);
   } catch (error) {
     console.error("listMyRequests error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function acceptRequestBid(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { requestId, bidId } = req.params;
+
+    const existingRequest = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        userId,
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        user: { select: { email: true, name: true } },
+        repairJob: { select: { id: true } },
+      },
+    });
+
+    if (!existingRequest) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    if (existingRequest.status !== RequestStatus.BIDDING) {
+      return res.status(400).json({ message: "This request is no longer in bidding" });
+    }
+
+    const selectedBid = await prisma.bid.findFirst({
+      where: {
+        id: bidId,
+        repairRequestId: requestId,
+      },
+      select: {
+        id: true,
+        shopId: true,
+        status: true,
+        shop: { select: { name: true } },
+      },
+    });
+
+    if (!selectedBid) {
+      return res.status(404).json({ message: "Bid not found" });
+    }
+
+    if (selectedBid.status !== BidStatus.ACTIVE) {
+      return res.status(400).json({ message: "Only active bids can be accepted" });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const acceptedBid = await tx.bid.update({
+        where: { id: bidId },
+        data: { status: BidStatus.ACCEPTED },
+        select: {
+          id: true,
+          partsCost: true,
+          laborCost: true,
+          totalCost: true,
+          estimatedDays: true,
+          notes: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await tx.bid.updateMany({
+        where: {
+          repairRequestId: requestId,
+          id: { not: bidId },
+          status: BidStatus.ACTIVE,
+        },
+        data: {
+          status: BidStatus.DECLINED,
+        },
+      });
+
+      const repairJob = existingRequest.repairJob?.id
+        ? await tx.repairJob.update({
+            where: { id: existingRequest.repairJob.id },
+            data: {
+              shopId: selectedBid.shopId,
+              acceptedBidId: bidId,
+              status: RepairJobStatus.CREATED,
+            },
+            select: {
+              id: true,
+              status: true,
+              shop: { select: { id: true, name: true, slug: true } },
+            },
+          })
+        : await tx.repairJob.create({
+            data: {
+              repairRequestId: requestId,
+              shopId: selectedBid.shopId,
+              acceptedBidId: bidId,
+              status: RepairJobStatus.CREATED,
+            },
+            select: {
+              id: true,
+              status: true,
+              shop: { select: { id: true, name: true, slug: true } },
+            },
+          });
+
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.ASSIGNED,
+          approvedAt: new Date(),
+          rejectedAt: null,
+        },
+        select: {
+          id: true,
+          status: true,
+          approvedAt: true,
+        },
+      });
+
+      return { acceptedBid, repairJob, request };
+    });
+
+    if (existingRequest.user.email) {
+      await sendOrderStatusEmail({
+        to: existingRequest.user.email,
+        customerName: existingRequest.user.name,
+        orderRef: existingRequest.title,
+        status: result.request.status,
+        shopName: selectedBid.shop.name,
+      }).catch((error) => console.error("accept bid email failed", error));
+    }
+
+    return res.json({
+      message: "Bid accepted and repair job assigned",
+      request: result.request,
+      acceptedBid: result.acceptedBid,
+      repairJob: result.repairJob,
+    });
+  } catch (error) {
+    console.error("acceptRequestBid error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function declineRequestBid(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { requestId, bidId } = req.params;
+
+    const existingRequest = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        userId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!existingRequest) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    if (existingRequest.status !== RequestStatus.BIDDING) {
+      return res.status(400).json({ message: "This request is no longer in bidding" });
+    }
+
+    const bid = await prisma.bid.findFirst({
+      where: {
+        id: bidId,
+        repairRequestId: requestId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!bid) {
+      return res.status(404).json({ message: "Bid not found" });
+    }
+
+    if (bid.status !== BidStatus.ACTIVE) {
+      return res.status(400).json({ message: "Only active bids can be declined" });
+    }
+
+    const updatedBid = await prisma.bid.update({
+      where: { id: bidId },
+      data: { status: BidStatus.DECLINED },
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json({
+      message: "Bid declined",
+      bid: updatedBid,
+    });
+  } catch (error) {
+    console.error("declineRequestBid error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function respondToFinalQuote(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { requestId } = req.params;
+    const { action } = req.body as { action?: string };
+
+    const normalizedAction = normalizeQuoteResponseAction(action);
+    if (!normalizedAction) {
+      return res.status(400).json({ message: "Action must be ACCEPT or DECLINE" });
+    }
+
+    const existingRequest = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        userId,
+      },
+      select: {
+        id: true,
+        title: true,
+        quotedFinalAmount: true,
+        user: { select: { email: true, name: true } },
+        repairJob: {
+          select: {
+            id: true,
+            status: true,
+            finalQuotedAmount: true,
+            shop: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    if (!existingRequest || !existingRequest.repairJob) {
+      return res.status(404).json({ message: "Repair job not found for this request" });
+    }
+
+    if (existingRequest.repairJob.status !== RepairJobStatus.WAITING_APPROVAL) {
+      return res.status(400).json({
+        message: "There is no pending final quote awaiting your decision",
+      });
+    }
+
+    const approved = normalizedAction === "ACCEPT";
+    const nextRequestStatus = approved ? RequestStatus.REPAIRING : RequestStatus.REJECTED;
+    const nextJobStatus = approved ? RepairJobStatus.REPAIRING : RepairJobStatus.CANCELLED;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const repairJob = await tx.repairJob.update({
+        where: { id: existingRequest.repairJob!.id },
+        data: {
+          customerApproved: approved,
+          status: nextJobStatus,
+          startedAt: approved ? new Date() : undefined,
+        },
+        select: {
+          id: true,
+          status: true,
+          customerApproved: true,
+          updatedAt: true,
+        },
+      });
+
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: nextRequestStatus,
+          approvedAt: approved ? new Date() : undefined,
+          rejectedAt: approved ? null : new Date(),
+          quotedFinalAmount:
+            existingRequest.repairJob?.finalQuotedAmount ?? existingRequest.quotedFinalAmount,
+        },
+        select: {
+          id: true,
+          status: true,
+          approvedAt: true,
+          rejectedAt: true,
+          quotedFinalAmount: true,
+        },
+      });
+
+      return { repairJob, request };
+    });
+
+    if (existingRequest.user.email) {
+      await sendOrderStatusEmail({
+        to: existingRequest.user.email,
+        customerName: existingRequest.user.name,
+        orderRef: existingRequest.title,
+        status: result.request.status,
+        shopName: existingRequest.repairJob.shop.name,
+      }).catch((error) => console.error("final quote response email failed", error));
+    }
+
+    return res.json({
+      message: approved
+        ? "Final quote accepted. The vendor can continue with the repair."
+        : "Final quote declined. The repair job has been closed.",
+      request: result.request,
+      repairJob: result.repairJob,
+    });
+  } catch (error) {
+    console.error("respondToFinalQuote error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 }
@@ -248,7 +632,9 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
             where: { id: existing.repairJob.id },
             data: {
               status: mapped,
-              ...(mapped === RepairJobStatus.COMPLETED ? { completedAt: new Date() } : {}),
+              ...(mapped === RepairJobStatus.COMPLETED
+                ? { completedAt: new Date() }
+                : {}),
             },
           });
         }
@@ -261,7 +647,7 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
       await sendOrderStatusEmail({
         to: existing.user.email,
         customerName: existing.user.name,
-        orderTitle: existing.title,
+        orderRef: existing.title,
         status: updated.status,
         shopName: existing.repairJob?.shop.name,
       }).catch((error) => console.error("status email failed", error));

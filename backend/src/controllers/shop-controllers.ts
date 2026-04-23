@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../models/prisma";
+import prisma from "../models/prisma.js";
 
 function toNumber(value: unknown, fallback?: number) {
   const n = Number(value);

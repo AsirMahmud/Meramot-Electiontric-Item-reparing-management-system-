@@ -251,7 +251,7 @@ if (app) {
       skillTags: allSkillTags,
     });
 
-    router.push("/profile");
+    router.push("/vendor/dashboard");
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to save shop setup";

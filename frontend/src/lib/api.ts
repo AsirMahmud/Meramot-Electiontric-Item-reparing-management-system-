@@ -22,7 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       },
       cache: init?.cache ?? "no-store",
     });
-  } catch (error) {
+  } catch {
     throw new Error(
       `Network error while requesting ${API}/api${path}. Check whether the backend is running and reachable.`
     );
@@ -32,7 +32,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     throw new Error(
-      (data as any)?.message || `Request failed with status ${response.status}`
+      ((typeof data === "object" && data && "message" in data ? (data as { message?: string }).message : undefined) || `Request failed with status ${response.status}`)
     );
   }
 
@@ -465,7 +465,222 @@ export function getShopBySlug(slug: string) {
    SERVICES / REQUESTS
 ========================================================= */
 
-export async function createRepairRequest(payload: any, token?: string) {
+export type FinalQuoteItem = {
+  label: string;
+  description?: string | null;
+  amount: number;
+};
+
+export type BidItem = {
+  id: string;
+  partsCost: number;
+  laborCost: number;
+  totalCost: number;
+  estimatedDays?: number | null;
+  notes?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  shop?: {
+    id: string;
+    name: string;
+    slug: string;
+    specialties?: string[];
+    ratingAvg?: number;
+  };
+  repairRequest?: {
+    id: string;
+    title: string;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    issueCategory?: string | null;
+    problem: string;
+    mode: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+export type DeliverySummary = {
+  id: string;
+  direction: string;
+  status: string;
+  riderName?: string | null;
+  riderPhone?: string | null;
+  trackingCode?: string | null;
+  scheduledAt?: string | null;
+};
+
+export type OrderItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  deviceType: string;
+  brand?: string | null;
+  model?: string | null;
+  issueCategory?: string | null;
+  problem: string;
+  mode: string;
+  status: string;
+  preferredPickup: boolean;
+  deliveryType?: string | null;
+  quotedFinalAmount?: number | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  bids: BidItem[];
+  repairJob?: {
+    id: string;
+    status: string;
+    diagnosisNotes?: string | null;
+    finalQuotedAmount?: number | null;
+    finalQuoteItems?: FinalQuoteItem[] | null;
+    customerApproved?: boolean | null;
+    acceptedBid?: BidItem | null;
+    shop: {
+      id: string;
+      name: string;
+      slug: string;
+      ratingAvg?: number;
+    };
+    deliveries: DeliverySummary[];
+  } | null;
+};
+
+export type CreateRepairRequestPayload = {
+  title: string;
+  description?: string | null;
+  deviceType: string;
+  brand?: string | null;
+  model?: string | null;
+  issueCategory?: string | null;
+  problem: string;
+  mode?: string;
+  preferredPickup?: boolean;
+  deliveryType?: string | null;
+  shopSlug?: string;
+};
+
+export type VendorDashboardData = {
+  application: {
+    id: string;
+    status: string;
+    shopName: string;
+    businessEmail: string;
+    specialties: string[];
+    courierPickup: boolean;
+    inShopRepair: boolean;
+    spareParts: boolean;
+  };
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    setupComplete: boolean;
+    isPublic: boolean;
+    inspectionFee?: number | null;
+    baseLaborFee?: number | null;
+    pickupFee?: number | null;
+    expressFee?: number | null;
+    categories: string[];
+    specialties: string[];
+  };
+  stats: {
+    relevantRequestCount: number;
+    activeBidCount: number;
+    assignedJobCount: number;
+    waitingApprovalCount: number;
+    completedJobCount: number;
+  };
+  relevantRequests: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    issueCategory?: string | null;
+    problem: string;
+    mode: string;
+    preferredPickup: boolean;
+    deliveryType?: string | null;
+    status: string;
+    createdAt: string;
+    bidCount: number;
+    relevanceScore: number;
+    matchReasons: string[];
+    myBid?: BidItem | null;
+  }>;
+  myBids: BidItem[];
+  assignedJobs: Array<{
+    id: string;
+    status: string;
+    diagnosisNotes?: string | null;
+    finalQuotedAmount?: number | null;
+    finalQuoteItems?: FinalQuoteItem[] | null;
+    customerApproved?: boolean | null;
+    createdAt: string;
+    updatedAt: string;
+    acceptedBid?: BidItem | null;
+    repairRequest: {
+      id: string;
+      title: string;
+      description?: string | null;
+      deviceType: string;
+      brand?: string | null;
+      model?: string | null;
+      issueCategory?: string | null;
+      problem: string;
+      mode: string;
+      preferredPickup: boolean;
+      deliveryType?: string | null;
+      status: string;
+      quotedFinalAmount?: number | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>;
+};
+
+
+export type VendorAnalyticsData = {
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  summary: {
+    monthLabel: string;
+    totalMonthlyEarnings: number;
+    bidsWonThisMonth: number;
+    averageCustomerRating: number;
+    reviewCount: number;
+  };
+  trends: Array<{
+    key: string;
+    label: string;
+    earnings: number;
+    bidsWon: number;
+    completedJobs: number;
+  }>;
+  recentRatings: Array<{
+    id: string;
+    score: number;
+    review?: string | null;
+    createdAt: string;
+    customerName: string;
+  }>;
+  insights: {
+    bestMonthLabel: string;
+    bestMonthEarnings: number;
+    sixMonthBidsWon: number;
+    sixMonthCompletedJobs: number;
+  };
+};
+
+export async function createRepairRequest(payload: CreateRepairRequestPayload, token?: string) {
   return authedRequest("/requests", token, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -473,7 +688,99 @@ export async function createRepairRequest(payload: any, token?: string) {
 }
 
 export async function getMyOrders(token: string) {
-  return authedRequest<any[]>("/requests/mine", token);
+  return authedRequest<OrderItem[]>("/requests/mine", token);
+}
+
+export async function acceptBid(token: string, requestId: string, bidId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/bids/${encodeURIComponent(bidId)}/accept`,
+    token,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function declineBid(token: string, requestId: string, bidId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/bids/${encodeURIComponent(bidId)}/decline`,
+    token,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function respondToFinalQuote(
+  token: string,
+  requestId: string,
+  action: "ACCEPT" | "DECLINE"
+) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/final-quote/respond`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ action }),
+    }
+  );
+}
+
+export function getVendorDashboard(token: string) {
+  return authedRequest<VendorDashboardData>("/vendor/requests/dashboard", token);
+}
+
+export function getVendorAnalytics(token: string) {
+  return authedRequest<VendorAnalyticsData>("/vendor/requests/analytics", token);
+}
+
+export function submitVendorBid(
+  token: string,
+  requestId: string,
+  payload: {
+    partsCost: number;
+    laborCost: number;
+    estimatedDays?: number | null;
+    notes?: string;
+  }
+) {
+  return authedRequest(
+    `/vendor/requests/${encodeURIComponent(requestId)}/bids`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export function updateVendorJobStatus(token: string, jobId: string, status: string) {
+  return authedRequest(
+    `/vendor/requests/jobs/${encodeURIComponent(jobId)}/status`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }
+  );
+}
+
+export function submitVendorFinalQuote(
+  token: string,
+  jobId: string,
+  payload: {
+    diagnosisNotes: string;
+    items: FinalQuoteItem[];
+  }
+) {
+  return authedRequest(
+    `/vendor/requests/jobs/${encodeURIComponent(jobId)}/final-quote`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
+  );
 }
 
 /* =========================================================
@@ -481,8 +788,13 @@ export async function getMyOrders(token: string) {
 ========================================================= */
 
 export async function getShopReviews(slug: string) {
-  const data = await request<any>(`/shops/${slug}/reviews`);
-  return Array.isArray(data) ? data : data.reviews || [];
+  const data = await request<unknown>(`/shops/${slug}/reviews`);
+  if (Array.isArray(data)) return data;
+  if (typeof data === "object" && data && "reviews" in data) {
+    const reviews = (data as { reviews?: unknown }).reviews;
+    return Array.isArray(reviews) ? reviews : [];
+  }
+  return [];
 }
 
 export async function getReviewEligibility(
@@ -515,12 +827,26 @@ export async function createReview(
    PROFILE
 ========================================================= */
 
+export type Profile = {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  address?: string | null;
+  city?: string | null;
+  area?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export function getProfile(token?: string) {
-  return authedRequest("/profile/me", token);
+  return authedRequest<Profile>("/profile/me", token);
 }
 
-export function updateProfile(token: string, payload: any) {
-  return authedRequest("/profile/me", token, {
+export function updateProfile(token: string, payload: Partial<Profile> & Record<string, unknown>) {
+  return authedRequest<{ message: string; user: Profile }>("/profile/me", token, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });

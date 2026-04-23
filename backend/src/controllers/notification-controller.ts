@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendOrderStatusEmail } from "../services/email-service";
+import { sendOrderStatusEmail } from "../services/email-service.js";
 
 export async function sendTestOrderStatusNotification(req: Request, res: Response) {
   try {

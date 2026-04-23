@@ -1,13 +1,13 @@
 import { Router } from "express";
-import authRoutes from "./auth-routes";
-import shopRoutes from "./shop-routes";
-import notificationRoutes from "./notification-routes";
-import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app";
+import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app.js";
+import authRoutes from "./auth-routes.js";
+import notificationRoutes from "./notification-routes.js";
 import profileRoutes from "./profile-routes.js";
-import vendorApplicationRoutes from "./vendor-application-routes.js";
-import vendorStatusRoutes from "./vendor-status-routes.js";
 import requestRoutes from "./request-routes.js";
-
+import shopRoutes from "./shop-routes.js";
+import vendorApplicationRoutes from "./vendor-application-routes.js";
+import vendorRequestRoutes from "./vendor-request-routes.js";
+import vendorStatusRoutes from "./vendor-status-routes.js";
 
 const router = Router();
 
@@ -26,4 +26,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/requests", requestRoutes);
 router.use("/vendor/applications", vendorApplicationRoutes);
 router.use("/vendor/application-status", vendorStatusRoutes);
+router.use("/vendor/requests", vendorRequestRoutes);
+
 export default router;
