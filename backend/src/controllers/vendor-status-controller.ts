@@ -91,6 +91,10 @@ const shop = await prisma.shop.findFirst({
     id: true,
     setupComplete: true,
     isPublic: true,
+    inspectionFee: true,
+    baseLaborFee: true,
+    pickupFee: true,
+    expressFee: true,
   },
 });
 
@@ -99,6 +103,10 @@ return res.json({
     ...application,
     setupComplete: shop?.setupComplete ?? false,
     isPublic: shop?.isPublic ?? false,
+    inspectionFee: shop?.inspectionFee ?? null,
+    baseLaborFee: shop?.baseLaborFee ?? null,
+    pickupFee: shop?.pickupFee ?? null,
+    expressFee: shop?.expressFee ?? null,
   },
 });
 

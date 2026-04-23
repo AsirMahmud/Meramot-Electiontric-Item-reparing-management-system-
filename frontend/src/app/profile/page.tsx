@@ -302,96 +302,109 @@ export default function ProfilePage() {
 
           {message && <p className="mt-4 text-sm text-[#214c34]">{message}</p>}
 
-          {role === "VENDOR" ? (
-            <section className="mt-8 rounded-3xl bg-[#f6faf4] p-5">
-              <h2 className="text-lg font-semibold text-accent-dark">Vendor details</h2>
+         {role === "VENDOR" ? (
+  <section className="mt-8 rounded-3xl bg-[#f6faf4] p-5">
+    <h2 className="text-lg font-semibold text-accent-dark">Vendor details</h2>
 
-              {loadingVendorData ? (
-                <p className="mt-3 text-sm text-slate-600">Loading vendor details...</p>
-              ) : (
-                <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-                  <div>
-                    <span className="font-semibold text-slate-900">
-                      Application status:
-                    </span>{" "}
-                    {vendorApp?.status || "—"}
-                  </div>
+    {loadingVendorData ? (
+      <p className="mt-3 text-sm text-slate-600">Loading vendor details...</p>
+    ) : (
+      <>
+        <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+          <div>
+            <span className="font-semibold text-slate-900">
+              Application status:
+            </span>{" "}
+            {vendorApp?.status || "—"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">
-                      Shop setup:
-                    </span>{" "}
-                    {vendorApp?.setupComplete ? "Completed" : "Incomplete"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">
+              Shop setup:
+            </span>{" "}
+            {vendorApp?.setupComplete ? "Completed" : "Incomplete"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">
-                      Shop visibility:
-                    </span>{" "}
-                    {vendorApp?.isPublic ? "Public" : "Hidden"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">
+              Shop visibility:
+            </span>{" "}
+            {vendorApp?.isPublic ? "Public" : "Hidden"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">
-                      Business email:
-                    </span>{" "}
-                    {vendorApp?.businessEmail || "—"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">
+              Business email:
+            </span>{" "}
+            {vendorApp?.businessEmail || "—"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">Shop name:</span>{" "}
-                    {vendorApp?.shopName || "—"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">Shop name:</span>{" "}
+            {vendorApp?.shopName || "—"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">
-                      Trade license:
-                    </span>{" "}
-                    {vendorApp?.tradeLicenseNo || "—"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">
+              Trade license:
+            </span>{" "}
+            {vendorApp?.tradeLicenseNo || "—"}
+          </div>
 
-                  <div className="md:col-span-2">
-                    <span className="font-semibold text-slate-900">Address:</span>{" "}
-                    {vendorApp?.address || "—"}
-                  </div>
+          <div className="md:col-span-2">
+            <span className="font-semibold text-slate-900">Address:</span>{" "}
+            {vendorApp?.address || "—"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">City:</span>{" "}
-                    {vendorApp?.city || "—"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">City:</span>{" "}
+            {vendorApp?.city || "—"}
+          </div>
 
-                  <div>
-                    <span className="font-semibold text-slate-900">Area:</span>{" "}
-                    {vendorApp?.area || "—"}
-                  </div>
+          <div>
+            <span className="font-semibold text-slate-900">Area:</span>{" "}
+            {vendorApp?.area || "—"}
+          </div>
 
-                  <div className="md:col-span-2">
-                    <span className="font-semibold text-slate-900">Services:</span>{" "}
-                    {[
-                      vendorApp?.courierPickup ? "Courier pickup" : null,
-                      vendorApp?.inShopRepair ? "In-shop repair" : null,
-                      vendorApp?.spareParts ? "Spare parts" : null,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || "—"}
-                  </div>
+          <div className="md:col-span-2">
+            <span className="font-semibold text-slate-900">Services:</span>{" "}
+            {[
+              vendorApp?.courierPickup ? "Courier pickup" : null,
+              vendorApp?.inShopRepair ? "In-shop repair" : null,
+              vendorApp?.spareParts ? "Spare parts" : null,
+            ]
+              .filter(Boolean)
+              .join(", ") || "—"}
+          </div>
 
-                  <div className="md:col-span-2">
-                    <span className="font-semibold text-slate-900">Skill tags:</span>{" "}
-                    {vendorApp?.specialties?.length
-                      ? vendorApp.specialties.join(", ")
-                      : "—"}
-                  </div>
+          <div className="md:col-span-2">
+            <span className="font-semibold text-slate-900">Skill tags:</span>{" "}
+            {vendorApp?.specialties?.length
+              ? vendorApp.specialties.join(", ")
+              : "—"}
+          </div>
 
-                  {vendorApp?.rejectionReason ? (
-                    <div className="md:col-span-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                      {vendorApp.rejectionReason}
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </section>
+          {vendorApp?.rejectionReason ? (
+            <div className="md:col-span-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {vendorApp.rejectionReason}
+            </div>
           ) : null}
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            href="/vendor/setup-shop"
+            className="rounded-full bg-[#214c34] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            Edit vendor details
+          </Link>
+        </div>
+      </>
+    )}
+  </section>
+) : null}
+
+           
         </div>
       </div>
     </main>

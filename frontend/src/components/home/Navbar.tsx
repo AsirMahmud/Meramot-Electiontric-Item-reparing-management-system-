@@ -154,72 +154,56 @@ export default function Navbar({
                   {isUserMenuOpen && (
                     <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-[#d9e5d5] bg-white p-2 shadow-lg">
                       {userRole === "VENDOR" ? (
+                    <>
+                      {isVendorSetupIncomplete ? (
                         <>
-                          {isVendorSetupIncomplete ? (
-                            <>
-                              <Link
-                                href="/vendor/setup-shop"
-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Set up your shop
-                              </Link>
+                          <Link
+                            href="/vendor/setup-shop"
+                            className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            Set up your shop
+                          </Link>
 
-                              <Link
-                                href="/vendor/status"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View application status
-                              </Link>
-                            </>
-                          ) : isVendorSetupComplete ? (
-                            <>
-                              <Link
-                                href="/profile"
-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View profile
-                              </Link>
+                          <Link
+                            href="/vendor/status"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            View application status
+                          </Link>
+                        </>
+                      ) : isVendorSetupComplete ? (
+                        <>
+                          <Link
+                            href="/profile"
+                            className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            View profile
+                          </Link>
 
-                              <Link
-                                href="/"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Go to home
-                              </Link>
-
-                              <Link
-                                href="/vendor/status"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View application status
-                              </Link>
-                            </>
-                          ) : (
-                            <>
-                              <Link
-                                href="/vendor/status"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View application status
-                              </Link>
-
-                              <Link
-                                href="/"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Go to home
-                              </Link>
-                            </>
-                          )}
+                          <Link
+                            href="/vendor/status"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            View application status
+                          </Link>
                         </>
                       ) : (
+                        <>
+                          <Link
+                            href="/vendor/status"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            View application status
+                          </Link>
+                        </>
+                      )}
+                    </>
+                  ) : (
                         <>
                           <Link
                             href="/profile"

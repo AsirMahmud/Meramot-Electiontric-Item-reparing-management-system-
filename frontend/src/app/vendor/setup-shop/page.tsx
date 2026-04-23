@@ -23,6 +23,12 @@ type VendorStatusPayload = {
     rejectionReason?: string | null;
     rejectionVisibleUntil?: string | null;
     createdAt: string;
+    setupComplete?: boolean;
+    isPublic?: boolean;
+    inspectionFee?: number | null;
+    baseLaborFee?: number | null;
+    pickupFee?: number | null;
+    expressFee?: number | null;
   };
   message?: string;
 };
@@ -70,7 +76,7 @@ export default function VendorSetupShopPage() {
 
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
+  const [isEditMode, setIsEditMode] = useState(false);
    useEffect(() => {
     if (status === "loading") return;
 
@@ -94,18 +100,40 @@ export default function VendorSetupShopPage() {
         const result = (await getVendorApplicationStatus(token)) as VendorStatusPayload;
         const app = result?.application;
 
-        if (app) {
-          setShopName(app.shopName || "");
-          setDescription(app.notes || "");
-          setPhone(app.phone || "");
-          setAddress(app.address || "");
-          setCity(app.city || "");
-          setArea(app.area || "");
+if (app) {
+    setIsEditMode(Boolean(app.setupComplete));
 
-          setCourierPickup(Boolean(app.courierPickup));
-          setInShopRepair(Boolean(app.inShopRepair));
-          setSpareParts(Boolean(app.spareParts));
+    setShopName(app.shopName || "");
+    setDescription(app.notes || "");
+    setPhone(app.phone || "");
+    setAddress(app.address || "");
+    setCity(app.city || "");
+    setArea(app.area || "");
 
+    setCourierPickup(Boolean(app.courierPickup));
+    setInShopRepair(Boolean(app.inShopRepair));
+    setSpareParts(Boolean(app.spareParts));
+
+    setInspectionFee(
+    app.inspectionFee !== null && app.inspectionFee !== undefined
+      ? String(app.inspectionFee)
+      : ""
+  );
+  setBaseLaborFee(
+    app.baseLaborFee !== null && app.baseLaborFee !== undefined
+      ? String(app.baseLaborFee)
+      : ""
+  );
+  setPickupFee(
+    app.pickupFee !== null && app.pickupFee !== undefined
+      ? String(app.pickupFee)
+      : ""
+  );
+  setExpressFee(
+    app.expressFee !== null && app.expressFee !== undefined
+      ? String(app.expressFee)
+      : ""
+  );
           const presetLowerMap = new Map(
             PRESET_SKILL_TAGS.map((tag) => [tag.toLowerCase(), tag])
           );
@@ -223,7 +251,7 @@ export default function VendorSetupShopPage() {
       skillTags: allSkillTags,
     });
 
-    router.push("/vendor/status");
+    router.push("/profile");
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to save shop setup";
@@ -252,16 +280,14 @@ export default function VendorSetupShopPage() {
           Vendor
         </p>
 
-        <h1 className="mt-2 text-3xl font-bold text-accent-dark">
-          Set up your shop
+      <h1 className="mt-2 text-3xl font-bold text-accent-dark">
+        {isEditMode ? "Edit vendor details" : "Set up your shop"}
         </h1>
-
-        <p className="mt-3 max-w-3xl text-sm text-slate-600">
-          Complete your shop profile before you start operating as a vendor.
-          Your shop should only go live after you set your own pricing,
-          services, skill tags, and business details.
-        </p>
-
+       <p className="mt-3 max-w-3xl text-sm text-slate-600">
+  {isEditMode
+    ? "Update your shop information, services, pricing, and skill tags here."
+    : "Complete your shop profile before you start operating as a vendor. Your shop should only go live after you set your own pricing, services, skill tags, and business details."}
+</p>
         <form onSubmit={handleSubmit} className="mt-8 space-y-8">
         {formError ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -535,19 +561,25 @@ export default function VendorSetupShopPage() {
 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
             <button
-              type="button"
-              onClick={() => router.push("/vendor/status")}
-              className="rounded-2xl border border-border px-5 py-3 text-sm font-semibold text-slate-700"
+            type="button"
+            onClick={() => router.push("/profile")}
+            className="rounded-2xl border border-border px-5 py-3 text-sm font-semibold text-slate-700"
             >
-              Back to status
+            Back to profile
             </button>
 
-            <button
+           <button
             type="submit"
             disabled={submitting}
             className="rounded-2xl bg-accent-dark px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-            {submitting ? "Saving..." : "Save shop setup"}
+            {submitting
+                ? isEditMode
+                ? "Saving vendor details..."
+                : "Saving..."
+                : isEditMode
+                ? "Save vendor details"
+                : "Save shop setup"}
             </button>
           </div>
         </form>
