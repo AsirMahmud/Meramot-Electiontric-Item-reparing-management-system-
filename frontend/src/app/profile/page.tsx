@@ -133,10 +133,10 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 relative flex flex-col items-center gap-4 md:flex-row md:justify-center">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/"
-            className="inline-block -translate-x-3 transition-transform hover:scale-105"
+            className="inline-block transition-transform hover:scale-105"
           >
             <Image
               src="/images/meramot.svg"
@@ -150,7 +150,7 @@ export default function ProfilePage() {
 
           <Link
             href="/"
-            className="rounded-full border border-[#214c34] bg-white px-5 py-2 text-sm font-semibold text-[#214c34] transition-colors hover:bg-[#f6faf4] md:absolute md:right-0"
+            className="rounded-full border border-[#214c34] bg-white px-5 py-2 text-sm font-semibold text-[#214c34] transition-colors hover:bg-[#f6faf4]"
           >
             Back to home
           </Link>
