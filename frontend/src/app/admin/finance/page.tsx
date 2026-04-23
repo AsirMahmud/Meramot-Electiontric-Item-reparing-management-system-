@@ -1,7 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
 
+import { useEffect, useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 type FinancialSummary = {
   commissionRate: number;
@@ -45,30 +47,44 @@ export default function AdminFinancePage() {
   const [batchLimit, setBatchLimit] = useState("20");
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  function getAuthHeaders() {
+    return token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {};
+  }
+  
   const loadSummary = async () => {
-    setLoadingSummary(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/summary`, {
-        credentials: "include",
-       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSummary(data.data);
-      } else {
-        setActionError(data.message || "Failed to load financial summary");
-      }
-    } catch (error) {
-      console.error(error);
-      setActionError("Failed to load financial summary");
-    } finally {
-      setLoadingSummary(false);
+  setLoadingSummary(true);
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
-  };
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger`,
+      {
+        credentials: "include",
+        headers,
+      }
+    );
+
+    const data = await res.json();
+  } finally {
+    setLoadingSummary(false);
+  }
+};
 
   const loadEntries = async () => {
     setLoadingEntries(true);
@@ -95,8 +111,22 @@ export default function AdminFinancePage() {
   };
 
   useEffect(() => {
-    void Promise.all([loadSummary(), loadEntries()]);
-  }, []);
+  if (status === "loading") return;
+
+  if (!session?.user) {
+    router.replace("/login");
+    return;
+  }
+
+  if (role !== "ADMIN") {
+    router.replace("/");
+    return;
+  }
+
+  if (!token) return;
+
+  void Promise.all([loadSummary(), loadEntries()]);
+}, [session, status, role, token, router]);
 
   const handleSettleSingle = async (event: FormEvent) => {
     event.preventDefault();
