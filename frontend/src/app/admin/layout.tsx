@@ -8,16 +8,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-[#EEF5EA] text-[#244233]">
       <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[260px_1fr]">
         <div className="flex flex-col gap-6">
-          <Link href="/" className="inline-flex items-center">
-            <Image
-              src="/images/meramot.svg"
-              alt="Meramot"
-              width={200}
-              height={64}
-              className="h-14 w-auto object-contain"
-              priority
-            />
-          </Link>
+          <div className="flex justify-center">
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/images/meramot.svg"
+                alt="Meramot"
+                width={200}
+                height={64}
+                className="h-14 w-auto object-contain"
+                priority
+              />
+            </Link>
+          </div>
           <aside className="rounded-[32px] border border-[#D7E2D2] bg-[#FAFAF7] p-6 shadow-sm">
             <div className="mb-8">
               <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">

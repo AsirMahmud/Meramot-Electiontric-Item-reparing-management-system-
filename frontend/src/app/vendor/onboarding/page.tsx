@@ -114,16 +114,18 @@ export default function VendorOnboardingPage() {
     return (
       <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
         <div className="flex w-full max-w-xl flex-col gap-6">
-          <Link href="/" className="inline-flex items-center">
-            <Image
-              src="/images/meramot.svg"
-              alt="Meramot"
-              width={200}
-              height={64}
-              className="h-14 w-auto object-contain"
-              priority
-            />
-          </Link>
+          <div className="flex justify-center">
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/images/meramot.svg"
+                alt="Meramot"
+                width={200}
+                height={64}
+                className="h-14 w-auto object-contain"
+                priority
+              />
+            </Link>
+          </div>
           <div className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
             <h1 className="mt-2 text-3xl font-bold text-accent-dark">Vendor application</h1>
@@ -167,16 +169,18 @@ export default function VendorOnboardingPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <Link href="/" className="inline-flex items-center">
-          <Image
-            src="/images/meramot.svg"
-            alt="Meramot"
-            width={200}
-            height={64}
-            className="h-14 w-auto object-contain"
-            priority
-          />
-        </Link>
+        <div className="flex justify-center">
+          <Link href="/" className="inline-flex items-center">
+            <Image
+              src="/images/meramot.svg"
+              alt="Meramot"
+              width={200}
+              height={64}
+              className="h-14 w-auto object-contain"
+              priority
+            />
+          </Link>
+        </div>
         <div className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
           <h1 className="mt-2 text-3xl font-bold text-accent-dark">{heading}</h1>
