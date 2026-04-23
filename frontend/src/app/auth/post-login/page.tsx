@@ -106,36 +106,23 @@ export default function PostLoginPage() {
     void resolveDestination();
   }, [router, session, status]);
 
-  return (
-    <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
-      <div className="flex w-full max-w-md flex-col gap-6">
-        <div className="flex w-full items-center justify-center">
-          <Link href="/" className="inline-block transition-transform hover:scale-105">
-            <Image
-              src="/images/meramot.svg"
-              alt="Meramot"
-              width={240}
-              height={80}
-              className="h-16 w-auto object-contain md:h-20"
-              priority
-            />
-          </Link>
-        </div>
-        <div className="rounded-[2rem] border border-white/60 bg-white/90 p-8 text-center shadow-2xl backdrop-blur">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
-            Meramot
-          </p>
-          <h1 className="mt-3 text-3xl font-bold text-accent-dark">Finishing sign-in</h1>
-        <p className="mt-3 text-sm text-slate-600">
-          We are sending you to the correct dashboard for your account.
-        </p>
-        {error ? (
-          <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+  if (error) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
+        <div className="w-full max-w-md rounded-[2rem] border border-red-200 bg-red-50 p-8 text-center shadow-2xl backdrop-blur">
+          <p className="text-sm font-semibold text-red-700">
             {error}
           </p>
-        ) : null}
+          <Link
+            href="/"
+            className="mt-6 inline-block rounded-full bg-red-100 px-6 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-200"
+          >
+            Back to Home
+          </Link>
         </div>
-      </div>
-    </main>
-  );
+      </main>
+    );
+  }
+
+  return null;
 }
