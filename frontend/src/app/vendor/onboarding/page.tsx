@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -113,7 +114,16 @@ export default function VendorOnboardingPage() {
     return (
       <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
         <div className="w-full max-w-xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
+          <Link href="/" className="mb-2 inline-flex items-center">
+            <Image
+              src="/images/meramot.svg"
+              alt="Meramot"
+              width={160}
+              height={48}
+              className="h-10 w-auto object-contain"
+              priority
+            />
+          </Link>
           <h1 className="mt-2 text-3xl font-bold text-accent-dark">Vendor application</h1>
           <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -154,7 +164,16 @@ export default function VendorOnboardingPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
       <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
+        <Link href="/" className="mb-2 inline-flex items-center">
+          <Image
+            src="/images/meramot.svg"
+            alt="Meramot"
+            width={160}
+            height={48}
+            className="h-10 w-auto object-contain"
+            priority
+          />
+        </Link>
         <h1 className="mt-2 text-3xl font-bold text-accent-dark">{heading}</h1>
         <p className="mt-3 text-sm text-slate-600">{description}</p>
 
