@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { createRepairRequest } from "@/lib/api";
+import { createRepairRequest, uploadImages } from "@/lib/api";
 
 export default function NewRequestPage() {
   const searchParams = useSearchParams();
@@ -26,6 +26,7 @@ export default function NewRequestPage() {
     preferredPickup: true,
     deliveryType: "REGULAR",
   });
+  const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -67,6 +68,12 @@ export default function NewRequestPage() {
 
               try {
                 setSubmitting(true);
+                let uploadedImageUrls: string[] = [];
+                if (files.length > 0) {
+                  const uploadResult = await uploadImages(files, token);
+                  uploadedImageUrls = uploadResult.imageUrls;
+                }
+
                 await createRepairRequest(
                   {
                     title: form.title,
@@ -80,6 +87,7 @@ export default function NewRequestPage() {
                     preferredPickup: form.preferredPickup,
                     deliveryType: form.deliveryType,
                     shopSlug: shopSlug || undefined,
+                    imageUrls: uploadedImageUrls,
                   },
                   token
                 );
@@ -186,6 +194,33 @@ export default function NewRequestPage() {
               className="md:col-span-2 rounded-2xl border border-[#cfe0c6] px-4 py-3"
               placeholder="Describe the problem"
             />
+            
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-[#173726]">
+                Upload Images (Max 4)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const selected = Array.from(e.target.files).slice(0, 4);
+                    setFiles(selected);
+                  }
+                }}
+                className="w-full rounded-2xl border border-[#cfe0c6] px-4 py-3 file:mr-4 file:rounded-full file:border-0 file:bg-[#214c34] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#1a3d29]"
+              />
+              {files.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-[#5b7262]">
+                  {files.map((f, i) => (
+                    <span key={i} className="inline-block bg-[#f6faf4] px-2 py-1 rounded border border-[#cfe0c6]">
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="md:col-span-2 flex flex-wrap gap-3">
               <button
                 disabled={submitting}

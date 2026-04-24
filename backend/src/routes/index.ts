@@ -8,6 +8,7 @@ import shopRoutes from "./shop-routes.js";
 import vendorApplicationRoutes from "./vendor-application-routes.js";
 import vendorRequestRoutes from "./vendor-request-routes.js";
 import vendorStatusRoutes from "./vendor-status-routes.js";
+import uploadRoutes from "./upload-routes.js";
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use("/requests", requestRoutes);
 router.use("/vendor/applications", vendorApplicationRoutes);
 router.use("/vendor/application-status", vendorStatusRoutes);
 router.use("/vendor/requests", vendorRequestRoutes);
+router.use("/uploads", uploadRoutes);
 
 export default router;

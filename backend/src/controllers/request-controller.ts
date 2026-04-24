@@ -56,7 +56,8 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
       preferredPickup,
       deliveryType,
       shopSlug,
-    } = req.body as Record<string, string | boolean | undefined>;
+      imageUrls,
+    } = req.body as Record<string, any>;
 
     if (!title || !deviceType || !problem) {
       return res
@@ -99,7 +100,7 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
           model: typeof model === "string" ? model.trim() : null,
           issueCategory: typeof issueCategory === "string" ? issueCategory.trim() : null,
           problem: String(problem).trim(),
-          imageUrls: [],
+          imageUrls: Array.isArray(imageUrls) ? imageUrls.filter(u => typeof u === "string").slice(0, 4) : [],
           mode: normalizeRequestMode(typeof mode === "string" ? mode : undefined),
           preferredPickup: Boolean(preferredPickup),
           deliveryType: normalizeDeliveryType(

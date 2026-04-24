@@ -561,6 +561,7 @@ export type CreateRepairRequestPayload = {
   preferredPickup?: boolean;
   deliveryType?: string | null;
   shopSlug?: string;
+  imageUrls?: string[];
 };
 
 export type VendorDashboardData = {
@@ -685,6 +686,31 @@ export async function createRepairRequest(payload: CreateRepairRequestPayload, t
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function uploadImages(files: File[], token?: string) {
+  const formData = new FormData();
+  files.forEach(f => formData.append("images", f));
+  
+  let response: Response;
+  try {
+    response = await fetch(`${API}/api/uploads`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+  } catch {
+    throw new Error("Network error while uploading images.");
+  }
+  
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Upload failed with status ${response.status}`);
+  }
+  
+  return data as { imageUrls: string[] };
 }
 
 export async function getMyOrders(token: string) {
