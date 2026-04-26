@@ -349,11 +349,40 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
 
     const { application, shop } = await getVendorContext(userId);
 
+    // Build DB-level filter from shop specialties to avoid fetching all open
+    // requests into memory (OOM risk at scale).
+    const specialtyTokens = shop.specialties
+      .flatMap((s: string) =>
+        s.toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter((t: string) => t.length > 1),
+      );
+    const uniqueTokens = Array.from(new Set(specialtyTokens));
+
+    // Build OR conditions that match specialty tokens against request text fields
+    const specialtyFilter =
+      uniqueTokens.length > 0
+        ? {
+            OR: uniqueTokens.flatMap((token: string) => [
+              { deviceType: { contains: token, mode: "insensitive" as const } },
+              { brand: { contains: token, mode: "insensitive" as const } },
+              { issueCategory: { contains: token, mode: "insensitive" as const } },
+              { title: { contains: token, mode: "insensitive" as const } },
+              { problem: { contains: token, mode: "insensitive" as const } },
+            ]),
+          }
+        : {};
+
     const biddingRequests = await prisma.repairRequest.findMany({
       where: {
         status: RequestStatus.BIDDING,
+        OR: [
+          // Requests matching vendor specialties (DB-level filtering)
+          specialtyFilter,
+          // Requests this vendor already bid on (always show regardless of match)
+          { bids: { some: { shopId: shop.id } } },
+        ],
       },
       orderBy: { createdAt: "desc" },
+      take: 50,
       select: {
         id: true,
         title: true,

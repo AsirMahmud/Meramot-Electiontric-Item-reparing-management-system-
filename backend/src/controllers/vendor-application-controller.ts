@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import prisma from "../models/prisma.js";
 
 function parseCsvList(input?: string) {
@@ -71,43 +72,64 @@ export async function createVendorApplication(req: Request, res: Response) {
       notes?: string;
     };
 
-    if (
-      !ownerName ||
-      !businessEmail ||
-      !phone ||
-      !password ||
-      !confirmPassword ||
-      !shopName ||
-      !address
-    ) {
-      return res.status(400).json({
-        message:
-          "ownerName, businessEmail, phone, password, confirmPassword, shopName, and address are required",
-      });
+    // Authenticated users (e.g. existing CUSTOMER accounts) don't need a password
+    // to apply — they already have credentials.
+    if (!isAuthed) {
+      if (
+        !ownerName ||
+        !businessEmail ||
+        !phone ||
+        !password ||
+        !confirmPassword ||
+        !shopName ||
+        !address
+      ) {
+        return res.status(400).json({
+          message:
+            "ownerName, businessEmail, phone, password, confirmPassword, shopName, and address are required",
+        });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({
+          message: "Password must be at least 8 characters long",
+        });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({
+          message: "Password and confirmPassword do not match",
+        });
+      }
+    } else {
+      if (!ownerName || !businessEmail || !phone || !shopName || !address) {
+        return res.status(400).json({
+          message:
+            "ownerName, businessEmail, phone, shopName, and address are required",
+        });
+      }
     }
 
-    if (password.length < 8) {
-      return res.status(400).json({
-        message: "Password must be at least 8 characters long",
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        message: "Password and confirmPassword do not match",
-      });
-    }
-
-    const normalizedEmail = businessEmail.trim().toLowerCase();
+    const normalizedEmail = businessEmail!.trim().toLowerCase();
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true },
     });
 
+    // If the email belongs to someone else AND the requester is not authenticated,
+    // prompt them to sign in. Authenticated users can freely use their own email.
     if (existingUser && !isAuthed) {
       return res.status(409).json({
-        message: "A user with this business email already exists. Please log in to apply.",
+        message: "A user with this business email already exists. Please sign in first to apply.",
+      });
+    }
+
+    // If authenticated, verify the email matches the logged-in user's account
+    // to prevent a vendor from hijacking another user's email.
+    if (isAuthed && existingUser && existingUser.id !== authUser.id) {
+      return res.status(409).json({
+        message: "This email belongs to another account.",
       });
     }
 
@@ -207,13 +229,15 @@ function slugifyShopName(input: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-async function generateUniqueShopSlug(base: string) {
+async function generateUniqueShopSlug(base: string, tx: typeof prisma) {
   const normalized = slugifyShopName(base) || "shop";
-  let candidate = normalized;
+  // Use crypto for collision-resistant suffix inside the transaction
+  const suffix = crypto.randomBytes(4).toString("hex");
+  let candidate = `${normalized}-${suffix}`;
   let counter = 1;
 
-  while (await prisma.shop.findUnique({ where: { slug: candidate } })) {
-    candidate = `${normalized}-${counter}`;
+  while (await tx.shop.findUnique({ where: { slug: candidate } })) {
+    candidate = `${normalized}-${suffix}-${counter}`;
     counter += 1;
   }
 
@@ -274,11 +298,6 @@ export async function approveVendorApplication(req: Request, res: Response) {
       return res.status(404).json({ message: "Vendor application not found" });
     }
 
-   const existingShop = await prisma.shop.findFirst({
-      where: { email: application.businessEmail },
-      select: { id: true, slug: true },
-    });
-
     const result = await prisma.$transaction(async (tx) => {
       const updatedApplication = await tx.vendorApplication.update({
         where: { id },
@@ -295,10 +314,14 @@ export async function approveVendorApplication(req: Request, res: Response) {
         data: { role: "VENDOR" },
       });
 
+      // Check for existing shop INSIDE the transaction for proper isolation
+      const existingShop = await tx.shop.findFirst({
+        where: { email: application.businessEmail },
+        select: { id: true, slug: true },
+      });
+
     if (!existingShop) {
-      const baseSlug = slugifyShopName(application.shopName) || "shop";
-      const randomSuffix = Math.random().toString(36).substring(2, 6);
-      const slug = `${baseSlug}-${randomSuffix}`;
+      const slug = await generateUniqueShopSlug(application.shopName, tx);
 
       await tx.shop.create({
         data: {
