@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
-import { type ApiShop, getShops } from "@/lib/api";
+import { type Shop, getShops } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
 import { defaultSearchState, filterAndSortShops, formatPriceLevel, normalizeSearchState, toShopQuery } from "@/lib/shop-search";
 
@@ -41,7 +41,7 @@ function etaLabel(minutes?: number | null) {
   return "Next day";
 }
 
-function ShopResultCard({ shop }: { shop: ApiShop }) {
+function ShopResultCard({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
@@ -100,7 +100,7 @@ export default function ShopsResultsClient() {
       normalizeSearchState({
         q: searchParams.get("q") ?? defaultSearchState.q,
         category: searchParams.get("category") ?? defaultSearchState.category,
-        sort: (searchParams.get("sort") as any) ?? defaultSearchState.sort,
+        sort: (searchParams.get("sort") as "price" | "distance" | "topRated" | "relevance" | null) ?? defaultSearchState.sort,
         voucher: searchParams.get("voucher") === "true",
         freeDelivery: searchParams.get("freeDelivery") === "true",
         deals: searchParams.get("deals") === "true",
@@ -113,7 +113,7 @@ export default function ShopsResultsClient() {
 
   const categoryBrowseMode = Boolean(searchState.category && !searchState.q);
 
-  const [remoteShops, setRemoteShops] = useState<ApiShop[]>([]);
+  const [remoteShops, setRemoteShops] = useState<Shop[]>([]);
   const [apiFailed, setApiFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 

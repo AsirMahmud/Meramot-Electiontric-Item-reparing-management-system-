@@ -7,7 +7,7 @@ import Navbar from "@/components/home/Navbar";
 import {
   createReview,
   getReviewEligibility,
-  getShops,
+  getShopBySlug,
   getShopReviews,
   type Review,
   type Shop,
@@ -41,7 +41,7 @@ function getServiceSummary(service: string) {
 
 export default function ShopDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState<string>("");
-  const [shop, setShop] = useState<(Shop & { phone?: string | null; email?: string | null; specialties: string[] }) | null>(null);
+  const [shop, setShop] = useState<Shop | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [eligibility, setEligibility] = useState<{ eligible: boolean; hasCompletedJob: boolean; hasExistingReview: boolean } | null>(null);
   const [score, setScore] = useState(5);
@@ -55,7 +55,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
   useEffect(() => {
     if (!slug) return;
-    getShops(slug).then(setShop).catch(() => setShop(null));
+    getShopBySlug(slug).then(setShop).catch(() => setShop(null));
     getShopReviews(slug).then(setReviews).catch(() => setReviews([]));
   }, [slug]);
 

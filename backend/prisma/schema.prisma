@@ -1,8 +1,3 @@
-// ============================================================
-// Meramot marketplace schema (customer-focused iteration)
-// PostgreSQL + Prisma
-// ============================================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,21 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserStatus {
-  ACTIVE
-  SUSPENDED
-  DELETED
-}
-
 enum UserRole {
   CUSTOMER
   VENDOR
   ADMIN
   DELIVERY
+  DELIVERY_ADMIN
+}
+
+enum DeliveryPartnerApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
 }
 
 enum VendorApplicationStatus {
   PENDING
+  UNDER_REVIEW
   APPROVED
   REJECTED
 }
@@ -37,10 +41,22 @@ enum ShopCategory {
   SPARE_PARTS
 }
 
+enum ShopStaffRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
 enum RequestMode {
   CHECKUP_ONLY
   DIRECT_REPAIR
   CHECKUP_AND_REPAIR
+}
+
+enum RequestSource {
+  MARKETPLACE
+  DIRECT_SERVICE
+  DIRECT_CUSTOM_SHOP
 }
 
 enum RequestStatus {
@@ -66,6 +82,7 @@ enum BidStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+  WITHDRAWN
 }
 
 enum RepairJobStatus {
@@ -95,11 +112,45 @@ enum DeliveryDirection {
 enum DeliveryStatus {
   PENDING
   SCHEDULED
+  DISPATCHED
   PICKED_UP
   IN_TRANSIT
   DELIVERED
   FAILED
   CANCELLED
+}
+
+enum DeliveryAgentStatus {
+  OFFLINE
+  AVAILABLE
+  BUSY
+  SUSPENDED
+}
+
+enum ShopServicePricingType {
+  FIXED
+  STARTING_FROM
+  INSPECTION_REQUIRED
+}
+
+enum VerificationTargetType {
+  USER
+  VENDOR_APPLICATION
+  SHOP
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  REJECTED
+}
+
+enum VerificationProvider {
+  MANUAL
+  PORICHOY
+  TRADE_LICENSE
+  OTHER
 }
 
 enum PaymentMethod {
@@ -112,10 +163,64 @@ enum PaymentMethod {
 
 enum PaymentStatus {
   PENDING
+  AUTHORIZED
   PAID
   FAILED
   REFUNDED
   PARTIALLY_REFUNDED
+}
+
+enum InvoiceType {
+  CHECKUP
+  REPAIR
+  DELIVERY
+  FINAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  VOID
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum LedgerEntryType {
+  CUSTOMER_PAYMENT
+  PLATFORM_COMMISSION
+  VENDOR_EARNING
+  VENDOR_PAYOUT
+  DELIVERY_FEE
+  DELIVERY_PAYOUT
+  REFUND
+  ADJUSTMENT
+}
+
+enum LedgerDirection {
+  CREDIT
+  DEBIT
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
 }
 
 enum SupportTicketStatus {
@@ -123,6 +228,7 @@ enum SupportTicketStatus {
   IN_PROGRESS
   RESOLVED
   CLOSED
+  ESCALATED
 }
 
 enum HomeSectionType {
@@ -133,141 +239,253 @@ enum HomeSectionType {
   RECENTLY_VIEWED
 }
 
-model User {
-  id              String     @id @default(cuid())
-  username        String     @unique
-  email           String     @unique
-  passwordHash    String
-  name            String?
-  phone           String?
-  avatarUrl       String?
-  address         String?
-  city            String?
-  area            String?
-  lat             Float?
-  lng             Float?
-  isEmailVerified Boolean    @default(false)
-  status          UserStatus @default(ACTIVE)
-  role            UserRole   @default(CUSTOMER)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ABANDONED
+}
 
-  repairRequests     RepairRequest[]
-  payments           Payment[]
-  ratings            Rating[]
-  recentlyViewed     RecentlyViewed[]
-  supportTickets     SupportTicket[]
-  vendorApplications VendorApplication[]
-  carts              Cart[]
+model User {
+  id                         String               @id @default(cuid())
+  username                   String               @unique
+  email                      String               @unique
+  passwordHash               String
+  role                       UserRole             @default(CUSTOMER)
+  name                       String?
+  phone                      String?
+  avatarUrl                  String?
+  address                    String?
+  city                       String?
+  area                       String?
+  lat                        Float?
+  lng                        Float?
+  isEmailVerified            Boolean              @default(false)
+  status                     UserStatus           @default(ACTIVE)
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  repairRequests             RepairRequest[]
+  payments                   Payment[]
+  ratings                    Rating[]             @relation("RatingAuthor")
+  recentlyViewed             RecentlyViewed[]
+  supportTickets             SupportTicket[]      @relation("TicketCreator")
+  assignedSupportTickets     SupportTicket[]      @relation("TicketAssignee")
+  supportMessages            SupportMessage[]
+  moderationActions          Rating[]             @relation("RatingModerator")
+  shopMemberships            ShopStaff[]
+  verificationRecords        VerificationRecord[] @relation("VerificationSubjectUser")
+  reviewedVerifications      VerificationRecord[] @relation("VerificationReviewer")
+  reviewedVendorApplications VendorApplication[]  @relation("VendorApplicationReviewer")
+  vendorApplications         VendorApplication[]
+  riderProfile               RiderProfile?
+  carts                      Cart[]
+  aiChatSessions             AiChatSession[]
+  disputesOpened             DisputeCase[]        @relation("DisputeOpenedBy")
+  disputesAgainst            DisputeCase[]        @relation("DisputeAgainst")
+  assignedDisputes           DisputeCase[]        @relation("DisputeAssignedAdmin")
+  disputeNotes               DisputeNote[]
+  approvedRefunds            Refund[]             @relation("RefundApprovedBy")
+  escrowLedgersAsCustomer    EscrowLedger[]       @relation("EscrowCustomer")
+  escrowLedgersAsVendor      EscrowLedger[]       @relation("EscrowVendor")
 }
 
 model VendorApplication {
-  id                    String                  @id @default(cuid())
-  userId                String                  @unique
-  ownerName             String
-  businessEmail         String                  @unique
-  phone                 String
-  shopName              String
-  tradeLicenseNo        String?
-  address               String
-  city                  String?
-  area                  String?
-  lat                   Float?
-  lng                   Float?
-  specialties           String[]
-  courierPickup         Boolean                 @default(false)
-  inShopRepair          Boolean                 @default(true)
-  spareParts            Boolean                 @default(false)
-  notes                 String?
-  status                VendorApplicationStatus @default(PENDING)
+  userId                String    @unique
   rejectionReason       String?
   rejectedAt            DateTime?
   rejectionVisibleUntil DateTime?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String                  @id @default(cuid())
+  ownerName         String
+  businessEmail     String                  @unique
+  phone             String
+  shopName          String
+  tradeLicenseNo    String?
+  address           String
+  city              String?
+  area              String?
+  lat               Float?
+  lng               Float?
+  specialties       String[]
+  courierPickup     Boolean                 @default(false)
+  inShopRepair      Boolean                 @default(true)
+  spareParts        Boolean                 @default(false)
+  notes             String?
+  status            VendorApplicationStatus @default(PENDING)
+  reviewedByAdminId String?
+  reviewedAt        DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  reviewedByAdmin    User?               @relation("VendorApplicationReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+  verificationRecord VerificationRecord?
+  shop               Shop?
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([reviewedByAdminId])
 }
 
 model Shop {
-  id          String  @id @default(cuid())
-  name        String
-  slug        String  @unique
-  description String?
-  logoUrl     String?
-  bannerUrl   String?
-  address     String
-  city        String?
-  area        String?
-  lat         Float?
-  lng         Float?
-  phone       String?
-  email       String?
+  id                  String  @id @default(cuid())
+  vendorApplicationId String? @unique
+  name                String
+  slug                String  @unique
+  description         String?
+  logoUrl             String?
+  bannerUrl           String?
+  address             String
+  city                String?
+  area                String?
+  lat                 Float?
+  lng                 Float?
+  phone               String?
+  email               String?
+  ratingAvg           Float   @default(0)
+  reviewCount         Int     @default(0)
+  priceLevel          Int     @default(2)
+  isFeatured          Boolean @default(false)
+  isActive            Boolean @default(true)
 
-  ratingAvg   Float @default(0)
-  reviewCount Int   @default(0)
-  priceLevel  Int   @default(2)
-
-  isFeatured    Boolean @default(false)
-  isActive      Boolean @default(true)
   isPublic      Boolean @default(false)
   setupComplete Boolean @default(false)
 
-  hasVoucher   Boolean @default(false)
-  freeDelivery Boolean @default(false)
-  hasDeals     Boolean @default(false)
-
-  categories  ShopCategory[]
-  specialties String[]
-
-  inspectionFee Float?
-  baseLaborFee  Float?
-  pickupFee     Float?
-  expressFee    Float?
-
+  inspectionFee  Float?
+  baseLaborFee   Float?
+  pickupFee      Float?
+  expressFee     Float?
   openingDays    String?
   openingHours   String?
   supportPhone   String?
   whatsappNumber String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  hasVoucher           Boolean        @default(false)
+  freeDelivery         Boolean        @default(false)
+  hasDeals             Boolean        @default(false)
+  acceptsDirectOrders  Boolean        @default(true)
+  supportsPickup       Boolean        @default(false)
+  supportsOnsiteRepair Boolean        @default(false)
+  deliveryRadiusKm     Float?
+  openingHoursText     String?
+  categories           ShopCategory[]
+  specialties          String[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  bids       Bid[]
-  ratings    Rating[]
-  repairJobs RepairJob[]
-  carts      Cart[]
+  vendorApplication   VendorApplication?   @relation(fields: [vendorApplicationId], references: [id], onDelete: SetNull)
+  bids                Bid[]
+  ratings             Rating[]
+  repairJobs          RepairJob[]
+  services            ShopService[]
+  directRequests      RepairRequest[]      @relation("RequestedShopRequests")
+  recentlyViewed      RecentlyViewed[]
+  staff               ShopStaff[]
+  verificationRecords VerificationRecord[]
+  invoices            Invoice[]
+  payouts             VendorPayout[]
+  ledgerEntries       LedgerEntry[]
+  escrowStatus        EscrowStatus?        @default(HELD)
+  refunds             Refund[]
+  disputeCases        DisputeCase[]
+  escrowLedgers       EscrowLedger[]
+  supportTickets      SupportTicket[]
+  carts               Cart[]
+
+  @@index([isActive, isFeatured])
+  @@index([city, area])
+}
+
+model ShopStaff {
+  id        String        @id @default(cuid())
+  shopId    String
+  userId    String
+  role      ShopStaffRole @default(STAFF)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, userId])
+  @@index([userId])
+}
+
+model ShopService {
+  id               String                 @id @default(cuid())
+  shopId           String
+  slug             String
+  name             String
+  shortDescription String?
+  description      String?
+  deviceType       String?
+  issueCategory    String?
+  pricingType      ShopServicePricingType @default(INSPECTION_REQUIRED)
+  basePrice        Float?
+  priceMax         Float?
+  estimatedDaysMin Int?
+  estimatedDaysMax Int?
+  includesPickup   Boolean                @default(false)
+  includesDelivery Boolean                @default(false)
+  sortOrder        Int                    @default(0)
+  isFeatured       Boolean                @default(false)
+  isActive         Boolean                @default(true)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  requestedIn      RepairRequest[]
+  invoiceLineItems InvoiceLineItem[]
+
+  @@unique([shopId, slug])
+  @@index([shopId, isActive, sortOrder])
+  @@index([deviceType, issueCategory])
 }
 
 model RepairRequest {
-  id                String        @id @default(cuid())
-  userId            String
-  title             String
-  description       String?
-  deviceType        String
-  brand             String?
-  model             String?
-  issueCategory     String?
-  problem           String
-  imageUrls         String[]
-  mode              RequestMode
-  status            RequestStatus @default(PENDING)
-  preferredPickup   Boolean       @default(false)
-  deliveryType      DeliveryType?
-  checkupFee        Float?
-  quotedFinalAmount Float?
-  approvedAt        DateTime?
-  rejectedAt        DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  userId             String
+  source             RequestSource @default(MARKETPLACE)
+  requestedShopId    String?
+  requestedServiceId String?
+  title              String
+  description        String?
+  deviceType         String
+  brand              String?
+  model              String?
+  issueCategory      String?
+  problem            String
+  imageUrls          String[]
+  mode               RequestMode
+  status             RequestStatus @default(PENDING)
+  preferredPickup    Boolean       @default(false)
+  deliveryType       DeliveryType?
+  contactPhone       String?
+  pickupAddress      String?
+  dropoffAddress     String?
+  checkupFee         Float?
+  quotedFinalAmount  Float?
+  approvedAt         DateTime?
+  rejectedAt         DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bids      Bid[]
-  payments  Payment[]
-  repairJob RepairJob?
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedShop    Shop?             @relation("RequestedShopRequests", fields: [requestedShopId], references: [id], onDelete: SetNull)
+  requestedService ShopService?      @relation(fields: [requestedServiceId], references: [id], onDelete: SetNull)
+  bids             Bid[]
+  payments         Payment[]
+  repairJob        RepairJob?
+  supportTickets   SupportTicket[]
+  invoices         Invoice[]
+  notifications    NotificationLog[]
+  disputeCases     DisputeCase[]
+  escrowLedgers    EscrowLedger[]
 
   @@index([userId])
   @@index([status])
+  @@index([source, status])
+  @@index([requestedShopId])
+  @@index([requestedServiceId])
   @@index([deviceType, brand, model])
 }
 
@@ -301,84 +519,313 @@ model RepairJob {
   status            RepairJobStatus @default(CREATED)
   diagnosisNotes    String?
   finalQuotedAmount Float?
-  finalQuoteItems   Json?
   customerApproved  Boolean?
   startedAt         DateTime?
   completedAt       DateTime?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  repairRequest RepairRequest @relation(fields: [repairRequestId], references: [id], onDelete: Cascade)
-  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  acceptedBid   Bid?          @relation(fields: [acceptedBidId], references: [id])
-  deliveries    Delivery[]
-  warranty      Warranty?
+  repairRequest  RepairRequest   @relation(fields: [repairRequestId], references: [id], onDelete: Cascade)
+  shop           Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  acceptedBid    Bid?            @relation(fields: [acceptedBidId], references: [id])
+  deliveries     Delivery[]
+  warranty       Warranty?
+  invoices       Invoice[]
+  supportTickets SupportTicket[]
+  disputeCases   DisputeCase[]
 
   @@index([shopId])
   @@index([status])
 }
 
-model Delivery {
-  id            String            @id @default(cuid())
-  repairJobId   String
-  direction     DeliveryDirection
-  type          DeliveryType      @default(REGULAR)
-  status        DeliveryStatus    @default(PENDING)
-  partnerName   String?
-  trackingCode  String?
-  riderName     String?
-  riderPhone    String?
-  pickupAddress String
-  dropAddress   String
-  distanceKm    Float?
-  fee           Float?
-  scheduledAt   DateTime?
-  pickedUpAt    DateTime?
-  deliveredAt   DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+model RiderProfile {
+  id                   String                        @id @default(cuid())
+  userId               String                        @unique
+  vehicleType          String?
+  nidDocumentUrl       String?
+  educationDocumentUrl String?
+  cvDocumentUrl        String?
+  status               DeliveryAgentStatus           @default(OFFLINE)
+  isActive             Boolean                       @default(true)
+  registrationStatus   DeliveryPartnerApprovalStatus @default(APPROVED)
+  currentLat           Float?
+  currentLng           Float?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
 
-  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries    Delivery[]
+  coverageZones RiderCoverage[]
+  payoutRecords VendorPayout[]  @relation("DeliveryAgentPayouts")
+
+  @@index([status, isActive])
+  @@index([registrationStatus])
+}
+
+model CoverageZone {
+  id         String   @id @default(cuid())
+  name       String
+  city       String?
+  area       String?
+  postalCode String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  riders     RiderCoverage[]
+  deliveries Delivery[]
+
+  @@index([city, area])
+}
+
+model RiderCoverage {
+  id             String   @id @default(cuid())
+  riderProfileId String
+  coverageZoneId String
+  createdAt      DateTime @default(now())
+
+  riderProfile RiderProfile @relation(fields: [riderProfileId], references: [id], onDelete: Cascade)
+  coverageZone CoverageZone @relation(fields: [coverageZoneId], references: [id], onDelete: Cascade)
+
+  @@unique([riderProfileId, coverageZoneId])
+}
+
+model Delivery {
+  id                 String            @id @default(cuid())
+  repairJobId        String
+  deliveryAgentId    String?
+  coverageZoneId     String?
+  direction          DeliveryDirection
+  type               DeliveryType      @default(REGULAR)
+  status             DeliveryStatus    @default(PENDING)
+  partnerName        String?
+  externalOrderId    String?
+  trackingCode       String?
+  riderName          String?
+  riderPhone         String?
+  pickupAddress      String
+  dropAddress        String
+  distanceKm         Float?
+  fee                Float?
+  scheduledAt        DateTime?
+  dispatchedAt       DateTime?
+  pickedUpAt         DateTime?
+  deliveredAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  repairJob     RepairJob             @relation(fields: [repairJobId], references: [id], onDelete: Cascade)
+  deliveryAgent RiderProfile?         @relation(fields: [deliveryAgentId], references: [id], onDelete: SetNull)
+  coverageZone  CoverageZone?         @relation(fields: [coverageZoneId], references: [id], onDelete: SetNull)
+  notifications NotificationLog[]
+  chatMessages  DeliveryChatMessage[]
 
   @@index([repairJobId])
   @@index([status])
+  @@index([deliveryAgentId])
+}
+
+model DeliveryChatMessage {
+  id              String   @id @default(cuid())
+  deliveryId      String
+  senderUserId    String
+  senderRole      UserRole
+  recipientUserId String
+  message         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId, createdAt])
+  @@index([senderUserId, recipientUserId, createdAt])
+}
+
+model VerificationRecord {
+  id                  String                 @id @default(cuid())
+  targetType          VerificationTargetType
+  status              VerificationStatus     @default(PENDING)
+  provider            VerificationProvider   @default(MANUAL)
+  userId              String?
+  vendorApplicationId String?                @unique
+  shopId              String?
+  reviewedByAdminId   String?
+  subjectRef          String?
+  providerReference   String?
+  notes               String?
+  requestedAt         DateTime               @default(now())
+  resolvedAt          DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  user              User?              @relation("VerificationSubjectUser", fields: [userId], references: [id], onDelete: SetNull)
+  vendorApplication VendorApplication? @relation(fields: [vendorApplicationId], references: [id], onDelete: Cascade)
+  shop              Shop?              @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  reviewedByAdmin   User?              @relation("VerificationReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([status, provider])
+  @@index([userId])
+  @@index([shopId])
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  repairRequestId  String?
+  repairJobId      String?
+  shopId           String?
+  type             InvoiceType   @default(FINAL)
+  status           InvoiceStatus @default(DRAFT)
+  invoiceNumber    String        @unique
+  subtotalAmount   Float         @default(0)
+  deliveryAmount   Float         @default(0)
+  discountAmount   Float         @default(0)
+  commissionAmount Float         @default(0)
+  totalAmount      Float         @default(0)
+  issuedAt         DateTime?
+  dueAt            DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  repairRequest RepairRequest?    @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  repairJob     RepairJob?        @relation(fields: [repairJobId], references: [id], onDelete: SetNull)
+  shop          Shop?             @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  lineItems     InvoiceLineItem[]
+  payments      Payment[]
+  ledgerEntries LedgerEntry[]
+  escrowStatus  EscrowStatus?     @default(HELD)
+  refunds       Refund[]
+  disputeCases  DisputeCase[]
+  escrowLedgers EscrowLedger[]
+
+  @@index([repairRequestId])
+  @@index([repairJobId])
+  @@index([shopId])
+  @@index([status])
+}
+
+model InvoiceLineItem {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  shopServiceId String?
+  title         String
+  description   String?
+  quantity      Int      @default(1)
+  unitPrice     Float    @default(0)
+  totalPrice    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  shopService ShopService? @relation(fields: [shopServiceId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([shopServiceId])
 }
 
 model Payment {
   id              String         @id @default(cuid())
   userId          String
   repairRequestId String?
+  invoiceId       String?
   amount          Float
   currency        String         @default("BDT")
   method          PaymentMethod?
   status          PaymentStatus  @default(PENDING)
   transactionRef  String?        @unique
+  gatewayResponse String?
   paidAt          DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   repairRequest RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  invoice       Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  ledgerEntries LedgerEntry[]
+  escrowStatus  EscrowStatus?  @default(HELD)
+  refunds       Refund[]
+  disputeCases  DisputeCase[]
+  escrowLedgers EscrowLedger[]
 
   @@index([userId])
   @@index([repairRequestId])
+  @@index([invoiceId])
+  @@index([status])
+}
+
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  shopId      String?
+  paymentId   String?
+  invoiceId   String?
+  payoutId    String?
+  type        LedgerEntryType
+  direction   LedgerDirection
+  amount      Float
+  currency    String          @default("BDT")
+  description String?
+  effectiveAt DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+
+  shop    Shop?         @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  payment Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  payout  VendorPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@index([shopId])
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@index([payoutId])
+  @@index([type, direction])
+}
+
+model VendorPayout {
+  id             String       @id @default(cuid())
+  shopId         String?
+  riderProfileId String?
+  amount         Float
+  currency       String       @default("BDT")
+  status         PayoutStatus @default(PENDING)
+  reference      String?      @unique
+  notes          String?
+  paidAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  shop          Shop?          @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  riderProfile  RiderProfile?  @relation("DeliveryAgentPayouts", fields: [riderProfileId], references: [id], onDelete: SetNull)
+  ledgerEntries LedgerEntry[]
+  escrowStatus  EscrowStatus?  @default(HELD)
+  refunds       Refund[]
+  disputeCases  DisputeCase[]
+  escrowLedgers EscrowLedger[]
+
+  @@index([shopId])
+  @@index([riderProfileId])
   @@index([status])
 }
 
 model Rating {
-  id        String   @id @default(cuid())
-  userId    String
-  shopId    String
-  score     Int
-  review    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  shopId         String
+  score          Int
+  review         String?
+  isHidden       Boolean   @default(false)
+  moderatedAt    DateTime?
+  moderatedById  String?
+  moderationNote String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user        User  @relation("RatingAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  shop        Shop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  moderatedBy User? @relation("RatingModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
 
   @@unique([userId, shopId])
   @@index([shopId])
+  @@index([moderatedById])
 }
 
 model Warranty {
@@ -401,6 +848,7 @@ model RecentlyViewed {
   viewedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([userId, viewedAt])
   @@index([shopId])
@@ -409,7 +857,10 @@ model RecentlyViewed {
 model SupportTicket {
   id              String              @id @default(cuid())
   userId          String
+  shopId          String?
   repairRequestId String?
+  repairJobId     String?
+  assignedAdminId String?
   subject         String
   message         String
   status          SupportTicketStatus @default(OPEN)
@@ -418,10 +869,41 @@ model SupportTicket {
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User             @relation("TicketCreator", fields: [userId], references: [id], onDelete: Cascade)
+  shop            Shop?            @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  repairRequest   RepairRequest?   @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  repairJob       RepairJob?       @relation(fields: [repairJobId], references: [id], onDelete: SetNull)
+  assignedAdmin   User?            @relation("TicketAssignee", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  supportMessages SupportMessage[]
 
   @@index([userId])
+  @@index([shopId])
+  @@index([repairRequestId])
+  @@index([repairJobId])
   @@index([status])
+}
+
+model NotificationLog {
+  id              String              @id @default(cuid())
+  repairRequestId String?
+  deliveryId      String?
+  channel         NotificationChannel
+  recipient       String
+  subject         String?
+  body            String
+  provider        String?
+  providerRef     String?
+  status          NotificationStatus  @default(QUEUED)
+  sentAt          DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  repairRequest RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  delivery      Delivery?      @relation(fields: [deliveryId], references: [id], onDelete: SetNull)
+
+  @@index([repairRequestId])
+  @@index([deliveryId])
+  @@index([channel, status])
 }
 
 model OfferBanner {
@@ -474,8 +956,161 @@ model CartItem {
   @@index([cartId])
 }
 
-enum CartStatus {
-  ACTIVE
-  CHECKED_OUT
-  ABANDONED
+model AiChatSession {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @default("New Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiChatMessage[]
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String
+  text      String
+  createdAt DateTime @default(now())
+
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+enum DisputeStatus {
+  OPEN
+  INVESTIGATING
+  WAITING_EVIDENCE
+  WAITING_RESPONSE
+  RESOLVED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  REJECTED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  NOT_APPLICABLE
+}
+
+model DisputeCase {
+  id              String        @id @default(cuid())
+  repairRequestId String?
+  repairJobId     String?
+  paymentId       String?
+  openedById      String
+  againstId       String
+  assignedAdminId String?
+  status          DisputeStatus @default(OPEN)
+  resolution      String?
+  resolvedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  repairRequest  RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  repairJob      RepairJob?     @relation(fields: [repairJobId], references: [id], onDelete: SetNull)
+  payment        Payment?       @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  openedBy       User           @relation("DisputeOpenedBy", fields: [openedById], references: [id], onDelete: Cascade)
+  against        User           @relation("DisputeAgainst", fields: [againstId], references: [id], onDelete: Cascade)
+  assignedAdmin  User?          @relation("DisputeAssignedAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  notes          DisputeNote[]
+  refunds        Refund[]
+  escrowLedgers  EscrowLedger[]
+  shop           Shop?          @relation(fields: [shopId], references: [id])
+  shopId         String?
+  invoice        Invoice?       @relation(fields: [invoiceId], references: [id])
+  invoiceId      String?
+  vendorPayout   VendorPayout?  @relation(fields: [vendorPayoutId], references: [id])
+  vendorPayoutId String?
+}
+
+model DisputeNote {
+  id            String   @id @default(cuid())
+  disputeCaseId String
+  authorId      String
+  note          String
+  isInternal    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  disputeCase DisputeCase @relation(fields: [disputeCaseId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Refund {
+  id            String       @id @default(cuid())
+  paymentId     String
+  disputeCaseId String?
+  approvedById  String?
+  amount        Float
+  reason        String?
+  status        RefundStatus @default(PENDING)
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  payment        Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  disputeCase    DisputeCase?  @relation(fields: [disputeCaseId], references: [id], onDelete: SetNull)
+  approvedBy     User?         @relation("RefundApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  shop           Shop?         @relation(fields: [shopId], references: [id])
+  shopId         String?
+  invoice        Invoice?      @relation(fields: [invoiceId], references: [id])
+  invoiceId      String?
+  vendorPayout   VendorPayout? @relation(fields: [vendorPayoutId], references: [id])
+  vendorPayoutId String?
+}
+
+model EscrowLedger {
+  id                       String   @id @default(cuid())
+  paymentId                String
+  disputeCaseId            String?
+  repairRequestId          String?
+  customerUserId           String?
+  vendorUserId             String?
+  amount                   Float
+  grossAmount              Float?
+  platformCommissionAmount Float?
+  vendorNetAmount          Float?
+  action                   String
+  note                     String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  payment        Payment        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  disputeCase    DisputeCase?   @relation(fields: [disputeCaseId], references: [id], onDelete: SetNull)
+  repairRequest  RepairRequest? @relation(fields: [repairRequestId], references: [id], onDelete: SetNull)
+  customer       User?          @relation("EscrowCustomer", fields: [customerUserId], references: [id], onDelete: SetNull)
+  vendor         User?          @relation("EscrowVendor", fields: [vendorUserId], references: [id], onDelete: SetNull)
+  shop           Shop?          @relation(fields: [shopId], references: [id])
+  shopId         String?
+  invoice        Invoice?       @relation(fields: [invoiceId], references: [id])
+  invoiceId      String?
+  vendorPayout   VendorPayout?  @relation(fields: [vendorPayoutId], references: [id])
+  vendorPayoutId String?
+}
+
+model SupportMessage {
+  id             String   @id @default(cuid())
+  ticketId       String
+  authorId       String
+  senderType     String
+  message        String
+  attachmentUrls String[]
+  createdAt      DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([authorId])
 }

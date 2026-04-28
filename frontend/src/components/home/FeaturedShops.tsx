@@ -1,8 +1,8 @@
-import type { ApiShop } from "@/lib/api";
+import type { Shop } from "@/lib/api";
 import ShopCard from "@/components/shops/shop-card";
 
 type FeaturedShopsProps = {
-  shops: ApiShop[];
+  shops: Shop[];
 };
 
 export default function FeaturedShops({ shops }: FeaturedShopsProps) {

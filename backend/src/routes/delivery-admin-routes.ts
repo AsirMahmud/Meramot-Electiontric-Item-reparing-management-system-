@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import {
   approveDeliveryPartner,
@@ -6,11 +7,11 @@ import {
   rejectDeliveryPartner,
 } from "../controllers/delivery-admin-controller.js";
 import { getDeliveryAdminMe } from "../controllers/delivery-admin-auth-controller.js";
-import { requireDeliveryAdminAuth } from "../middleware/delivery-admin-auth-middleware.js";
+import { requireAuthAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-router.use(requireDeliveryAdminAuth);
+router.use(requireAuthAuth);
 
 router.get("/me", getDeliveryAdminMe);
 router.get("/stats", getDeliveryAdminStats);

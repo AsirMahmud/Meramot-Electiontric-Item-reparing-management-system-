@@ -25,4 +25,14 @@ export const env = {
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   smtpFrom: process.env.SMTP_FROM,
+
+  enableAiChat: process.env.ENABLE_AI_CHAT === "true",
+  groqApiKey: process.env.GROQ_API_KEY || "",
+  pusherAppId: process.env.PUSHER_APP_ID || "",
+  pusherKey: process.env.PUSHER_KEY || "",
+  pusherSecret: process.env.PUSHER_SECRET || "",
+  pusherCluster: process.env.PUSHER_CLUSTER || "",
+  sslCommerzStoreId: process.env.SSLCOMMERZ_STORE_ID || "",
+  sslCommerzStorePassword: process.env.SSLCOMMERZ_STORE_PASSWORD || "",
+  sslCommerzLive: process.env.SSLCOMMERZ_LIVE === "true",
 };

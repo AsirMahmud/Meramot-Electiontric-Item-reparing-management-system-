@@ -72,25 +72,15 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
 
     // Use login/register response immediately so auth does not fail on an extra /me round-trip.
     setMe({
-      id: payload.riderProfile.id,
-      userId: payload.user.id,
-      vehicleType: payload.riderProfile.vehicleType ?? null,
-      status: payload.riderProfile.status,
-      isActive: payload.riderProfile.isActive ?? true,
-      registrationStatus: payload.riderProfile.registrationStatus ?? "APPROVED",
-      currentLat: null,
-      currentLng: null,
-      user: {
-        id: payload.user.id,
-        name: payload.user.name ?? null,
-        username: payload.user.username,
-        email: payload.user.email,
-        phone: payload.user.phone ?? null,
-        role: payload.user.role,
-        status: "ACTIVE",
-        avatarUrl: null,
-      },
-      coverageZones: [],
+      id: payload.riderProfile?.id || "",
+      email: payload.riderProfile?.email || payload.user?.email || "",
+      name: payload.riderProfile?.name || payload.user?.name || null,
+      phone: payload.riderProfile?.phone || payload.user?.phone || null,
+      userId: payload.user?.id || "",
+      vehicleType: payload.riderProfile?.vehicleType ?? null,
+      status: payload.riderProfile?.status || "ACTIVE",
+      isActive: payload.riderProfile?.isActive ?? true,
+      registrationStatus: payload.riderProfile?.registrationStatus ?? "APPROVED",
     });
 
     try {
@@ -160,7 +150,8 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
     }) => {
       setLoading(true);
       try {
-        const payload = await apiDeliveryRegister(data);
+        const res = await apiDeliveryRegister(data);
+        const payload = res.data as DeliveryAuthPayload;
         await applyAuthPayload(payload);
       } finally {
         setLoading(false);

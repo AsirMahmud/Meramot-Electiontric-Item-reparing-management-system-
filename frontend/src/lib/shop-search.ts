@@ -1,4 +1,4 @@
-import type { ApiShop, ShopQuery } from "@/lib/api";
+import type { Shop, ShopQuery } from "@/lib/api";
 
 export type SearchState = {
   q: string;
@@ -44,7 +44,7 @@ export function toShopQuery(state: SearchState): ShopQuery {
   };
 }
 
-function textForShop(shop: ApiShop) {
+function textForShop(shop: Shop) {
   return [
     shop.name,
     shop.description ?? "",
@@ -60,7 +60,7 @@ function textForShop(shop: ApiShop) {
     .toLowerCase();
 }
 
-function relevanceScore(shop: ApiShop, query: string) {
+function relevanceScore(shop: Shop, query: string) {
   if (!query) return 0;
   const q = query.toLowerCase();
   const text = textForShop(shop);
@@ -73,7 +73,7 @@ function relevanceScore(shop: ApiShop, query: string) {
   return score;
 }
 
-export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
+export function filterAndSortShops(shops: Shop[], state: SearchState) {
   const filtered = shops.filter((shop) => {
     const score = relevanceScore(shop, state.q);
     if (state.q && score === 0) return false;
@@ -87,7 +87,7 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
 
   const sorted = [...filtered].sort((a, b) => {
     if (state.sort === "price") {
-      if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
+      if (a.priceLevel !== b.priceLevel) return (a.priceLevel ?? 0) - (b.priceLevel ?? 0);
       return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
     }
 
@@ -96,14 +96,14 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
     }
 
     if (state.sort === "topRated") {
-      if (b.ratingAvg !== a.ratingAvg) return b.ratingAvg - a.ratingAvg;
-      return b.reviewCount - a.reviewCount;
+      if (b.ratingAvg !== a.ratingAvg) return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
+      return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
     }
 
     const scoreDiff = relevanceScore(b, state.q) - relevanceScore(a, state.q);
     if (scoreDiff !== 0) return scoreDiff;
     if ((a.distanceKm ?? 999) !== (b.distanceKm ?? 999)) return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
-    return b.ratingAvg - a.ratingAvg;
+    return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
   });
 
   return sorted;

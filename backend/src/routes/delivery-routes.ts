@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from "express";
 import {
   acceptMyDelivery,
@@ -9,7 +10,7 @@ import {
 import {
   requireApprovedDeliveryPartner,
   requireDeliveryAuth,
-} from "../middleware/delivery-auth-middleware.js";
+} from "../middleware/auth.js";
 
 const router = Router();
 

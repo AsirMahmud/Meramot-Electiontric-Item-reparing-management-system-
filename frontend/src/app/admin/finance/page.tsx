@@ -53,12 +53,10 @@ export default function AdminFinancePage() {
   const role = (session?.user as { role?: string } | undefined)?.role;
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
 
-  function getAuthHeaders() {
-    return token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {};
+  function getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
   }
   
   const loadSummary = async () => {

@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
 import { env } from "../config/env.js";
 
 type CredentialEmailInput = {

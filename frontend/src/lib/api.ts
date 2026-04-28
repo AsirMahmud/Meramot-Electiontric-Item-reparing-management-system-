@@ -1,10 +1,11 @@
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 
-export function getAuthHeaders(token: string) {
-  return {
+export function getAuthHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
 }
 /* =========================================================
    CORE REQUEST HELPERS
@@ -886,14 +887,14 @@ export function updateProfile(token: string, payload: Partial<Profile> & Record<
 export const DELIVERY_TOKEN_STORAGE_KEY = "meeramoot_delivery_token";
 
 export function deliveryLogin(data: { identifier: string; password: string }) {
-  return request("/delivery/auth/login", {
+  return request<DeliveryAuthPayload>("/delivery/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function fetchDeliveryMe(token: string) {
-  return authedRequest("/delivery/me", token);
+  return authedRequest<DeliveryMeResponse>("/delivery/me", token);
 }
 
 export function fetchDeliveryDeliveries(token: string, status?: string) {
@@ -921,7 +922,7 @@ export function acceptDelivery(token: string, id: string) {
 export const DELIVERY_ADMIN_TOKEN_STORAGE_KEY = "meeramoot_delivery_admin_token";
 
 export function deliveryAdminLogin(data: { identifier: string; password: string }) {
-  return request("/delivery-admin/auth/login", {
+  return request<DeliveryAdminAuthPayload>("/delivery-admin/auth/login", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -929,6 +930,10 @@ export function deliveryAdminLogin(data: { identifier: string; password: string 
 
 export function fetchDeliveryAdminStats(token: string) {
   return authedRequest("/delivery-admin/stats", token);
+}
+
+export function fetchDeliveryAdminMe(token: string) {
+  return authedRequest<DeliveryAdminMeResponse>("/delivery-admin/auth/me", token);
 }
 
 export function fetchDeliveryAdminPartners(token: string, status?: string) {
@@ -947,3 +952,146 @@ export function rejectDeliveryPartnerAdmin(token: string, id: string) {
     method: "PATCH",
   });
 }
+
+// --- NEW TYPES AND FUNCTIONS ---
+
+export interface Review {
+  id: string;
+  score: number;
+  review: string;
+  createdAt: string;
+  user?: { name: string; username: string };
+}
+
+export interface ApiShop {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  bannerImage?: string | null;
+  profileImage?: string | null;
+  rating?: number;
+  ratingAvg?: number;
+  reviewCount?: number;
+  specialties?: string[];
+  categories?: string[];
+  address: string | null;
+  city: string | null;
+  area?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  distanceKm?: number;
+  priceLevel?: number;
+  hasVoucher?: boolean;
+  freeDelivery?: boolean;
+  hasDeals?: boolean;
+  resultTag?: string | null;
+  offerSummary?: string | null;
+  etaMinutes?: number;
+}
+
+export interface ShopSummary {
+  id: string;
+  slug: string;
+  name: string;
+  rating?: number;
+  reviewCount?: number;
+  specialties?: string[];
+  profileImage?: string | null;
+  bannerImage?: string | null;
+  address: string | null;
+  city: string | null;
+  description?: string | null;
+  priceLevel?: number;
+  hasVoucher?: boolean;
+  freeDelivery?: boolean;
+  hasDeals?: boolean;
+  acceptsDirectOrders?: boolean;
+  ratingAvg?: number;
+}
+
+export interface DeliveryAuthPayload {
+  token: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+    phone: string | null;
+    status: string;
+    userId?: string;
+    username?: string | null;
+    role?: string;
+  };
+  riderProfile?: {
+    id: string;
+    email: string;
+    name: string | null;
+    phone: string | null;
+    status: string;
+    userId?: string;
+    vehicleType?: string | null;
+    isActive?: boolean;
+    registrationStatus?: string;
+  };
+}
+
+export interface DeliveryMeResponse {
+  success: boolean;
+  riderProfile?: DeliveryAuthPayload['riderProfile'];
+  user?: DeliveryAuthPayload['user'];
+}
+
+export interface DeliveryAdminAuthPayload {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    username?: string | null;
+    phone?: string | null;
+    role: string;
+  };
+}
+
+export interface DeliveryAdminMeResponse {
+  success: boolean;
+  user?: DeliveryAdminAuthPayload['user'];
+}
+
+
+
+export async function loginDelivery(credentials: unknown): Promise<{success: boolean, data?: DeliveryAuthPayload}> {
+  const res = await fetch(`${API}/api/delivery-auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials)
+  });
+  return res.json();
+}
+
+export async function loginDeliveryAdmin(credentials: unknown): Promise<{success: boolean, data?: DeliveryAdminAuthPayload}> {
+  const res = await fetch(`${API}/api/delivery-admin-auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials)
+  });
+  return res.json();
+}
+
+export async function deliveryRegister(data: unknown): Promise<{success: boolean, data?: unknown}> {
+  const res = await fetch(`${API}/api/delivery-auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function logoutDelivery(token: string): Promise<void> {
+  // Client-side logout usually just clears token, but hit endpoint if needed
+}
+
+
+
+
+// VendorAnalyticsData was already defined around line 650, so I will remove the duplicate.

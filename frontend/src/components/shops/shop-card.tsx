@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { ApiShop } from "@/lib/api";
+import type { Shop } from "@/lib/api";
 import { formatPriceLevel } from "@/lib/shop-search";
 
 type ShopCardProps = {
-  shop: ApiShop;
+  shop: Shop;
   href?: string;
   compact?: boolean;
 };

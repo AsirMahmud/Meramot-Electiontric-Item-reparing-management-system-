@@ -98,15 +98,15 @@ export function DeliveryAdminAuthProvider({ children }: { children: ReactNode })
         const payload = await apiDeliveryAdminLogin({ identifier, password });
         persistToken(payload.token);
         setUser({
-          id: payload.user.id,
-          name: payload.user.name ?? null,
-          username: payload.user.username,
-          email: payload.user.email,
-          phone: payload.user.phone ?? null,
-          role: payload.user.role,
+          id: payload.user?.id || "",
+          name: payload.user?.name ?? null,
+          username: payload.user?.username || null,
+          email: payload.user?.email || "",
+          phone: payload.user?.phone ?? null,
+          role: payload.user?.role || "ADMIN",
           status: "ACTIVE",
           createdAt: new Date().toISOString(),
-        });
+        } as DeliveryAdminMeResponse["user"]);
         const me = await fetchDeliveryAdminMe(payload.token);
         setUser(me.user);
       } finally {

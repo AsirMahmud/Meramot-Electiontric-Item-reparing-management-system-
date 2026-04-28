@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
-import { getShops, type ShopSummary } from "@/lib/api";
+import { getShops, type Shop } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
 
 export default function ShopsResultsClient() {
@@ -15,7 +15,7 @@ export default function ShopsResultsClient() {
   const category = searchParams.get("category") ?? "";
   const sort = searchParams.get("sort") ?? "topRated";
 
-  const [shops, setShops] = useState<ShopSummary[]>(fallbackShops);
+  const [shops, setShops] = useState<Shop[]>(fallbackShops);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

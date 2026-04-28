@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { getVendorApplicationStatus } from "@/lib/api";
@@ -28,7 +28,7 @@ const categoryTabs = [
   { label: "Spare Parts", value: "SPARE_PARTS" },
 ] as const;
 
-export default function Navbar({
+function NavbarContent({
   isLoggedIn,
   firstName,
   language = "en",
@@ -424,5 +424,13 @@ export default function Navbar({
         </div>
       )}
     </>
+  );
+}
+
+export default function Navbar(props: NavbarProps) {
+  return (
+    <Suspense fallback={<div className="h-20 w-full border-b border-[#c7ddc8] bg-[#d5ead8]" />}>
+      <NavbarContent {...props} />
+    </Suspense>
   );
 }

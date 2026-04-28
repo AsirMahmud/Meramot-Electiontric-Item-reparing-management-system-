@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
 import { createRepairRequest, uploadImages } from "@/lib/api";
 
-export default function NewRequestPage() {
+function NewRequestContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -240,5 +240,19 @@ export default function NewRequestPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function NewRequestPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#E4FCD5]">
+          <div className="mx-auto max-w-4xl px-4 py-8">Loading request form...</div>
+        </main>
+      }
+    >
+      <NewRequestContent />
+    </Suspense>
   );
 }

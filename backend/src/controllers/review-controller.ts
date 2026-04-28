@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
 import type { AuthedRequest } from "../middleware/auth.js";

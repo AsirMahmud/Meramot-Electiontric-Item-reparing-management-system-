@@ -71,7 +71,7 @@ export default function VendorAnalyticsPage() {
     async function loadAnalytics() {
       try {
         setLoading(true);
-        const result = await getVendorAnalytics(token);
+        const result = await getVendorAnalytics(token!);
         if (cancelled) return;
         setAnalytics(result);
         setFlash(null);
