@@ -1,85 +1,93 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> feature/moderation-ui
-# Root ignore rules for workspace-level generated files
+# ============================================
+# Meeramoot Electric Item Repairing System
+# Git Ignore Rules
+# ============================================
 
-# Dependencies
+# ============== DEPENDENCIES ==============
 node_modules/
 backend/node_modules/
 frontend/node_modules/
+.pnp
+.pnp.*
+*.pem
 
-# Build artifacts
+# ============== BUILD ARTIFACTS ==============
+# Backend
 backend/dist/
+backend/build/
+*.tsbuildinfo
+
+# Frontend (Next.js)
 frontend/.next/
 frontend/out/
-coverage/
+frontend/build/
+next-env.d.ts
 
-# Environment and local-only files
+# ============== ENVIRONMENT FILES ==============
+# Never commit environment files with secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
 backend/.env
+backend/.env.local
 frontend/.env
 frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
 
-# OS / editor junk
-.DS_Store
-Thumbs.db
-<<<<<<< HEAD
-=======
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
+# ============== TESTING ==============
 /coverage
+coverage/
+*.lcov
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# ============== LOGS ==============
 npm-debug.log*
+npm-error.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-!.env.example
+# ============== OS FILES ==============
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# vercel
-.vercel
+# ============== IDE & EDITOR ==============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.eslintcache
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-<<<<<<< HEAD
+# ============== MISC ==============
+.cache
+.parcel-cache
+dist
+build
+*.tgz
 
+# ============== DATABASE ==============
+# SQLite (if used locally)
+*.sqlite
+*.sqlite3
 
-.env
-.env.*
-backend/.env
-frontend/.env
-=======
->>>>>>> 4bc9e005b7817c1c5b3c773557f6c38b0bcb14ba
-=======
-SSLCommerz-NodeJS-master
->>>>>>> feature/moderation-ui
->>>>>>> origin/main
+# ============== PRISMA ==============
+# Generated Prisma files
+prisma/seed-output.log
