@@ -1,12 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { chatWithAi } from "@/lib/api";
+import {
+  chatWithAi,
+  createAiChatSession,
+  getAiChatSessions,
+  saveAiChatMessage,
+} from "@/lib/api";
 
 type Message = {
   role: "user" | "assistant";
   text: string;
+};
+
+type ChatSession = {
+  id: string;
+  title: string;
+  messages: Message[];
 };
 
 type ChatPreview = {
@@ -15,6 +33,46 @@ type ChatPreview = {
   subtitle: string;
 };
 
+const CHAT_STORAGE_KEY = "meramot-ai-chat-sessions";
+const ACTIVE_CHAT_STORAGE_KEY = "meramot-ai-active-chat-id";
+
+const DEFAULT_GREETING =
+  "Hi, I’m Meramot AI. Tell me what’s happening with your device, and I’ll help you figure out the next step.";
+
+function createDefaultChat(id = "draft-chat", title = "General Support"): ChatSession {
+  return {
+    id,
+    title,
+    messages: [
+      {
+        role: "assistant",
+        text: DEFAULT_GREETING,
+      },
+    ],
+  };
+}
+
+function renderFormattedText(text: string) {
+  return text.split("\n").map((line, lineIndex) => {
+    const isBullet = line.trim().startsWith("- ");
+
+    return (
+      <div
+        key={lineIndex}
+        className={isBullet ? "ml-5 list-item" : line.trim() === "" ? "h-3" : ""}
+      >
+        {line.split(/(\*\*[^*]+\*\*)/g).map((part, partIndex) => {
+          if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+            return <strong key={partIndex}>{part.slice(2, -2)}</strong>;
+          }
+
+          return <Fragment key={partIndex}>{part}</Fragment>;
+        })}
+      </div>
+    );
+  });
+}
+
 function makePreview(messages: Message[], fallback: string): string {
   const firstUser = messages.find((msg) => msg.role === "user")?.text?.trim();
   if (!firstUser) return fallback;
@@ -22,24 +80,38 @@ function makePreview(messages: Message[], fallback: string): string {
 }
 
 export default function AiChatPage() {
-  const [chatSessions, setChatSessions] = useState<
-    { id: string; title: string; messages: Message[] }[]
-  >([
-    {
-      id: "default",
-      title: "General Support",
-      messages: [
-        {
-          role: "assistant",
-          text: "Hi, I’m Meramot AI. Tell me what’s happening with your device, and I’ll help you figure out the next step.",
-        },
-      ],
-    },
+  const { data: session } = useSession();
+
+  const [token, setToken] = useState("");
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([
+    createDefaultChat(),
   ]);
 
-  const [activeChatId, setActiveChatId] = useState("default");
+  const [activeChatId, setActiveChatId] = useState("draft-chat");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const isLoggedIn = !!token;
+
+  useEffect(() => {
+    setToken(localStorage.getItem("meramot.token") || "");
+  }, []);
+
+  const firstName = useMemo(() => {
+    const user = session?.user as
+      | { name?: string | null; username?: string | null; email?: string | null }
+      | undefined;
+
+    return (
+      user?.name?.trim()?.split(" ")[0] ||
+      user?.username?.trim()?.split(" ")[0] ||
+      user?.email?.trim()?.split("@")[0] ||
+      "User"
+    );
+  }, [session]);
 
   const activeChat = useMemo(() => {
     return (
@@ -61,10 +133,79 @@ export default function AiChatPage() {
     }));
   }, [chatSessions]);
 
-  function updateActiveMessages(nextMessages: Message[]) {
+  useEffect(() => {
+    async function loadHistory() {
+      setHistoryError("");
+
+      if (isLoggedIn) {
+        try {
+          const savedChats = await getAiChatSessions(token);
+
+          if (Array.isArray(savedChats) && savedChats.length > 0) {
+            setChatSessions(savedChats);
+            setActiveChatId(savedChats[0].id);
+          } else {
+            const defaultChat = createDefaultChat();
+            setChatSessions([defaultChat]);
+            setActiveChatId(defaultChat.id);
+          }
+        } catch {
+          setHistoryError("Could not load saved AI chat history.");
+          const defaultChat = createDefaultChat();
+          setChatSessions([defaultChat]);
+          setActiveChatId(defaultChat.id);
+        } finally {
+          setHistoryLoaded(true);
+        }
+
+        return;
+      }
+
+      const savedChats = localStorage.getItem(CHAT_STORAGE_KEY);
+      const savedActiveChatId = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY);
+
+      if (savedChats) {
+        try {
+          const parsedChats = JSON.parse(savedChats);
+
+          if (Array.isArray(parsedChats) && parsedChats.length > 0) {
+            setChatSessions(parsedChats);
+            setActiveChatId(savedActiveChatId || parsedChats[0].id);
+          }
+        } catch {
+          localStorage.removeItem(CHAT_STORAGE_KEY);
+          localStorage.removeItem(ACTIVE_CHAT_STORAGE_KEY);
+        }
+      }
+
+      setHistoryLoaded(true);
+    }
+
+    if (token !== "") {
+      void loadHistory();
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      const localToken = localStorage.getItem("meramot.token") || "";
+
+      if (!localToken) {
+        void loadHistory();
+      }
+    }
+  }, [isLoggedIn, token]);
+
+  useEffect(() => {
+    if (!historyLoaded || isLoggedIn) return;
+
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatSessions));
+    localStorage.setItem(ACTIVE_CHAT_STORAGE_KEY, activeChatId);
+  }, [chatSessions, activeChatId, historyLoaded, isLoggedIn]);
+
+  function updateMessagesById(chatId: string, nextMessages: Message[]) {
     setChatSessions((prev) =>
       prev.map((chat) =>
-        chat.id === activeChatId
+        chat.id === chatId
           ? {
               ...chat,
               messages: nextMessages,
@@ -76,13 +217,14 @@ export default function AiChatPage() {
   }
 
   function createNewChat() {
-    const id = `chat-${Date.now()}`;
-    const newChat = {
+    const id = isLoggedIn ? `draft-chat-${Date.now()}` : `guest-chat-${Date.now()}`;
+
+    const newChat: ChatSession = {
       id,
       title: "New Chat",
       messages: [
         {
-          role: "assistant" as const,
+          role: "assistant",
           text: "Hi, I’m Meramot AI. Describe your repair issue, and I’ll help you troubleshoot it.",
         },
       ],
@@ -91,22 +233,76 @@ export default function AiChatPage() {
     setChatSessions((prev) => [newChat, ...prev]);
     setActiveChatId(id);
     setInput("");
+    setHistoryError("");
+  }
+
+  function handleInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+
+    event.preventDefault();
+    void handleSend();
   }
 
   async function handleSend() {
     const trimmed = input.trim();
     if (!trimmed || loading || !activeChat) return;
 
+    const originalChatId = activeChat.id;
+    let currentChatId = activeChat.id;
+    const baseMessages = activeChat.messages;
+
     const nextMessages: Message[] = [
-      ...activeChat.messages,
+      ...baseMessages,
       { role: "user", text: trimmed },
     ];
 
-    updateActiveMessages(nextMessages);
     setInput("");
     setLoading(true);
+    setHistoryError("");
 
     try {
+      if (isLoggedIn && currentChatId.startsWith("draft-chat")) {
+        const createdChat = await createAiChatSession(
+          makePreview(nextMessages, "New Chat"),
+          token
+        );
+
+        currentChatId = createdChat.id;
+
+        await saveAiChatMessage(currentChatId, "assistant", baseMessages[0].text, token);
+
+        setChatSessions((prev) =>
+          prev.map((chat) =>
+            chat.id === originalChatId
+              ? {
+                  ...chat,
+                  id: currentChatId,
+                  title: makePreview(nextMessages, createdChat.title || "New Chat"),
+                }
+              : chat
+          )
+        );
+
+        setActiveChatId(currentChatId);
+      }
+
+      setChatSessions((prev) =>
+        prev.map((chat) =>
+          chat.id === originalChatId || chat.id === currentChatId
+            ? {
+                ...chat,
+                id: currentChatId,
+                messages: nextMessages,
+                title: makePreview(nextMessages, chat.title),
+              }
+            : chat
+        )
+      );
+
+      if (isLoggedIn) {
+        await saveAiChatMessage(currentChatId, "user", trimmed, token);
+      }
+
       const result = await chatWithAi({
         message: trimmed,
         history: nextMessages.map((msg) => ({
@@ -115,15 +311,27 @@ export default function AiChatPage() {
         })),
       });
 
-      updateActiveMessages([
+      const finalMessages: Message[] = [
         ...nextMessages,
         {
           role: "assistant",
           text: result.reply,
         },
-      ]);
+      ];
+
+      updateMessagesById(currentChatId, finalMessages);
+
+      if (isLoggedIn) {
+        await saveAiChatMessage(currentChatId, "assistant", result.reply, token);
+      }
     } catch (error) {
-      updateActiveMessages([
+      setHistoryError(
+        isLoggedIn
+          ? "Could not save this AI chat. Check the AI chat history API."
+          : ""
+      );
+
+      updateMessagesById(originalChatId, [
         ...nextMessages,
         {
           role: "assistant",
@@ -140,7 +348,7 @@ export default function AiChatPage() {
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <Navbar />
+      <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
         <div className="rounded-[2.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_20px_50px_rgba(67,100,64,0.12)] md:p-6 dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
@@ -149,7 +357,8 @@ export default function AiChatPage() {
               <button
                 type="button"
                 onClick={createNewChat}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
               >
                 <span className="text-lg leading-none">+</span>
                 New Chat
@@ -210,6 +419,10 @@ export default function AiChatPage() {
                   <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                     Ask about device issues, repair urgency, and next steps.
                   </p>
+
+                  {historyError && (
+                    <p className="mt-2 text-sm text-red-600">{historyError}</p>
+                  )}
                 </div>
 
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)]">
@@ -251,7 +464,9 @@ export default function AiChatPage() {
                           : "bg-[var(--mint-100)] text-[var(--foreground)]"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap">{msg.text}</div>
+                      <div className="whitespace-pre-wrap">
+                        {renderFormattedText(msg.text)}
+                      </div>
                     </div>
 
                     {msg.role === "user" && (
@@ -292,9 +507,11 @@ export default function AiChatPage() {
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleInputKeyDown}
                     rows={2}
                     placeholder="Type your message here..."
-                    className="min-h-[56px] flex-1 resize-none rounded-[1.2rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
+                    disabled={loading}
+                    className="min-h-[56px] flex-1 resize-none rounded-[1.2rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] disabled:opacity-60"
                   />
 
                   <button

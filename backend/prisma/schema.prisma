@@ -262,7 +262,6 @@ model User {
   status          UserStatus  @default(ACTIVE)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-
   repairRequests             RepairRequest[]
   payments                   Payment[]
   ratings                    Rating[]              @relation("RatingAuthor")
@@ -276,6 +275,7 @@ model User {
   reviewedVendorApplications VendorApplication[]   @relation("VendorApplicationReviewer")
   riderProfile               RiderProfile?
   carts                      Cart[]
+  aiChatSessions AiChatSession[]
 }
 
 model VendorApplication {
@@ -905,4 +905,25 @@ model CartItem {
   cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
   @@index([cartId])
+}
+
+model AiChatSession {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @default("New Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiChatMessage[]
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String
+  text      String
+  createdAt DateTime @default(now())
+
+  session   AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

@@ -173,16 +173,16 @@ export async function getFeaturedShops(_req: Request, res: Response) {
     const shops = await prisma.shop.findMany({
       where: {
         isActive: true,
-        isFeatured: true,
       },
       orderBy: [{ ratingAvg: "desc" }, { reviewCount: "desc" }],
-      take: 8,
+      take: 6,
       select: {
         id: true,
         name: true,
         slug: true,
         description: true,
         logoUrl: true,
+        bannerUrl: true,
         address: true,
         city: true,
         area: true,
@@ -191,6 +191,7 @@ export async function getFeaturedShops(_req: Request, res: Response) {
         ratingAvg: true,
         reviewCount: true,
         priceLevel: true,
+        isFeatured: true,
         hasVoucher: true,
         freeDelivery: true,
         hasDeals: true,

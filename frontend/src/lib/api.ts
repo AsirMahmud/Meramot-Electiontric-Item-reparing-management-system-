@@ -49,7 +49,6 @@ async function authedRequest<T>(path: string, token?: string, init?: RequestInit
 export type ShopCategory = "COURIER_PICKUP" | "IN_SHOP_REPAIR" | "SPARE_PARTS";
 export type ShopServicePricingType = "FIXED" | "STARTING_FROM" | "INSPECTION_REQUIRED";
 
-/** 🔥 Unified shop type (merged both versions) */
 export type Shop = {
   id: string;
   name: string;
@@ -549,6 +548,12 @@ export function updateProfile(token: string, payload: any) {
   });
 }
 
+export function deleteProfile(token: string) {
+  return authedRequest("/profile/me", token, {
+    method: "DELETE",
+  });
+}
+
 /* =========================================================
    DELIVERY (RIDER)
 ========================================================= */
@@ -1019,8 +1024,6 @@ export type Cart = {
   items: CartItem[];
 };
 
-
-
 export async function addServiceToCart(
   payload: {
     shopSlug: string;
@@ -1064,7 +1067,7 @@ export async function checkoutCart(
   payload: {
     scheduleType: "NOW" | "LATER";
     scheduledAt?: string;
-    paymentMethod: "CASH" | "BKASH";
+    paymentMethod: "CASH" | "SSLCOMMERZ";
     addressMode: "PROFILE" | "MANUAL" | "MAP";
     address: string;
     city?: string;
@@ -1082,6 +1085,17 @@ export async function checkoutCart(
   });
 }
 
+const GUEST_CART_KEY = "meramot.guestCart";
+
+export function getGuestCart(): Cart[] {
+  if (typeof window === "undefined") return [];
+  return JSON.parse(localStorage.getItem(GUEST_CART_KEY) || "[]");
+}
+
+export function setGuestCart(cart: Cart[]) {
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+}
+
 /* =========================================================
    Ai Chat
 ========================================================= */
@@ -1096,5 +1110,28 @@ export async function chatWithAi(payload: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function getAiChatSessions(token?: string) {
+  return authedRequest("/ai-chat/sessions", token);
+}
+
+export async function createAiChatSession(title = "New Chat", token?: string) {
+  return authedRequest("/ai-chat/sessions", token, {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+}
+
+export async function saveAiChatMessage(
+  sessionId: string,
+  role: "user" | "assistant",
+  text: string,
+  token?: string
+) {
+  return authedRequest(`/ai-chat/sessions/${sessionId}/messages`, token, {
+    method: "POST",
+    body: JSON.stringify({ role, text }),
   });
 }

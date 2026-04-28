@@ -67,3 +67,19 @@ export async function updateProfile(req: AuthedRequest, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function deleteProfile(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return res.json({ message: "Profile deleted" });
+  } catch (error) {
+    console.error("deleteProfile error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

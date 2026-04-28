@@ -4,14 +4,14 @@
 :root {
   --background: #E4FCD5;
   --foreground: #203126;
-  --card: #ffffff;
+  --card: #c8e7c5;
   --card-foreground: #203126;
-  --muted: #eef5ec;
+  --muted: #b1c9aa;
   --muted-foreground: #5e6d64;
-  --border: #d8e5d5;
-  --mint-50: #f4fbf2;
+  --border: #556c527a;
+  --mint-50: #b5d4ad;
   --mint-100: #e4f3df;
-  --mint-200: #cfe8c8;
+  --mint-200: #c4ddbd;
   --mint-300: #b8d9b5;
   --mint-500: #7eae77;
   --mint-700: #436440;

@@ -5,7 +5,10 @@ import {
   RequestStatus,
   RepairJobStatus,
   ShopCategory,
+  type Shop,
+  type User,
 } from "@prisma/client";
+
 
 const prisma = new PrismaClient();
 

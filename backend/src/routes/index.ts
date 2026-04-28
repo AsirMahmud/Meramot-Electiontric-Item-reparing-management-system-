@@ -9,6 +9,7 @@ import profileRoutes from "./profile-routes.js";
 import cartRoutes from "./cart-routes.js";
 import requestRoutes from "./request-routes.js";
 import aiRoutes from "./ai-routes.js";
+import aiChatHistoryRoutes from "./ai-chat-history-routes.js";
 
 const router = Router();
 
@@ -42,5 +43,6 @@ router.use("/cart", cartRoutes);
 router.use("/requests", requestRoutes);
 router.use("/ai", aiRoutes);
 router.use("/payments", paymentRoutes);
+router.use("/ai-chat", aiChatHistoryRoutes);
 
 export default router;
