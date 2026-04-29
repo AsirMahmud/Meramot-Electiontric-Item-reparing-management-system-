@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type Review = {
@@ -22,6 +23,8 @@ type Review = {
 };
 
 export default function AdminReviewsPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +41,7 @@ export default function AdminReviewsPage() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews?${queryParams.toString()}`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
       const data = await res.json();
       if (res.ok) {
@@ -52,8 +55,10 @@ export default function AdminReviewsPage() {
   };
 
   useEffect(() => {
-    fetchReviews();
-  }, []);
+    if (token) {
+      fetchReviews();
+    }
+  }, [token]);
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +74,7 @@ export default function AdminReviewsPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews/${id}`, {
         method: "DELETE",
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
 
       if (res.ok) {

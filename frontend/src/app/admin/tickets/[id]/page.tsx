@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type Message = {
@@ -46,6 +47,8 @@ type Ticket = {
 export default function AdminTicketDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function AdminTicketDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -85,8 +88,8 @@ export default function AdminTicketDetailPage() {
       }
     };
 
-    if (id) fetchTicket();
-  }, [id]);
+    if (id && token) fetchTicket();
+  }, [id, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -103,7 +106,7 @@ export default function AdminTicketDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ message: replyMessage }),
       });
@@ -139,7 +142,7 @@ export default function AdminTicketDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({
             status: statusInput,
@@ -181,7 +184,7 @@ export default function AdminTicketDetailPage() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}/escalate`, {
           method: "POST",
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
   
         const data = await res.json();

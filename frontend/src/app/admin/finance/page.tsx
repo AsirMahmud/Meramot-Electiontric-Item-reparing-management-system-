@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { getAuthHeaders } from "@/lib/api";
 import {
@@ -66,6 +67,8 @@ function formatMoney(value: number | string | null | undefined) {
 }
 
 export default function AdminFinancePage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -83,7 +86,7 @@ export default function AdminFinancePage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/summary`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
       const data = await res.json();
       if (res.ok) {
@@ -104,7 +107,7 @@ export default function AdminFinancePage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/chart-data`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
       const data = await res.json();
       if (res.ok) {
@@ -124,7 +127,7 @@ export default function AdminFinancePage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/entries?take=20`,
         {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         },
       );
       const data = await res.json();
@@ -142,8 +145,10 @@ export default function AdminFinancePage() {
   };
 
   useEffect(() => {
-    void Promise.all([loadSummary(), loadChartData(), loadEntries()]);
-  }, []);
+    if (token) {
+      void Promise.all([loadSummary(), loadChartData(), loadEntries()]);
+    }
+  }, [token]);
 
   const handleSettleSingle = async (event: FormEvent) => {
     event.preventDefault();
@@ -165,7 +170,7 @@ export default function AdminFinancePage() {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            ...getAuthHeaders(),
+            ...getAuthHeaders(token),
           },
           body: JSON.stringify({ note: settlementNote.trim() || undefined }),
         },
@@ -199,7 +204,7 @@ export default function AdminFinancePage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ limit }),
       });

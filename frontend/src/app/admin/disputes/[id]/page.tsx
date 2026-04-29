@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type Note = {
@@ -55,6 +56,8 @@ type Dispute = {
 export default function AdminDisputeDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +74,7 @@ export default function AdminDisputeDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -86,8 +89,8 @@ export default function AdminDisputeDetailPage() {
       }
     };
 
-    if (id) fetchDispute();
-  }, [id]);
+    if (id && token) fetchDispute();
+  }, [id, token]);
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +102,7 @@ export default function AdminDisputeDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ note: newNote, isInternal }),
       });
@@ -137,7 +140,7 @@ export default function AdminDisputeDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ resolution: resolutionText, status: statusToResolve }),
       });

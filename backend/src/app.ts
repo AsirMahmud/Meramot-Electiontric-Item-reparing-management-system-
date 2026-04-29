@@ -8,6 +8,7 @@ import supportTicketRoutes from "./routes/support-ticket-routes.js";
 import disputeRoutes from "./routes/dispute-routes.js";
 import refundRoutes from "./routes/refund-routes.js";
 import financialLedgerRoutes from "./routes/financial-ledger-routes.js";
+import adminDeliveryRoutes from "./routes/admin-delivery-routes.js";
 import deliveryRoutes from "./routes/delivery-routes.js";
 import deliveryAuthRoutes from "./routes/delivery-auth-routes.js";
 import deliveryAdminRoutes from "./routes/delivery-admin-routes.js";
@@ -36,6 +37,7 @@ export function createApp() {
   app.use("/api/admin", disputeRoutes);
   app.use("/api/admin", refundRoutes);
   app.use("/api/admin", financialLedgerRoutes);
+  app.use("/api/admin", adminDeliveryRoutes);
 
   // Delivery system routes — kept separate as in main
   app.use("/api/delivery/auth", deliveryAuthRoutes);

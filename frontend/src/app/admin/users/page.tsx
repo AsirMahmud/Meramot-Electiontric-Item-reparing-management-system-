@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type User = {
@@ -15,6 +16,8 @@ type User = {
 };
 
 export default function AdminUsersPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function AdminUsersPage() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?${queryParams.toString()}`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
       const data = await res.json();
       if (res.ok) {
@@ -47,8 +50,10 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [role, status]); // Re-fetch on filter change
+    if (token) {
+      fetchUsers();
+    }
+  }, [role, status, token]); // Re-fetch on filter change or token load
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +67,7 @@ export default function AdminUsersPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ status: newStatus }),
       });

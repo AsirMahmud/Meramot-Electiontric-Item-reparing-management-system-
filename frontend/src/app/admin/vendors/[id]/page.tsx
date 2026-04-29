@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type VendorApplication = {
@@ -50,6 +51,8 @@ type VendorApplication = {
 export default function AdminVendorDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [application, setApplication] = useState<VendorApplication | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +65,7 @@ export default function AdminVendorDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -77,8 +80,8 @@ export default function AdminVendorDetailPage() {
       }
     };
 
-    if (id) fetchVendor();
-  }, [id]);
+    if (id && token) fetchVendor();
+  }, [id, token]);
 
   const handleApplicationAction = async (action: "approve" | "reject" | "request-info") => {
     try {
@@ -88,7 +91,7 @@ export default function AdminVendorDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({
           reviewNotes:
@@ -135,7 +138,7 @@ export default function AdminVendorDetailPage() {
         method: "DELETE",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
           "x-admin-passkey": passkey
         },
       });
@@ -168,7 +171,7 @@ export default function AdminVendorDetailPage() {
               credentials: "include",
               headers: {
                   "Content-Type": "application/json",
-                  ...getAuthHeaders(),
+                  ...getAuthHeaders(token),
               },
               body: JSON.stringify({ isActive }),
           });

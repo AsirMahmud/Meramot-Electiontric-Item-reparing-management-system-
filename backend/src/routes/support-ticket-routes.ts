@@ -25,7 +25,7 @@ router.get("/tickets", async (req: Request, res: Response) => {
             username: true,
           },
         },
-        assigneeAdmin: {
+        assignedAdmin: {
           select: {
             id: true,
             name: true,
@@ -56,7 +56,7 @@ router.get("/tickets/:id", async (req: Request, res: Response) => {
       where: { id: ticketId },
       include: {
         user: true,
-        assigneeAdmin: true,
+        assignedAdmin: true,
         repairRequest: true,
         messages: {
           orderBy: { createdAt: "asc" },
@@ -113,7 +113,7 @@ router.patch("/tickets/:id", async (req: Request & { user?: any }, res: Response
       where: { id: ticketId },
       include: {
         user: true,
-        assigneeAdmin: true,
+        assignedAdmin: true,
         repairRequest: true,
       }
     });
