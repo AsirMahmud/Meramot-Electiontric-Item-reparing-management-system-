@@ -378,6 +378,8 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
       pickupFee,
       expressFee,
       skillTags,
+      lat,
+      lng,
     } = req.body as {
       shopName?: string;
       description?: string;
@@ -393,6 +395,8 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
       pickupFee?: number | string;
       expressFee?: number | string;
       skillTags?: string[] | string;
+      lat?: number | string;
+      lng?: number | string;
     };
 
     const normalizedShopName = shopName?.trim() || "";
@@ -450,6 +454,12 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
         ? null
         : Number(expressFee);
 
+    const latNumber =
+      lat === "" || lat === undefined || lat === null ? null : Number(lat);
+
+    const lngNumber =
+      lng === "" || lng === undefined || lng === null ? null : Number(lng);
+
     if (
       (inspectionFeeNumber !== null && (Number.isNaN(inspectionFeeNumber) || inspectionFeeNumber < 0)) ||
       (baseLaborFeeNumber !== null && (Number.isNaN(baseLaborFeeNumber) || baseLaborFeeNumber < 0)) ||
@@ -487,6 +497,8 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
           address: normalizedAddress,
           city: normalizedCity,
           area: normalizedArea,
+          lat: latNumber,
+          lng: lngNumber,
           specialties: normalizedSkillTags,
           courierPickup: Boolean(courierPickup),
           inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : true,
@@ -504,6 +516,8 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
           address: normalizedAddress,
           city: normalizedCity,
           area: normalizedArea,
+          lat: latNumber,
+          lng: lngNumber,
           categories: serviceCategories,
           specialties: normalizedSkillTags,
           inspectionFee: inspectionFeeNumber,

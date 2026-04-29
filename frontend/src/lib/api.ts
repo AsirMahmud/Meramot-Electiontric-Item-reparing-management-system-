@@ -201,7 +201,7 @@ export type VendorSetupShopPayload = {
   baseLaborFee: number;
   pickupFee?: number | null;
   expressFee?: number | null;
-  skillTags: string[];
+  skillTags: string[];\n  lat?: number | null;\n  lng?: number | null;
 };
 
 export function getMyVendorApplication(token: string) {

@@ -2,7 +2,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { MapPin } from "lucide-react";
 import { completeVendorShopSetup, getVendorApplicationStatus } from "@/lib/api";
+import LocationPickerModal from "@/components/location/LocationPickerModal";
+import type { StoredLocation } from "@/components/location/types";
+import { forwardGeocode } from "@/components/location/location-utils";
 
 type VendorStatusPayload = {
   application?: {
@@ -29,6 +33,8 @@ type VendorStatusPayload = {
     baseLaborFee?: number | null;
     pickupFee?: number | null;
     expressFee?: number | null;
+    lat?: number | null;
+    lng?: number | null;
   };
   message?: string;
 };
@@ -59,6 +65,10 @@ export default function VendorSetupShopPage() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [loadingPrefill, setLoadingPrefill] = useState(true);
 
   const [courierPickup, setCourierPickup] = useState(false);
@@ -109,6 +119,8 @@ if (app) {
     setAddress(app.address || "");
     setCity(app.city || "");
     setArea(app.area || "");
+    setLat(app.lat ?? null);
+    setLng(app.lng ?? null);
 
     setCourierPickup(Boolean(app.courierPickup));
     setInShopRepair(Boolean(app.inShopRepair));
@@ -249,6 +261,8 @@ if (app) {
       pickupFee: pickupFee ? Number(pickupFee) : null,
       expressFee: expressFee ? Number(expressFee) : null,
       skillTags: allSkillTags,
+      lat,
+      lng,
     });
 
     router.push("/vendor/dashboard");
@@ -380,6 +394,30 @@ if (app) {
                   className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent-dark"
                 />
               </label>
+
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="button"
+                  disabled={isGeocoding}
+                  onClick={async () => {
+                    if (!lat && !lng && (address || city || area)) {
+                      setIsGeocoding(true);
+                      const query = [address, area, city].filter(Boolean).join(", ");
+                      const result = await forwardGeocode(query);
+                      setIsGeocoding(false);
+                      if (result) {
+                        setLat(result.lat);
+                        setLng(result.lng);
+                      }
+                    }
+                    setMapModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#e4fcd5] px-4 py-3 text-sm font-bold text-[#1f3a2d] transition hover:bg-[#c8e7c5] disabled:opacity-50"
+                >
+                  <MapPin size={18} className={isGeocoding ? "animate-pulse" : ""} />
+                  {isGeocoding ? "Locating..." : lat && lng ? "Update location on map" : "Pin exact location on map"}
+                </button>
+              </div>
             </div>
           </section>
 
@@ -584,6 +622,20 @@ if (app) {
           </div>
         </form>
       </div>
+
+      {mapModalOpen && (
+        <LocationPickerModal
+          selectedLocation={lat && lng ? { lat, lng, address, city, area, source: "map" } : null}
+          onClose={() => setMapModalOpen(false)}
+          onConfirm={async (loc) => {
+            setLat(loc.lat);
+            setLng(loc.lng);
+            if (loc.address && !address) setAddress(loc.address);
+            if (loc.city && !city) setCity(loc.city);
+            if (loc.area && !area) setArea(loc.area);
+          }}
+        />
+      )}
     </main>
   );
 }
