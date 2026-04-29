@@ -1100,6 +1100,22 @@ export function setGuestCart(cart: Cart[]) {
    Ai Chat
 ========================================================= */
 
+export type AiChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+};
+
+export type AiChatSession = {
+  id: string;
+  title: string;
+  messages: AiChatMessage[];
+};
+
+export type CreatedAiChatSession = {
+  id: string;
+  title: string;
+};
+
 export async function chatWithAi(payload: {
   message: string;
   history?: { role: "user" | "assistant"; text: string }[];
@@ -1114,11 +1130,11 @@ export async function chatWithAi(payload: {
 }
 
 export async function getAiChatSessions(token?: string) {
-  return authedRequest("/ai-chat/sessions", token);
+  return authedRequest<AiChatSession[]>("/ai-chat/sessions", token);
 }
 
 export async function createAiChatSession(title = "New Chat", token?: string) {
-  return authedRequest("/ai-chat/sessions", token, {
+  return authedRequest<CreatedAiChatSession>("/ai-chat/sessions", token, {
     method: "POST",
     body: JSON.stringify({ title }),
   });
@@ -1130,8 +1146,12 @@ export async function saveAiChatMessage(
   text: string,
   token?: string
 ) {
-  return authedRequest(`/ai-chat/sessions/${sessionId}/messages`, token, {
-    method: "POST",
-    body: JSON.stringify({ role, text }),
-  });
+  return authedRequest<{ message: AiChatMessage }>(
+    `/ai-chat/sessions/${sessionId}/messages`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ role, text }),
+    }
+  );
 }

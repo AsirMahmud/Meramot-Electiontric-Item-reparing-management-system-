@@ -113,9 +113,21 @@ async function findBestShopMatch(params: {
         acceptsDirectOrders: true,
       },
       OR: [
-        { deviceType: { contains: params.deviceType, mode: "insensitive" } },
+        {
+          deviceType: {
+            contains: params.deviceType,
+            mode: "insensitive" as const,
+          },
+        },
         ...(params.issueCategory
-          ? [{ issueCategory: { contains: params.issueCategory, mode: "insensitive" } }]
+          ? [
+              {
+                issueCategory: {
+                  contains: params.issueCategory,
+                  mode: "insensitive" as const,
+                },
+              },
+            ]
           : []),
       ],
     },
@@ -440,7 +452,7 @@ Pickup address: ${chosenAddress || "Not provided"}`,
       await sendOrderStatusEmail({
         to: user.email,
         customerName: user.name,
-        orderRef: created.request.id,
+        orderTitle: created.request.id,
         status: created.request.status,
         shopName: matchedShop?.name,
       }).catch((error) => console.error("request created email failed", error));
@@ -613,7 +625,7 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
       await sendOrderStatusEmail({
         to: existing.user.email,
         customerName: existing.user.name,
-        orderRef: existing.id,
+        orderTitle: existing.id,
         status: updated.status,
         shopName: existing.repairJob?.shop.name,
       }).catch((error) => console.error("status email failed", error));
