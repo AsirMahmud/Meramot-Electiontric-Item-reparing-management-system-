@@ -1,8 +1,9 @@
 /**
- * Seed script for testing the live bidding system.
+ * Self-contained seed script for testing the live bidding system.
  *
- * Creates 3 test customers and 8 repair requests in BIDDING status
- * so vendors can place bids from their dashboards.
+ * Creates:
+ *   • 3 test customers with 8 BIDDING repair requests
+ *   • 2 fully approved vendors with shops, ready to place bids
  *
  * Run:  npx ts-node prisma/seed_bidding_test.ts
  *
@@ -19,7 +20,174 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
-  // ── 1. Create test customers ───────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
+  // 1. CREATE FULLY APPROVED VENDORS WITH SHOPS
+  // ═══════════════════════════════════════════════════════════════════════
+
+  const vendorData = [
+    {
+      email: "testvendor1@meramot.demo",
+      username: "testvendor1",
+      name: "Arif Electronics",
+      phone: "+8801855551111",
+      shopName: "Arif Electronics Lab",
+      shopSlug: "arif-electronics-lab",
+      address: "22 Mirpur Road, Section 10",
+      city: "Dhaka",
+      area: "Mirpur",
+      lat: 23.8060,
+      lng: 90.3685,
+      specialties: [
+        "Battery replacement",
+        "Display repair",
+        "Charging port replacement",
+        "Water damage recovery",
+      ],
+      inspectionFee: 300,
+      baseLaborFee: 800,
+      pickupFee: 150,
+      expressFee: 400,
+    },
+    {
+      email: "testvendor2@meramot.demo",
+      username: "testvendor2",
+      name: "Dhaka Laptop Clinic",
+      phone: "+8801855552222",
+      shopName: "Dhaka Laptop Clinic",
+      shopSlug: "dhaka-laptop-clinic",
+      address: "55 Dhanmondi R/A, Road 8",
+      city: "Dhaka",
+      area: "Dhanmondi",
+      lat: 23.7470,
+      lng: 90.3750,
+      specialties: [
+        "Motherboard repair",
+        "Keyboard repair",
+        "SSD upgrade",
+        "Cooling",
+        "Power supply",
+      ],
+      inspectionFee: 500,
+      baseLaborFee: 1200,
+      pickupFee: 200,
+      expressFee: 500,
+    },
+  ];
+
+  const vendors: { userId: string; shopName: string }[] = [];
+
+  for (const v of vendorData) {
+    // Create vendor user
+    const vendorUser = await prisma.user.upsert({
+      where: { email: v.email },
+      update: { role: "VENDOR" },
+      create: {
+        username: v.username,
+        email: v.email,
+        passwordHash,
+        name: v.name,
+        phone: v.phone,
+        role: "VENDOR",
+      },
+    });
+
+    // Create approved vendor application
+    const vendorApp = await prisma.vendorApplication.upsert({
+      where: { businessEmail: v.email },
+      update: { status: "APPROVED" },
+      create: {
+        userId: vendorUser.id,
+        ownerName: v.name,
+        businessEmail: v.email,
+        phone: v.phone,
+        shopName: v.shopName,
+        address: v.address,
+        city: v.city,
+        area: v.area,
+        lat: v.lat,
+        lng: v.lng,
+        specialties: v.specialties,
+        courierPickup: true,
+        inShopRepair: true,
+        spareParts: false,
+        status: "APPROVED",
+        reviewedAt: new Date(),
+      },
+    });
+
+    // Create shop linked to the application
+    const shop = await prisma.shop.upsert({
+      where: { slug: v.shopSlug },
+      update: {
+        vendorApplicationId: vendorApp.id,
+        setupComplete: true,
+        isPublic: true,
+        specialties: v.specialties,
+        inspectionFee: v.inspectionFee,
+        baseLaborFee: v.baseLaborFee,
+        pickupFee: v.pickupFee,
+        expressFee: v.expressFee,
+      },
+      create: {
+        vendorApplicationId: vendorApp.id,
+        name: v.shopName,
+        slug: v.shopSlug,
+        description: "Professional electronics repair service.",
+        address: v.address,
+        city: v.city,
+        area: v.area,
+        lat: v.lat,
+        lng: v.lng,
+        phone: v.phone,
+        email: v.email,
+        ratingAvg: 4.5,
+        reviewCount: 0,
+        priceLevel: 2,
+        categories: ["COURIER_PICKUP", "IN_SHOP_REPAIR"],
+        specialties: v.specialties,
+        inspectionFee: v.inspectionFee,
+        baseLaborFee: v.baseLaborFee,
+        pickupFee: v.pickupFee,
+        expressFee: v.expressFee,
+        setupComplete: true,
+        isPublic: true,
+        isActive: true,
+      },
+    });
+
+    // Link vendor user as shop OWNER
+    await prisma.shopStaff.upsert({
+      where: {
+        shopId_userId: {
+          shopId: shop.id,
+          userId: vendorUser.id,
+        },
+      },
+      update: {},
+      create: {
+        shopId: shop.id,
+        userId: vendorUser.id,
+        role: "OWNER",
+        isActive: true,
+      },
+    });
+
+    vendors.push({ userId: vendorUser.id, shopName: v.shopName });
+  }
+
+  console.log(`✅ Created ${vendors.length} approved vendors with shops:`);
+  for (let i = 0; i < vendorData.length; i++) {
+    console.log(
+      `   • ${vendorData[i].shopName} — ${vendorData[i].email} / password123`,
+    );
+    console.log(
+      `     Skills: ${vendorData[i].specialties.join(", ")}`,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 2. CREATE TEST CUSTOMERS
+  // ═══════════════════════════════════════════════════════════════════════
 
   const customers = await Promise.all([
     prisma.user.upsert({
@@ -66,14 +234,11 @@ async function main() {
     }),
   ]);
 
-  console.log(`✅ Created ${customers.length} test customers`);
-  console.log(
-    customers
-      .map((c) => `   • ${c.name} — ${c.email} / password123`)
-      .join("\n")
-  );
+  console.log(`\n✅ Created ${customers.length} test customers`);
 
-  // ── 2. Create repair requests in BIDDING status ────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
+  // 3. CREATE REPAIR REQUESTS IN BIDDING STATUS
+  // ═══════════════════════════════════════════════════════════════════════
 
   const repairRequestData = [
     // Customer 1: Rahim — 3 requests
@@ -201,7 +366,6 @@ async function main() {
   let skipped = 0;
 
   for (const data of repairRequestData) {
-    // Check if a similar request already exists (avoid duplicates on re-run)
     const existing = await prisma.repairRequest.findFirst({
       where: {
         userId: data.userId,
@@ -236,20 +400,36 @@ async function main() {
     created++;
   }
 
-  console.log(`\n✅ Repair requests: ${created} created, ${skipped} skipped (already exist)`);
+  console.log(
+    `\n✅ Repair requests: ${created} created, ${skipped} skipped (already exist)`,
+  );
 
-  console.log("\n🎯 Summary:");
-  console.log("   All requests are in BIDDING status — ready for vendor bids.");
-  console.log("\n   Test accounts (password: password123):");
-  console.log("   ┌───────────────────────────────┬─────────────────────────┐");
-  console.log("   │ Customer                      │ Email                   │");
-  console.log("   ├───────────────────────────────┼─────────────────────────┤");
-  console.log("   │ Rahim Uddin                   │ rahim@meramot.demo      │");
-  console.log("   │ Fatema Khatun                 │ fatema@meramot.demo     │");
-  console.log("   │ Karim Hasan                   │ karim@meramot.demo      │");
-  console.log("   └───────────────────────────────┴─────────────────────────┘");
-  console.log("\n   To bid, log in as any vendor (vendor0@meramot.demo etc.)");
-  console.log("   and visit /vendor/dashboard.\n");
+  // ═══════════════════════════════════════════════════════════════════════
+  // SUMMARY
+  // ═══════════════════════════════════════════════════════════════════════
+
+  console.log("\n" + "═".repeat(64));
+  console.log("  🎯 BIDDING TEST READY — all accounts use password: password123");
+  console.log("═".repeat(64));
+  console.log("\n  VENDORS (log in → go to /vendor/dashboard → place bids):");
+  console.log("  ┌─────────────────────────┬──────────────────────────────┐");
+  console.log("  │ Shop                    │ Email                        │");
+  console.log("  ├─────────────────────────┼──────────────────────────────┤");
+  console.log("  │ Arif Electronics Lab    │ testvendor1@meramot.demo     │");
+  console.log("  │ Dhaka Laptop Clinic     │ testvendor2@meramot.demo     │");
+  console.log("  └─────────────────────────┴──────────────────────────────┘");
+  console.log("\n  CUSTOMERS (log in → go to /orders → see bids, accept/decline):");
+  console.log("  ┌─────────────────────────┬──────────────────────────────┐");
+  console.log("  │ Customer                │ Email                        │");
+  console.log("  ├─────────────────────────┼──────────────────────────────┤");
+  console.log("  │ Rahim Uddin             │ rahim@meramot.demo           │");
+  console.log("  │ Fatema Khatun           │ fatema@meramot.demo          │");
+  console.log("  │ Karim Hasan             │ karim@meramot.demo           │");
+  console.log("  └─────────────────────────┴──────────────────────────────┘");
+  console.log("\n  SKILL MATCHING:");
+  console.log("  • Arif Electronics Lab → Display, Battery, Charging port, Water damage");
+  console.log("  • Dhaka Laptop Clinic  → Motherboard, Keyboard, SSD, Cooling, Power supply");
+  console.log("");
 }
 
 main()
