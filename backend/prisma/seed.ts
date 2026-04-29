@@ -103,6 +103,12 @@ async function main() {
         hasVoucher: (i + 1) % 2 === 0,
         freeDelivery: (i + 1) % 4 === 0,
         hasDeals: (i + 1) % 5 === 0,
+        inspectionFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
+        baseLaborFee: Math.floor(Math.random() * 6 + 5) * 100, // 500 to 1000
+        pickupFee: Math.floor(Math.random() * 2 + 1) * 100, // 100 to 200
+        expressFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
+        setupComplete: true,
+        isPublic: true,
         categories: [
           ShopCategory.COURIER_PICKUP,
           ShopCategory.IN_SHOP_REPAIR,
@@ -136,7 +142,7 @@ async function main() {
       shopId: shops[0].id,
       status: RepairJobStatus.COMPLETED,
       diagnosisNotes: "Battery replaced with original cell.",
-      finalQuotedAmount: 145,
+      finalQuotedAmount: 12500, // Realistic BDT for MacBook Air M2 Battery
       customerApproved: true,
       startedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
       completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -165,7 +171,7 @@ async function main() {
       shopId: shops[1].id,
       status: RepairJobStatus.REPAIRING,
       diagnosisNotes: "Keyboard assembly needs replacement.",
-      finalQuotedAmount: 95,
+      finalQuotedAmount: 4500, // Realistic BDT for ThinkPad keyboard
       customerApproved: true,
       startedAt: new Date(),
     },
