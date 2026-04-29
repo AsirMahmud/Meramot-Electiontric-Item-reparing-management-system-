@@ -191,20 +191,31 @@ router.post("/tickets/:id/escalate", async (req: Request & { user?: any }, res: 
 
     const dispute = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.$executeRawUnsafe(
-        `UPDATE "SupportTicket" SET status = $1::"SupportTicketStatus", "assigneeAdminId" = $2 WHERE id = $3`,
+        `UPDATE "SupportTicket" SET status = $1::"SupportTicketStatus", "assignedAdminId" = $2 WHERE id = $3`,
         "ESCALATED",
         req.user.id,
         ticket.id
       );
 
+      let againstId = ticket.userId; // Default to self if nothing else
+      if (ticket.shopId) {
+        const shopStaff = await tx.shopStaff.findFirst({
+          where: { shopId: ticket.shopId, role: "OWNER" }
+        });
+        if (shopStaff) {
+          againstId = shopStaff.userId;
+        }
+      }
+
       const disputeId = `cm${Math.random().toString(36).substring(2, 15)}`;
       await tx.$executeRawUnsafe(
-        `INSERT INTO "DisputeCase" (id, "supportTicketId", "repairRequestId", "openedById", "assignedAdminId", status, "createdAt", "updatedAt") 
-         VALUES ($1, $2, $3, $4, $5, $6::"DisputeStatus", NOW(), NOW())`,
+        `INSERT INTO "DisputeCase" (id, "supportTicketId", "repairRequestId", "openedById", "againstId", "assignedAdminId", status, "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7::"DisputeStatus", NOW(), NOW())`,
         disputeId,
         ticket.id,
         ticket.repairRequestId,
         ticket.userId,
+        againstId,
         req.user.id,
         "OPEN"
       );
