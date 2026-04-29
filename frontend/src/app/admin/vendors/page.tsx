@@ -143,41 +143,41 @@ export default function AdminVendorsPage() {
   return (
     <section>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Vendors</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Vendor management</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Vendors</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Vendor management</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Review business applications and manage active shop statuses.
         </p>
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading vendor applications...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading vendor applications...</div>
       ) : (
         <div className="space-y-5">
           {vendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF] p-6"
+              className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6"
             >
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
                       {vendor.status}
                     </p>
                     {vendor.shop && (
-                      <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${vendor.shop.isActive ? "bg-[#E6F0E2] text-[#1F4D2E]" : "bg-[#FDEAEA] text-[#8A2A2A]"}`}>
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${vendor.shop.isActive ? "bg-[var(--mint-100)] text-[var(--accent-dark)]" : "bg-[#FDEAEA] text-[#8A2A2A]"}`}>
                         {vendor.shop.isActive ? "Shop Active" : "Shop Suspended"}
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-2 text-2xl font-bold text-[#1F4D2E]">{vendor.shopName}</h3>
-                  <p className="mt-2 text-[#244233]">
+                  <h3 className="mt-2 text-2xl font-bold text-[var(--accent-dark)]">{vendor.shopName}</h3>
+                  <p className="mt-2 text-[var(--foreground)]">
                     {vendor.applicant?.name || vendor.applicant?.username || "Unknown applicant"}
                   </p>
-                  <p className="text-[#6B7C72]">{vendor.businessEmail}</p>
-                  <p className="text-[#6B7C72]">{vendor.phone || vendor.applicant?.phone || "N/A"}</p>
-                  <p className="mt-2 text-sm text-[#6B7C72]">
+                  <p className="text-[var(--muted-foreground)]">{vendor.businessEmail}</p>
+                  <p className="text-[var(--muted-foreground)]">{vendor.phone || vendor.applicant?.phone || "N/A"}</p>
+                  <p className="mt-2 text-sm text-[var(--muted-foreground)]">
                     {vendor.city || "Unknown city"}
                     {vendor.area ? `, ${vendor.area}` : ""}
                   </p>
@@ -189,14 +189,14 @@ export default function AdminVendorsPage() {
                       <button
                         onClick={() => handleApplicationAction(vendor.id, "approve")}
                         disabled={isProcessing}
-                        className="rounded-full bg-[#1F4D2E] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#183D24] disabled:opacity-50"
+                        className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleApplicationAction(vendor.id, "request-info")}
                         disabled={isProcessing}
-                        className="rounded-full border border-[#1F4D2E] px-5 py-3 text-sm font-semibold text-[#1F4D2E] transition hover:bg-[#E6F0E2] disabled:opacity-50"
+                        className="rounded-full border border-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
                       >
                         Request Info
                       </button>
@@ -214,7 +214,7 @@ export default function AdminVendorsPage() {
                     <button
                       onClick={() => handleShopSuspendToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isActive)}
                       disabled={isProcessing}
-                      className={`rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50 ${vendor.shop.isActive ? "border border-[#D7E2D2] text-[#8A2A2A] hover:bg-[#FDEAEA]" : "bg-[#1F4D2E] text-white hover:bg-[#183D24]"}`}
+                      className={`rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50 ${vendor.shop.isActive ? "border border-[var(--border)] text-[#8A2A2A] hover:bg-[#FDEAEA]" : "bg-[var(--accent-dark)] text-white hover:opacity-90"}`}
                     >
                       {vendor.shop.isActive ? "Suspend Shop" : "Reinstate Shop"}
                     </button>
@@ -222,7 +222,7 @@ export default function AdminVendorsPage() {
 
                   <Link
                     href={`/admin/vendors/${vendor.id}`}
-                    className="rounded-full bg-[#E6F0E2] px-5 py-3 text-sm font-semibold text-[#1F4D2E] transition hover:bg-[#D7E2D2]"
+                    className="rounded-full bg-[var(--mint-100)] px-5 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2]"
                   >
                     View Details
                   </Link>
@@ -232,7 +232,7 @@ export default function AdminVendorsPage() {
           ))}
 
           {!vendors.length && (
-            <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">
+            <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">
               No vendor applications found.
             </div>
           )}

@@ -60,8 +60,8 @@ export default function AdminSidebarNav() {
               href={item.href}
               className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
                 isActive
-                  ? "bg-[#DCEAD7] text-[#1F4D2E]"
-                  : "text-[#244233] hover:bg-[#E6F0E2] hover:text-[#1F4D2E]"
+                  ? "bg-[#DCEAD7] text-[var(--accent-dark)]"
+                  : "text-[var(--foreground)] hover:bg-[var(--mint-100)] hover:text-[var(--accent-dark)]"
               }`}
             >
               {item.label}
@@ -70,17 +70,17 @@ export default function AdminSidebarNav() {
         })}
       </nav>
 
-      <div className="rounded-2xl border border-[#D7E2D2] bg-white/70 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#5E7366]">
+      <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
           Signed in as
         </p>
-        <p className="mt-2 text-sm font-semibold text-[#1F4D2E]">{adminLabel}</p>
+        <p className="mt-2 text-sm font-semibold text-[var(--accent-dark)]">{adminLabel}</p>
 
         <button
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="mt-4 w-full rounded-2xl border border-[#C7D7C2] bg-white px-4 py-3 text-sm font-semibold text-[#244233] transition hover:bg-[#E6F0E2] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 w-full rounded-2xl border border-[#C7D7C2] bg-white px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-100)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loggingOut ? "Signing out..." : "Sign out"}
         </button>

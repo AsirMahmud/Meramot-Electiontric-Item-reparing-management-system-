@@ -223,54 +223,54 @@ export default function AdminFinancePage() {
   return (
     <section className="space-y-10 pb-20">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Analytics</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Financial Business Intelligence</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Analytics</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Financial Business Intelligence</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Real-time tracking of platform revenue, commission flow, and vendor payout distributions.
         </p>
       </div>
 
       {loadingSummary ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading financial data...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading financial data...</div>
       ) : summary ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm transition hover:shadow-md">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">Total Volume</p>
-            <p className="mt-3 text-3xl font-bold text-[#1F4D2E]">{formatMoney(summary.totalCustomerPayments)}</p>
+          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Total Volume</p>
+            <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalCustomerPayments)}</p>
           </div>
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm transition hover:shadow-md">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#1F4D2E]">Platform Earnings</p>
-            <p className="mt-3 text-3xl font-bold text-[#1F4D2E]">{formatMoney(summary.totalPlatformCommission)}</p>
-            <p className="mt-1 text-xs text-[#6B7C72]">Net Commission ({(summary.commissionRate * 100).toFixed(0)}%)</p>
+          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--accent-dark)]">Platform Earnings</p>
+            <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalPlatformCommission)}</p>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">Net Commission ({(summary.commissionRate * 100).toFixed(0)}%)</p>
           </div>
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm transition hover:shadow-md">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">Vendor Payouts</p>
-            <p className="mt-3 text-3xl font-bold text-[#1F4D2E]">{formatMoney(summary.totalVendorEarningsReleased)}</p>
+          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Vendor Payouts</p>
+            <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalVendorEarningsReleased)}</p>
           </div>
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F9FBFA] p-6">
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8A2A2A]">Refunds Issued</p>
             <p className="mt-3 text-3xl font-bold text-[#8A2A2A]">{formatMoney(summary.totalRefundedToCustomers)}</p>
           </div>
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F9FBFA] p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">Escrow Balance</p>
-            <p className="mt-3 text-3xl font-bold text-[#1F4D2E]">{formatMoney(summary.escrowHeldAmount)}</p>
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Escrow Balance</p>
+            <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.escrowHeldAmount)}</p>
           </div>
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F9FBFA] p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">Open Settlements</p>
-            <p className="mt-3 text-3xl font-bold text-[#1F4D2E]">{summary.pendingSettlementCount}</p>
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Open Settlements</p>
+            <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{summary.pendingSettlementCount}</p>
           </div>
         </div>
       ) : null}
 
       {/* Charts Section */}
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-[32px] border border-[#D7E2D2] bg-white p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#1F4D2E]">Revenue & Commission Trends</h3>
-          <p className="mb-8 text-sm text-[#6B7C72]">Last 30 days of platform activity</p>
+        <div className="xl:col-span-2 rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-[var(--accent-dark)]">Revenue & Commission Trends</h3>
+          <p className="mb-8 text-sm text-[var(--muted-foreground)]">Last 30 days of platform activity</p>
           
           <div className="h-[350px] w-full">
             {loadingCharts ? (
-              <div className="flex h-full items-center justify-center text-[#6B7C72]">Loading trends...</div>
+              <div className="flex h-full items-center justify-center text-[var(--muted-foreground)]">Loading trends...</div>
             ) : chartData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData.timeline}>
@@ -314,18 +314,18 @@ export default function AdminFinancePage() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-[#6B7C72]">No chart data available</div>
+              <div className="flex h-full items-center justify-center text-[var(--muted-foreground)]">No chart data available</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-[#D7E2D2] bg-white p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#1F4D2E]">Fund Distribution</h3>
-          <p className="mb-4 text-sm text-[#6B7C72]">Transaction volume by type</p>
+        <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-[var(--accent-dark)]">Fund Distribution</h3>
+          <p className="mb-4 text-sm text-[var(--muted-foreground)]">Transaction volume by type</p>
 
           <div className="h-[300px] w-full">
             {loadingCharts ? (
-              <div className="flex h-full items-center justify-center text-[#6B7C72]">Loading...</div>
+              <div className="flex h-full items-center justify-center text-[var(--muted-foreground)]">Loading...</div>
             ) : chartData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -353,9 +353,9 @@ export default function AdminFinancePage() {
               <div key={item.name} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
-                  <span className="text-[#5E7366] truncate w-24">{item.name.replace(/_/g, " ")}</span>
+                  <span className="text-[var(--muted-foreground)] truncate w-24">{item.name.replace(/_/g, " ")}</span>
                 </div>
-                <span className="font-bold text-[#1F4D2E]">{formatMoney(item.value)}</span>
+                <span className="font-bold text-[var(--accent-dark)]">{formatMoney(item.value)}</span>
               </div>
             ))}
           </div>
@@ -363,9 +363,9 @@ export default function AdminFinancePage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <form onSubmit={handleSettleSingle} className="rounded-[32px] border border-[#D7E2D2] bg-white p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#1F4D2E]">Manual Settlement</h3>
-          <p className="mt-2 text-sm text-[#6B7C72]">
+        <form onSubmit={handleSettleSingle} className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-[var(--accent-dark)]">Manual Settlement</h3>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Process a single vendor payout with automated commission deduction.
           </p>
 
@@ -374,46 +374,46 @@ export default function AdminFinancePage() {
               value={settlePaymentId}
               onChange={(event) => setSettlePaymentId(event.target.value)}
               placeholder="Payment Transaction ID"
-              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[#1F4D2E] transition"
+              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
             />
             <textarea
               value={settlementNote}
               onChange={(event) => setSettlementNote(event.target.value)}
               placeholder="Internal settlement note (optional)"
               rows={3}
-              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[#1F4D2E] transition"
+              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
             />
           </div>
 
           <button
             type="submit"
-            className="mt-6 w-full rounded-full bg-[#1F4D2E] py-4 text-sm font-semibold text-white transition hover:bg-[#183D24] shadow-lg shadow-[#1F4D2E]/20"
+            className="mt-6 w-full rounded-full bg-[var(--accent-dark)] py-4 text-sm font-semibold text-white transition hover:opacity-90 shadow-lg shadow-[#1F4D2E]/20"
           >
             Confirm Settlement
           </button>
         </form>
 
-        <div className="rounded-[32px] border border-[#D7E2D2] bg-white p-8 shadow-sm">
-          <h3 className="text-xl font-bold text-[#1F4D2E]">Batch Operations</h3>
-          <p className="mt-2 text-sm text-[#6B7C72]">
+        <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-[var(--accent-dark)]">Batch Operations</h3>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Execute automated settlement tasks across all eligible paid payments.
           </p>
 
           <div className="mt-6 space-y-6">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-[#5E7366]">Batch Limit</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Batch Limit</label>
               <input
                 value={batchLimit}
                 onChange={(event) => setBatchLimit(event.target.value)}
                 placeholder="20"
-                className="mt-2 w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[#1F4D2E] transition"
+                className="mt-2 w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
               />
             </div>
             
             <button
               type="button"
               onClick={handleAutoSettle}
-              className="w-full rounded-full border-2 border-[#1F4D2E] py-4 text-sm font-bold text-[#1F4D2E] transition hover:bg-[#F2F5EF]"
+              className="w-full rounded-full border-2 border-[var(--accent-dark)] py-4 text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
             >
               Run Batch Settlement
             </button>
@@ -424,26 +424,26 @@ export default function AdminFinancePage() {
       {(actionMessage || actionError) && (
         <div
           className={`rounded-2xl px-6 py-5 text-sm font-medium shadow-sm border ${
-            actionError ? "bg-[#FBEAEA] text-[#8A2A2A] border-[#F2D7D7]" : "bg-[#E6F0E2] text-[#1F4D2E] border-[#D7E2D2]"
+            actionError ? "bg-[#FBEAEA] text-[#8A2A2A] border-[#F2D7D7]" : "bg-[var(--mint-100)] text-[var(--accent-dark)] border-[var(--border)]"
           }`}
         >
           {actionError || actionMessage}
         </div>
       )}
 
-      <div className="rounded-[32px] border border-[#D7E2D2] bg-white p-8 shadow-sm">
+      <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-[#1F4D2E]">Recent Ledger Activity</h3>
-          <button onClick={loadEntries} className="text-sm font-medium text-[#5E7366] hover:text-[#1F4D2E]">Refresh</button>
+          <h3 className="text-xl font-bold text-[var(--accent-dark)]">Recent Ledger Activity</h3>
+          <button onClick={loadEntries} className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--accent-dark)]">Refresh</button>
         </div>
 
         {loadingEntries ? (
-          <p className="mt-6 text-sm text-[#6B7C72]">Fetching latest entries...</p>
+          <p className="mt-6 text-sm text-[var(--muted-foreground)]">Fetching latest entries...</p>
         ) : entries.length ? (
           <div className="mt-6 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[#D7E2D2] text-left uppercase tracking-[0.16em] text-[#5E7366]">
+                <tr className="border-b border-[var(--border)] text-left uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
                   <th className="px-3 py-4">Event Type</th>
                   <th className="px-3 py-4">Impact</th>
                   <th className="px-3 py-4">Transaction</th>
@@ -453,23 +453,23 @@ export default function AdminFinancePage() {
               </thead>
               <tbody className="divide-y divide-[#F0F0F0]">
                 {entries.map((entry) => (
-                  <tr key={entry.id} className="text-[#244233] transition hover:bg-[#F9FBFA]">
+                  <tr key={entry.id} className="text-[var(--foreground)] transition hover:bg-[#F9FBFA]">
                     <td className="px-3 py-4">
-                      <span className="rounded-full bg-[#E6F0E2] px-3 py-1 text-[10px] font-bold text-[#1F4D2E]">
+                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-[10px] font-bold text-[var(--accent-dark)]">
                         {entry.action.replace(/_/g, " ")}
                       </span>
                     </td>
                     <td className="px-3 py-4 font-bold">{formatMoney(entry.amount)}</td>
-                    <td className="px-3 py-4 text-xs font-mono text-[#5E7366]">{entry.paymentId || "System"}</td>
-                    <td className="px-3 py-4 text-[#5E7366]">{entry.vendor?.name || entry.customer?.name || "N/A"}</td>
-                    <td className="px-3 py-4 text-[#6B7C72]">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-4 text-xs font-mono text-[var(--muted-foreground)]">{entry.paymentId || "System"}</td>
+                    <td className="px-3 py-4 text-[var(--muted-foreground)]">{entry.vendor?.name || entry.customer?.name || "N/A"}</td>
+                    <td className="px-3 py-4 text-[var(--muted-foreground)]">{new Date(entry.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="mt-6 text-sm text-[#6B7C72]">No financial activity recorded yet.</p>
+          <p className="mt-6 text-sm text-[var(--muted-foreground)]">No financial activity recorded yet.</p>
         )}
       </div>
     </section>

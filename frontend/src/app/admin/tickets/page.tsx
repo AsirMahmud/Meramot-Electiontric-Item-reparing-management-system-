@@ -46,21 +46,21 @@ export default function AdminTicketsPage() {
   return (
     <section>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Support</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Support tickets</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Support</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Support tickets</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Track user complaints, payment issues, and escalations.
         </p>
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading tickets...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading tickets...</div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF]">
+        <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="border-b border-[#D7E2D2] bg-[#E6F0E2]">
-                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[#5E7366]">
+              <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
+                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                   <th className="px-6 py-4">Subject</th>
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4">Category</th>
@@ -71,28 +71,28 @@ export default function AdminTicketsPage() {
               </thead>
               <tbody>
                 {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-[#D7E2D2] last:border-b-0">
+                  <tr key={ticket.id} className="border-b border-[var(--border)] last:border-b-0">
                     <td className="px-6 py-5">
-                      <p className="font-semibold text-[#1F4D2E]">{ticket.subject}</p>
-                      <p className="mt-1 text-sm text-[#6B7C72]">
+                      <p className="font-semibold text-[var(--accent-dark)]">{ticket.subject}</p>
+                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                         {new Date(ticket.createdAt).toLocaleString()}
                       </p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[#244233]">
+                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">
                       <p>{ticket.user.name || ticket.user.username}</p>
-                      <p className="text-[#6B7C72]">{ticket.user.email}</p>
+                      <p className="text-[var(--muted-foreground)]">{ticket.user.email}</p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[#244233]">{ticket.category}</td>
-                    <td className="px-6 py-5 text-sm text-[#244233]">{ticket.priority}</td>
+                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.category}</td>
+                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.priority}</td>
                     <td className="px-6 py-5">
-                      <span className="rounded-full bg-[#E6F0E2] px-3 py-1 text-xs font-semibold text-[#1F4D2E]">
+                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
                         {ticket.status}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <Link
                         href={`/admin/tickets/${ticket.id}`}
-                        className="rounded-full bg-[#1F4D2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#183D24]"
+                        className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
                       >
                         View
                       </Link>
@@ -103,7 +103,7 @@ export default function AdminTicketsPage() {
             </table>
           </div>
 
-          {!tickets.length && <div className="p-6 text-[#6B7C72]">No tickets found.</div>}
+          {!tickets.length && <div className="p-6 text-[var(--muted-foreground)]">No tickets found.</div>}
         </div>
       )}
     </section>

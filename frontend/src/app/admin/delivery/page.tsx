@@ -58,7 +58,7 @@ export default function AdminDeliveryPage() {
   if (status === "loading" || (loading && riders.length === 0)) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-[#6B7C72] animate-pulse">Loading delivery riders...</p>
+        <p className="text-[var(--muted-foreground)] animate-pulse">Loading delivery riders...</p>
       </div>
     );
   }
@@ -69,8 +69,8 @@ export default function AdminDeliveryPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-[#1F4D2E]">Delivery Riders</h2>
-        <p className="mt-1 text-sm text-[#6B7C72]">
+        <h2 className="text-2xl font-bold text-[var(--accent-dark)]">Delivery Riders</h2>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Approve, reject, and monitor delivery personnel on the platform.
         </p>
       </div>
@@ -83,35 +83,35 @@ export default function AdminDeliveryPage() {
 
       {stats && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-[#D7E2D2] bg-white p-4">
-            <p className="text-xs font-semibold uppercase text-[#6B7C72]">Total Riders</p>
-            <p className="mt-1 text-2xl font-bold text-[#1F4D2E]">{stats.totalRiders}</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Total Riders</p>
+            <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)]">{stats.totalRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[#D7E2D2] bg-white p-4">
-            <p className="text-xs font-semibold uppercase text-[#6B7C72]">Pending</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Pending</p>
             <p className="mt-1 text-2xl font-bold text-amber-600">{stats.pendingRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[#D7E2D2] bg-white p-4">
-            <p className="text-xs font-semibold uppercase text-[#6B7C72]">Approved</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Approved</p>
             <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.approvedRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[#D7E2D2] bg-white p-4">
-            <p className="text-xs font-semibold uppercase text-[#6B7C72]">Rejected</p>
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Rejected</p>
             <p className="mt-1 text-2xl font-bold text-rose-600">{stats.rejectedRiders}</p>
           </div>
         </div>
       )}
 
       <section>
-        <h3 className="mb-4 text-lg font-bold text-[#1F4D2E]">Pending Approvals ({pendingRiders.length})</h3>
+        <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Pending Approvals ({pendingRiders.length})</h3>
         {pendingRiders.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[#FAFAF7] p-8 text-center text-sm text-[#6B7C72]">
+          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
             No pending delivery rider applications.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[#D7E2D2] bg-white">
-            <table className="w-full text-left text-sm text-[#244233]">
-              <thead className="border-b border-[#D7E2D2] bg-[#FAFAF7]">
+          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
+            <table className="w-full text-left text-sm text-[var(--foreground)]">
+              <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-6 py-4 font-semibold">User</th>
                   <th className="px-6 py-4 font-semibold">Contact</th>
@@ -121,16 +121,16 @@ export default function AdminDeliveryPage() {
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea]">
                 {pendingRiders.map((rider) => (
-                  <tr key={rider.id} className="transition-colors hover:bg-[#FAFAF7]">
+                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)]">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-[#1F4D2E]">{rider.name || "Unknown"}</p>
-                      <p className="text-xs text-[#6B7C72]">ID: {rider.id}</p>
+                      <p className="font-bold text-[var(--accent-dark)]">{rider.name || "Unknown"}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">ID: {rider.id}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p>{rider.email || "—"}</p>
-                      <p className="text-[#6B7C72]">{rider.phone || "—"}</p>
+                      <p className="text-[var(--muted-foreground)]">{rider.phone || "—"}</p>
                     </td>
-                    <td className="px-6 py-4 text-[#6B7C72]">
+                    <td className="px-6 py-4 text-[var(--muted-foreground)]">
                       {new Date(rider.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -139,7 +139,7 @@ export default function AdminDeliveryPage() {
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleStatusUpdate(rider.id, "APPROVED")}
-                          className="rounded-xl bg-[#244233] px-4 py-2 text-xs font-bold text-[#DCEAD7] transition hover:bg-[#1F4D2E] disabled:opacity-50"
+                          className="rounded-xl bg-[#244233] px-4 py-2 text-xs font-bold text-[#DCEAD7] transition hover:bg-[var(--accent-dark)] disabled:opacity-50"
                         >
                           Approve
                         </button>
@@ -162,15 +162,15 @@ export default function AdminDeliveryPage() {
       </section>
 
       <section>
-        <h3 className="mb-4 text-lg font-bold text-[#1F4D2E]">All Delivery Riders ({allOtherRiders.length})</h3>
+        <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">All Delivery Riders ({allOtherRiders.length})</h3>
         {allOtherRiders.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[#FAFAF7] p-8 text-center text-sm text-[#6B7C72]">
+          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
             No verified delivery riders found.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[#D7E2D2] bg-white">
-            <table className="w-full text-left text-sm text-[#244233]">
-              <thead className="border-b border-[#D7E2D2] bg-[#FAFAF7]">
+          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
+            <table className="w-full text-left text-sm text-[var(--foreground)]">
+              <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-6 py-4 font-semibold">User</th>
                   <th className="px-6 py-4 font-semibold">Contact</th>
@@ -180,14 +180,14 @@ export default function AdminDeliveryPage() {
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea]">
                 {allOtherRiders.map((rider) => (
-                  <tr key={rider.id} className="transition-colors hover:bg-[#FAFAF7]">
+                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)]">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-[#1F4D2E]">{rider.name || "Unknown"}</p>
-                      <p className="text-xs text-[#6B7C72]">ID: {rider.id}</p>
+                      <p className="font-bold text-[var(--accent-dark)]">{rider.name || "Unknown"}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">ID: {rider.id}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p>{rider.email || "—"}</p>
-                      <p className="text-[#6B7C72]">{rider.phone || "—"}</p>
+                      <p className="text-[var(--muted-foreground)]">{rider.phone || "—"}</p>
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -203,7 +203,7 @@ export default function AdminDeliveryPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-medium text-[#6B7C72]">{rider.status}</span>
+                      <span className="font-medium text-[var(--muted-foreground)]">{rider.status}</span>
                     </td>
                   </tr>
                 ))}

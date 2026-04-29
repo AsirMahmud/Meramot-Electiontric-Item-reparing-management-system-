@@ -62,10 +62,10 @@ export default function DeliverySignupForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 py-12">
-      <div className="w-full max-w-lg rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+      <div className="w-full max-w-lg rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[#163625]">Create partner account</h1>
-          <p className="mt-2 text-sm font-medium text-[#163625]/60">
+          <h1 className="text-2xl font-bold text-[var(--accent-dark)]">Create partner account</h1>
+          <p className="mt-2 text-sm font-medium text-[var(--accent-dark)]/60">
             Submit your profile for approval. Username and password are auto-generated and sent to your email after approval.
           </p>
         </div>
@@ -79,40 +79,40 @@ export default function DeliverySignupForm() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">Full name</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">Full name</label>
               <input
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+                className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-[#163625]">Phone</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">Phone</label>
               <input
                 required
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+                className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">Email</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">Email</label>
               <input
                 required
                 type="email"
                 autoComplete="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+                className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">Vehicle (optional)</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">Vehicle (optional)</label>
               <select
                 value={form.vehicleType}
                 onChange={(e) => setForm((f) => ({ ...f, vehicleType: e.target.value }))}
-                className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+                className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               >
                 <option value="">Select</option>
                 <option value="motorcycle">Motorcycle</option>
@@ -122,9 +122,9 @@ export default function DeliverySignupForm() {
               </select>
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">NID Document Upload</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">NID Document Upload</label>
               {!form.nidDocumentUrl ? (
-                <div className="rounded-xl border border-[#d9e5d5] p-3">
+                <div className="rounded-xl border border-[var(--border)] p-3">
                   <UploadDropzone
                     endpoint="deliveryNidUploader"
                     onUploadError={(uploadError: Error) => {
@@ -149,7 +149,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[#163625] ut-allowed-content:text-[#163625]/70",
+                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -162,9 +162,9 @@ export default function DeliverySignupForm() {
               {nidUploadError ? <p className="text-xs font-medium text-red-700">{nidUploadError}</p> : null}
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">Educational Document Upload</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">Educational Document Upload</label>
               {!form.educationDocumentUrl ? (
-                <div className="rounded-xl border border-[#d9e5d5] p-3">
+                <div className="rounded-xl border border-[var(--border)] p-3">
                   <UploadDropzone
                     endpoint="deliveryEducationUploader"
                     onUploadError={(uploadError: Error) => {
@@ -189,7 +189,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[#163625] ut-allowed-content:text-[#163625]/70",
+                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -204,9 +204,9 @@ export default function DeliverySignupForm() {
               ) : null}
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <label className="text-sm font-semibold text-[#163625]">CV Upload (PDF)</label>
+              <label className="text-sm font-semibold text-[var(--accent-dark)]">CV Upload (PDF)</label>
               {!form.cvDocumentUrl ? (
-                <div className="rounded-xl border border-[#d9e5d5] p-3">
+                <div className="rounded-xl border border-[var(--border)] p-3">
                   <UploadDropzone
                     endpoint="deliveryCvUploader"
                     onUploadError={(uploadError: Error) => {
@@ -231,7 +231,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[#163625] ut-allowed-content:text-[#163625]/70",
+                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -248,7 +248,7 @@ export default function DeliverySignupForm() {
           </div>
 
           {!form.nidDocumentUrl || !form.educationDocumentUrl || !form.cvDocumentUrl ? (
-            <p className="text-xs font-medium text-[#163625]/70">
+            <p className="text-xs font-medium text-[var(--accent-dark)]/70">
               Upload NID, education document, and CV to enable registration.
             </p>
           ) : null}
@@ -256,15 +256,15 @@ export default function DeliverySignupForm() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 w-full rounded-xl bg-[#163625] py-3.5 text-base font-bold text-[#E4FCD5] transition hover:bg-[#0d2217] disabled:opacity-60"
+            className="mt-4 w-full rounded-xl bg-[#163625] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Register"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#163625]/70">
+        <p className="mt-6 text-center text-sm text-[var(--accent-dark)]/70">
           Already have a partner account?{" "}
-          <Link href="/delivery/login" className="font-bold text-[#163625] underline-offset-2 hover:underline">
+          <Link href="/delivery/login" className="font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline">
             Sign in
           </Link>
         </p>

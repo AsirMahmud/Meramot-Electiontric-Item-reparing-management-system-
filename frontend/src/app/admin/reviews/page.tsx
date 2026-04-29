@@ -87,9 +87,9 @@ export default function AdminReviewsPage() {
   return (
     <section>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Moderation</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Review Moderation</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Moderation</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Review Moderation</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Monitor platform-wide reviews and remove inappropriate content.
         </p>
       </div>
@@ -101,47 +101,47 @@ export default function AdminReviewsPage() {
                 placeholder="Filter by Shop ID"
                 value={shopId}
                 onChange={(e) => setShopId(e.target.value)}
-                className="w-full rounded-2xl border border-[#D7E2D2] px-4 py-3 text-[#244233] focus:border-[#1F4D2E] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
             />
             <input
                 type="text"
                 placeholder="Filter by User ID"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full rounded-2xl border border-[#D7E2D2] px-4 py-3 text-[#244233] focus:border-[#1F4D2E] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
             />
-            <button type="submit" className="rounded-2xl bg-[#1F4D2E] px-6 py-3 font-semibold text-white transition hover:bg-[#183D24]">
+            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-white transition hover:opacity-90">
                 Filter
             </button>
         </form>
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading reviews...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading reviews...</div>
       ) : (
         <div className="space-y-5">
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF] p-6"
+              className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6"
             >
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#5E7366]">
+                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
                         {review.shop.name}
                       </p>
-                      <span className="rounded-full bg-[#E6F0E2] px-3 py-1 text-xs font-semibold text-[#1F4D2E]">
+                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
                           {review.score} / 5
                       </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-medium text-[#1F4D2E] italic">
+                  <h3 className="mt-3 text-lg font-medium text-[var(--accent-dark)] italic">
                       "{review.review || "No written review provided."}"
                   </h3>
-                  <p className="mt-4 text-sm font-medium text-[#244233]">
+                  <p className="mt-4 text-sm font-medium text-[var(--foreground)]">
                     By: {review.user.name || review.user.username} ({review.user.email})
                   </p>
-                  <p className="mt-1 text-xs text-[#6B7C72]">
+                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                     Posted on: {new Date(review.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -159,7 +159,7 @@ export default function AdminReviewsPage() {
           ))}
 
           {!reviews.length && (
-            <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">
+            <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">
               No reviews found.
             </div>
           )}
