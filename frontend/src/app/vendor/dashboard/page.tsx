@@ -616,7 +616,7 @@ export default function VendorDashboardPage() {
                       <div>
                         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Bid workspace</p>
                         <h4 className="mt-1 text-xl font-bold text-[#173726]">
-                          {requestItem.myBid ? "Update your bid" : "Place your bid"}
+                          {requestItem.myBid ? "Update your offer" : "Make your offer"}
                         </h4>
                       </div>
                       {requestItem.myBid ? (
@@ -762,7 +762,7 @@ export default function VendorDashboardPage() {
                         </label>
 
                         <div className="rounded-2xl border border-dashed border-[#cfe0c6] bg-white px-4 py-3 text-sm text-[#355541]">
-                          <p className="font-semibold text-[#173726]">Bid total</p>
+                          <p className="font-semibold text-[#173726]">Your offer</p>
                           <p className="mt-2 text-2xl font-bold text-[#214c34]">{formatMoney(totalPreview)}</p>
                         </div>
                       </div>
@@ -802,8 +802,8 @@ export default function VendorDashboardPage() {
                         {isSubmitting
                           ? "Saving..."
                           : requestItem.myBid
-                            ? "Update bid"
-                            : "Place bid"}
+                            ? "Update offer"
+                            : "Make offer"}
                       </button>
                     </div>
                   </div>
