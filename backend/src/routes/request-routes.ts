@@ -7,7 +7,7 @@ import {
   respondToFinalQuote,
   updateRequestStatus,
 } from "../controllers/request-controller.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 const router = Router();
 

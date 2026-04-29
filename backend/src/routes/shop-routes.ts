@@ -5,13 +5,13 @@ import {
   getShops,
 } from "../controllers/shop-controllers.js";
 import {
-  getShopReviews,
   canReviewShop,
   createReview,
+  getShopReviews,
   updateReview,
   optionalAuth,
 } from "../controllers/review-controller.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 const router = Router();
 
@@ -27,4 +27,4 @@ router.patch("/:shopSlug/reviews/:reviewId", requireAuth, updateReview);
 // --- Shop detail ---
 router.get("/:slug", getShopBySlug);
 
-export default router;
+export default router;

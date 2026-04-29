@@ -17,11 +17,6 @@ import { apiRateLimiter } from "./middleware/rate-limit.js";
 export function createApp() {
   const app = express();
 
-  app.use((req, res, next) => {
-    console.log("INCOMING:", req.method, req.originalUrl);
-    next();
-  });
-
   app.use(
     cors({
       origin: env.frontendOrigin,

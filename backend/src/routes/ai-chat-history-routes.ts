@@ -5,7 +5,7 @@ import {
   getAiChatSessions,
   saveAiChatMessage,
 } from "../controllers/ai-chat-history-controller.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 const router = express.Router();
 

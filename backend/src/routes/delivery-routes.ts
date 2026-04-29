@@ -1,28 +1,35 @@
 import { Router } from "express";
 import {
   acceptMyDelivery,
+  getDeliveryChatMessages,
   getDeliveryMe,
+  getDeliveryPayoutSummary,
   listMyDeliveries,
+  requestDeliveryPayout,
+  sendDeliveryChatMessage,
   updateMyDeliveryStatus,
   updateLocation,
 } from "../controllers/delivery-controller.js";
-import { requireAuth, AuthedRequest } from "../middleware/auth.js";
-import { Response, NextFunction } from "express";
+import {
+  requireApprovedDeliveryPartner,
+  requireDeliveryAuth,
+} from "../middleware/delivery-auth-middleware.js";
 
 const router = Router();
 
-// Middleware to ensure the user is specifically a DELIVERY role
-function requireDeliveryRole(req: AuthedRequest, res: Response, next: NextFunction) {
-  if (req.user?.role !== "DELIVERY") {
-    return res.status(403).json({ message: "Only delivery partners can access this" });
-  }
-  return next();
-}
-
-router.get("/me", requireAuth, requireDeliveryRole, getDeliveryMe);
-router.get("/deliveries", requireAuth, requireDeliveryRole, listMyDeliveries);
-router.patch("/deliveries/:id/accept", requireAuth, requireDeliveryRole, acceptMyDelivery);
-router.patch("/deliveries/:id/status", requireAuth, requireDeliveryRole, updateMyDeliveryStatus);
-router.patch("/location", requireAuth, requireDeliveryRole, updateLocation);
+router.get("/me", requireDeliveryAuth, getDeliveryMe);
+router.get("/deliveries", requireDeliveryAuth, requireApprovedDeliveryPartner, listMyDeliveries);
+router.patch("/deliveries/:id/accept", requireDeliveryAuth, requireApprovedDeliveryPartner, acceptMyDelivery);
+router.patch(
+  "/deliveries/:id/status",
+  requireDeliveryAuth,
+  requireApprovedDeliveryPartner,
+  updateMyDeliveryStatus,
+);
+router.patch("/location", requireDeliveryAuth, requireApprovedDeliveryPartner, updateLocation);
+router.get("/payouts", requireDeliveryAuth, requireApprovedDeliveryPartner, getDeliveryPayoutSummary);
+router.post("/payouts/request", requireDeliveryAuth, requireApprovedDeliveryPartner, requestDeliveryPayout);
+router.get("/deliveries/:id/chat", requireDeliveryAuth, requireApprovedDeliveryPartner, getDeliveryChatMessages);
+router.post("/deliveries/:id/chat", requireDeliveryAuth, requireApprovedDeliveryPartner, sendDeliveryChatMessage);
 
 export default router;

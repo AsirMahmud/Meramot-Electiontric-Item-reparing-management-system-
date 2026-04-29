@@ -1097,7 +1097,7 @@ export interface DeliveryAdminMeResponse {
 
 
 export async function loginDelivery(credentials: unknown): Promise<{success: boolean, data?: DeliveryAuthPayload}> {
-  const res = await fetch(`${API}/api/delivery-auth/login`, {
+  const res = await fetch(`${API}/api/delivery/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials)
@@ -1106,7 +1106,7 @@ export async function loginDelivery(credentials: unknown): Promise<{success: boo
 }
 
 export async function loginDeliveryAdmin(credentials: unknown): Promise<{success: boolean, data?: DeliveryAdminAuthPayload}> {
-  const res = await fetch(`${API}/api/delivery-admin-auth/login`, {
+  const res = await fetch(`${API}/api/delivery-admin/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials)
@@ -1115,7 +1115,7 @@ export async function loginDeliveryAdmin(credentials: unknown): Promise<{success
 }
 
 export type RiderProfileStatusResponse = {
-  riderName: {
+  riderProfile: {
     id: string;
     userId: string;
     registrationStatus: "PENDING" | "APPROVED" | "REJECTED";

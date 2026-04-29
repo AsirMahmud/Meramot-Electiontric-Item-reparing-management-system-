@@ -7,7 +7,8 @@ import {
   updateMyVendorApplication,
   deleteVendorApplication
 } from "../controllers/vendor-application-controller.js";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/require-auth.js";
+import { requireAdmin } from "../middleware/require-admin.js";
 import { vendorApplyRateLimiter } from "../middleware/rate-limit.js";
 
 const router = Router();

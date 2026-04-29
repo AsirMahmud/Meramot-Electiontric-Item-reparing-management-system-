@@ -6,7 +6,7 @@ import {
   updateVendorAssignedJobStatus,
   upsertVendorBid,
 } from "../controllers/vendor-request-controller.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 const router = Router();
 
