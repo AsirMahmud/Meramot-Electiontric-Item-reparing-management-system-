@@ -256,16 +256,16 @@ export default function VendorDashboardPage() {
         href: "/vendor/my-bids",
       },
       {
-        label: "Assigned jobs",
-        value: String(totalOpenJobs),
-        description: "Jobs currently being handled by your shop.",
-        href: "/vendor/jobs",
-      },
-      {
         label: "Waiting customer approval",
         value: String(waitingApprovalCount),
         description: "Final diagnosis and quote already submitted by you.",
         href: "/vendor/approvals",
+      },
+      {
+        label: "Assigned jobs",
+        value: String(totalOpenJobs),
+        description: "Jobs currently being handled by your shop.",
+        href: "/vendor/jobs",
       },
     ],
     [activeBidCount, activeRequestCount, totalOpenJobs, waitingApprovalCount]
