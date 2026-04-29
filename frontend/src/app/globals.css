@@ -16,6 +16,7 @@
   --mint-500: #7eae77;
   --mint-700: #436440;
   --accent-dark: #244229;
+  --accent-foreground: #ffffff;
 }
 
 .dark {
@@ -33,6 +34,7 @@
   --mint-500: #7eae77;
   --mint-700: #b3caad;
   --accent-dark: #bdfaae; /* Much brighter green for accent texts */
+  --accent-foreground: #0f1c12; /* Dark green for text on bright accent background */
 }
 
 @theme inline {

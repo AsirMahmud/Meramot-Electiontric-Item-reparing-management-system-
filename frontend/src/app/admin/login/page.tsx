@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -79,7 +79,7 @@ export default function AdminLoginPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#5b7567]">
           Admin Only
         </p>
-        <h1 className="mt-3 text-3xl font-bold text-[#1f4d2e]">Admin Login</h1>
+        <h1 className="mt-3 text-3xl font-bold text-[var(--foreground)]">Admin Login</h1>
         <p className="mt-2 text-sm text-[#5f7668]">
           Use the demonstration credentials below to access the admin panel.
         </p>
@@ -131,14 +131,14 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-[#1f4d2e] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#183c24] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-[var(--foreground)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#183c24] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Sign in as admin"}
           </button>
         </form>
 
         <div className="mt-5 text-center text-sm text-[#5f7668]">
-          <Link href="/login" className="font-semibold text-[#1f4d2e] underline-offset-4 hover:underline">
+          <Link href="/login" className="font-semibold text-[var(--foreground)] underline-offset-4 hover:underline">
             Go to customer login
           </Link>
         </div>
@@ -146,3 +146,4 @@ export default function AdminLoginPage() {
     </main>
   );
 }
+

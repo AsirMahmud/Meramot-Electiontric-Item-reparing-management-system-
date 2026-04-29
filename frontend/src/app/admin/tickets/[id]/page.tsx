@@ -258,7 +258,7 @@ export default function AdminTicketDetailPage() {
                               <span>•</span>
                               <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
-                          <div className={`rounded-2xl px-5 py-3 max-w-[80%] shadow-sm ${isAdmin ? "bg-[var(--accent-dark)] text-white rounded-br-none" : "bg-white border border-[var(--border)] text-[var(--foreground)] rounded-bl-none"}`}>
+                          <div className={`rounded-2xl px-5 py-3 max-w-[80%] shadow-sm ${isAdmin ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] rounded-br-none" : "bg-white border border-[var(--border)] text-[var(--foreground)] rounded-bl-none"}`}>
                               {msg.message}
                           </div>
                       </div>
@@ -280,7 +280,7 @@ export default function AdminTicketDetailPage() {
                     <button
                         type="submit"
                         disabled={isSendingReply || !replyMessage.trim()}
-                        className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                        className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                     >
                         {isSendingReply ? "..." : "Send"}
                     </button>

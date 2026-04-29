@@ -346,7 +346,7 @@ function ShopsResultsClientInner() {
                     onClick={() => updateParams({ sort: tab.value })}
                     className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
                       active
-                        ? "bg-[var(--accent-dark)] text-white shadow-sm"
+                        ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] shadow-sm"
                         : "bg-transparent text-[var(--foreground)] hover:bg-[var(--card)]"
                     }`}
                   >

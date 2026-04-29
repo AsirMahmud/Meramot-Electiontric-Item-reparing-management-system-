@@ -772,7 +772,7 @@ export default function CartPage() {
                 type="button"
                 onClick={handleConfirmOrder}
                 disabled={busy}
-                className="mt-6 w-full rounded-full bg-[var(--accent-dark)] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:opacity-95 disabled:opacity-60"
+                className="mt-6 w-full rounded-full bg-[var(--accent-dark)] px-6 py-3.5 text-sm font-bold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-95 disabled:opacity-60"
               >
                 {busy
                   ? "Processing..."
@@ -802,7 +802,7 @@ export default function CartPage() {
             <button
               type="button"
               onClick={() => router.push("/shops")}
-              className="mt-6 rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-white transition hover:opacity-95"
+              className="mt-6 rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95"
             >
               Browse shops
             </button>

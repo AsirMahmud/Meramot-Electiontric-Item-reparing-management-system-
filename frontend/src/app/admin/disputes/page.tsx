@@ -109,7 +109,7 @@ export default function AdminDisputesPage() {
                 <div className="flex items-center gap-3 self-end lg:self-start">
                   <Link
                     href={`/admin/disputes/${dispute.id}`}
-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
                   >
                     Manage Case
                   </Link>

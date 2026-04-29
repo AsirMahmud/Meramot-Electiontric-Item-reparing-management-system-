@@ -189,7 +189,7 @@ export default function AdminVendorsPage() {
                       <button
                         onClick={() => handleApplicationAction(vendor.id, "approve")}
                         disabled={isProcessing}
-                        className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                        className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                       >
                         Approve
                       </button>
@@ -214,7 +214,7 @@ export default function AdminVendorsPage() {
                     <button
                       onClick={() => handleShopSuspendToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isActive)}
                       disabled={isProcessing}
-                      className={`rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50 ${vendor.shop.isActive ? "border border-[var(--border)] text-[#8A2A2A] hover:bg-[#FDEAEA]" : "bg-[var(--accent-dark)] text-white hover:opacity-90"}`}
+                      className={`rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50 ${vendor.shop.isActive ? "border border-[var(--border)] text-[#8A2A2A] hover:bg-[#FDEAEA]" : "bg-[var(--accent-dark)] text-[var(--accent-foreground)] hover:opacity-90"}`}
                     >
                       {vendor.shop.isActive ? "Suspend Shop" : "Reinstate Shop"}
                     </button>

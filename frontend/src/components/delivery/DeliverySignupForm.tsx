@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -149,7 +149,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
+                        "ut-ready:bg-[var(--foreground)] ut-uploading:bg-[var(--foreground)]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -189,7 +189,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
+                        "ut-ready:bg-[var(--foreground)] ut-uploading:bg-[var(--foreground)]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -231,7 +231,7 @@ export default function DeliverySignupForm() {
                     }}
                     appearance={{
                       button:
-                        "ut-ready:bg-[#163625] ut-uploading:bg-[#163625]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
+                        "ut-ready:bg-[var(--foreground)] ut-uploading:bg-[var(--foreground)]/70 ut-label:text-[var(--accent-dark)] ut-allowed-content:text-[var(--accent-dark)]/70",
                       container: "border-0",
                     }}
                   />
@@ -256,9 +256,9 @@ export default function DeliverySignupForm() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-4 w-full rounded-xl bg-[#163625] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
+            className="mt-4 w-full rounded-xl bg-[var(--foreground)] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
           >
-            {loading ? "Creating account…" : "Register"}
+            {loading ? "Creating accountâ€¦" : "Register"}
           </button>
         </form>
 
@@ -272,3 +272,4 @@ export default function DeliverySignupForm() {
     </div>
   );
 }
+

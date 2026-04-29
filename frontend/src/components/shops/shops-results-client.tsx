@@ -103,7 +103,7 @@ function ShopsResultsClientInner() {
                   onClick={() => setSort(value)}
                   className={`rounded-xl px-4 py-2 text-sm font-semibold ${
                     sort === value
-                      ? "bg-[var(--accent-dark)] text-white"
+                      ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
                       : "bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)]"
                   }`}
                 >

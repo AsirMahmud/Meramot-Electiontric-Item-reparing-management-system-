@@ -100,7 +100,7 @@ export default function AdminUsersPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E]"
             />
-            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-white transition hover:opacity-90">
+            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90">
                 Search
             </button>
         </form>
@@ -178,7 +178,7 @@ export default function AdminUsersPage() {
                       ) : (
                         <button
                           onClick={() => handleStatusUpdate(user.id, "ACTIVE")}
-                          className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                          className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
                         >
                           Restore
                         </button>

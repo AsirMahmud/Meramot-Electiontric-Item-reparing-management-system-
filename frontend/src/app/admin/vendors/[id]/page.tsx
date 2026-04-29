@@ -260,7 +260,7 @@ export default function AdminVendorDetailPage() {
                         <button
                             onClick={() => handleApplicationAction("approve")}
                             disabled={isProcessing}
-                            className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                            className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                         >
                             Approve Application
                         </button>
@@ -308,7 +308,7 @@ export default function AdminVendorDetailPage() {
                             <button
                                 onClick={() => handleShopSuspendToggle(true)}
                                 disabled={isProcessing}
-                                className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                                className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                             >
                                 Reinstate Shop
                             </button>

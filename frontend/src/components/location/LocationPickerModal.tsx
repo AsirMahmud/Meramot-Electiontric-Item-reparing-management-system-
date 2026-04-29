@@ -109,7 +109,7 @@ export default function LocationPickerModal({
               type="button"
               onClick={useGpsLocation}
               disabled={locationLoading || locationSaving}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
             >
               <LocateFixed size={18} className={locationLoading ? "animate-spin" : ""} />
               {locationLoading ? "Detecting..." : "Use GPS location"}
@@ -139,7 +139,7 @@ export default function LocationPickerModal({
               type="button"
               onClick={confirmLocation}
               disabled={locationSaving || !draftLocation}
-              className="mt-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+              className="mt-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
             >
               <Check size={18} />
               {locationSaving ? "Saving..." : "Confirm location"}

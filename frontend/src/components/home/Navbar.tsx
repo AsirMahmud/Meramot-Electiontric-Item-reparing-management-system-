@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, FormEvent } from "react";
+import { useMemo, useState, FormEvent, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
@@ -152,7 +152,7 @@ export function NavbarInner({
               {!isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
                 >
                   Sign in/Sign up
                 </Link>
@@ -163,7 +163,7 @@ export function NavbarInner({
                       setIsUserMenuOpen((prev) => !prev);
                       setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
                   >
                     {displayName} ▼
                   </button>
@@ -392,7 +392,7 @@ export function NavbarInner({
 
               <button
                 onClick={confirmLogout}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
               >
                 Yes
               </button>

@@ -92,7 +92,7 @@ export default function AdminTicketsPage() {
                     <td className="px-6 py-5 text-right">
                       <Link
                         href={`/admin/tickets/${ticket.id}`}
-                        className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+                        className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
                       >
                         View
                       </Link>

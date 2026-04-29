@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   createContext,
@@ -227,10 +227,10 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
         <div className="rounded-2xl bg-white px-10 py-8 shadow-sm border border-[#d9e5d5]">
           <div className="flex flex-col items-center gap-4">
             <div
-              className="h-10 w-10 border-2 border-[#163625] border-t-transparent rounded-full animate-spin"
+              className="h-10 w-10 border-2 border-[var(--foreground)] border-t-transparent rounded-full animate-spin"
               aria-hidden
             />
-            <p className="text-sm font-semibold text-[#163625]">Loading partner session…</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">Loading partner sessionâ€¦</p>
           </div>
         </div>
       </div>
@@ -239,3 +239,4 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

@@ -51,7 +51,7 @@ export default function AdminPaymentsPage() {
             onClick={() => setFilter(item)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               filter === item
-                ? "bg-[var(--accent-dark)] text-white"
+                ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
                 : "border border-[#BFD0BA] bg-white text-[var(--accent-dark)]"
             }`}
           >

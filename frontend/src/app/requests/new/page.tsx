@@ -143,7 +143,7 @@ function NewRequestPageInner() {
 
       {toast && (
        <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
            {toast}
          </div>
        </div>
@@ -498,7 +498,7 @@ function NewRequestPageInner() {
             <div className="md:col-span-2">
               <button
                 disabled={isSubmitting}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] disabled:opacity-60"
               >
                 {isSubmitting ? "Submitting..." : "Submit request"}
               </button>

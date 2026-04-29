@@ -633,7 +633,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       {cartToast && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
             {cartToast}
           </div>
         </div>
@@ -641,7 +641,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       {reviewToast && (
         <div className="pointer-events-none fixed inset-x-0 top-20 z-[101] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
             {reviewToast}
           </div>
         </div>
@@ -683,7 +683,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             </div>
 
             <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white">
+              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]">
                 Go to cart
               </Link>
               <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
@@ -732,7 +732,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                     <button
                       type="button"
                       onClick={() => void handleAddService(item)}
-                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-white"
+                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-[var(--accent-foreground)]"
                     >
                       {addingService === item.name ? "Adding..." : "Add to cart"}
                     </button>
@@ -876,7 +876,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
                 <button
                   disabled={submittingReview}
-                  className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+                  className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
                 >
                   {submittingReview
                     ? "Saving..."

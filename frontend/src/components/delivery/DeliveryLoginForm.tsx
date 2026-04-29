@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -30,7 +30,7 @@ export default function DeliveryLoginForm() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#163625] text-lg font-bold text-[var(--background)]">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--foreground)] text-lg font-bold text-[var(--background)]">
             LF
           </div>
           <h1 className="text-2xl font-bold text-[var(--accent-dark)]">Partner sign in</h1>
@@ -81,9 +81,9 @@ export default function DeliveryLoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-[#163625] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--foreground)] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Signing inâ€¦" : "Sign in"}
           </button>
         </form>
 
@@ -95,10 +95,11 @@ export default function DeliveryLoginForm() {
         </p>
         <p className="mt-3 text-center text-sm text-[var(--accent-dark)]/50">
           <Link href="/" className="font-medium hover:text-[var(--accent-dark)]">
-            ← Back to marketplace
+            â† Back to marketplace
           </Link>
         </p>
       </div>
     </div>
   );
 }
+

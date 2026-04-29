@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Home, Map, Wallet, User, Menu, X, LogOut, Package2 } from "lucide-react";
 import Link from "next/link";
@@ -25,7 +25,7 @@ export function Sidebar() {
     <>
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[var(--card)] p-4 md:hidden">
         <div className="flex items-center gap-2 text-[var(--accent-dark)]">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#163625] text-[var(--background)]">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--foreground)] text-[var(--background)]">
             <Package2 size={18} />
           </div>
           <div>
@@ -50,7 +50,7 @@ export function Sidebar() {
         )}
       >
         <div className="hidden border-b border-[var(--border)] px-6 py-6 md:flex md:items-center md:gap-3">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#163625] text-[var(--background)]">
+          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--foreground)] text-[var(--background)]">
             <Package2 size={20} />
           </div>
           <div>
@@ -119,3 +119,4 @@ export function Sidebar() {
     </>
   );
 }
+

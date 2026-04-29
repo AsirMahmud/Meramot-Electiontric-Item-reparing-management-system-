@@ -110,7 +110,7 @@ export default function AdminReviewsPage() {
                 onChange={(e) => setUserId(e.target.value)}
                 className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
             />
-            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-white transition hover:opacity-90">
+            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90">
                 Filter
             </button>
         </form>

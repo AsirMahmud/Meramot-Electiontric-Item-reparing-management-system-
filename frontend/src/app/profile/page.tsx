@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -37,7 +37,7 @@ type VendorProfileStatusPayload = {
   message?: string;
 };
 
-export default function ProfilePage() {
+function ProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -408,5 +408,13 @@ export default function ProfilePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center"><p>Loading profile...</p></div>}>
+      <ProfilePageInner />
+    </Suspense>
   );
 }

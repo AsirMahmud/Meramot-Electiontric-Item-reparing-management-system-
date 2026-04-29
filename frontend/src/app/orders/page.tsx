@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
@@ -84,7 +84,7 @@ function AcceptedBidSummary({ bid }: { bid?: BidItem | null }) {
   );
 }
 
-export default function OrdersPage() {
+function OrdersPageInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -490,5 +490,13 @@ export default function OrdersPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center"><p>Loading orders...</p></div>}>
+      <OrdersPageInner />
+    </Suspense>
   );
 }

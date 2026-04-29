@@ -358,7 +358,7 @@ export default function AiChatPage() {
                 type="button"
                 onClick={createNewChat}
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
               >
                 <span className="text-lg leading-none">+</span>
                 New Chat
@@ -460,7 +460,7 @@ export default function AiChatPage() {
                     <div
                       className={`max-w-[78%] rounded-[1.4rem] px-4 py-3 text-sm leading-7 shadow-sm ${
                         msg.role === "user"
-                          ? "bg-[var(--accent-dark)] text-white"
+                          ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
                           : "bg-[var(--mint-100)] text-[var(--foreground)]"
                       }`}
                     >
@@ -518,7 +518,7 @@ export default function AiChatPage() {
                     type="button"
                     onClick={handleSend}
                     disabled={loading}
-                    className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+                    className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
                   >
                     Send
                   </button>

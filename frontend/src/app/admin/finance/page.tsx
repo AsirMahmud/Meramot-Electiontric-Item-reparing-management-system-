@@ -387,7 +387,7 @@ export default function AdminFinancePage() {
 
           <button
             type="submit"
-            className="mt-6 w-full rounded-full bg-[var(--accent-dark)] py-4 text-sm font-semibold text-white transition hover:opacity-90 shadow-lg shadow-[#1F4D2E]/20"
+            className="mt-6 w-full rounded-full bg-[var(--accent-dark)] py-4 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 shadow-lg shadow-[#1F4D2E]/20"
           >
             Confirm Settlement
           </button>

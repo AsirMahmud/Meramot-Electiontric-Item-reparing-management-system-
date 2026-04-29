@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -61,7 +61,7 @@ export default function DeliveryDashboard() {
     if (status === "DELIVERED") return "border-emerald-200 bg-emerald-50 text-emerald-700";
     if (status === "FAILED" || status === "CANCELLED") return "border-red-200 bg-red-50 text-red-700";
     if (status === "PENDING") return "border-amber-200 bg-amber-50 text-amber-700";
-    return "border-[#d9e5d5] bg-[#eef4ea] text-[#163625]";
+    return "border-[#d9e5d5] bg-[#eef4ea] text-[var(--foreground)]";
   }
 
   return (
@@ -79,8 +79,8 @@ export default function DeliveryDashboard() {
       ) : null}
       {registrationStatus !== "APPROVED" ? (
         <div className="rounded-2xl border border-[#d9e5d5] bg-white px-6 py-8 shadow-sm">
-          <h2 className="text-lg font-bold text-[#163625]">Orders are locked</h2>
-          <p className="mt-2 text-sm text-[#163625]/75">
+          <h2 className="text-lg font-bold text-[var(--foreground)]">Orders are locked</h2>
+          <p className="mt-2 text-sm text-[var(--foreground)]/75">
             You cannot view customer orders until your delivery partner account is approved by admin.
           </p>
         </div>
@@ -92,15 +92,15 @@ export default function DeliveryDashboard() {
             <div className="rounded-3xl border border-[#d9e5d5] bg-white p-6 shadow-sm lg:col-span-2">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#163625] text-xl font-bold text-[#E4FCD5]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--foreground)] text-xl font-bold text-[#E4FCD5]">
                     {firstName.slice(0, 1).toUpperCase()}
                   </div>
                   <div>
-                    <h1 className="text-2xl font-extrabold text-[#163625]">Welcome back, {firstName}</h1>
-                    <p className="mt-1 text-sm font-medium text-[#163625]/70">Manage pickups and returns without map.</p>
+                    <h1 className="text-2xl font-extrabold text-[var(--foreground)]">Welcome back, {firstName}</h1>
+                    <p className="mt-1 text-sm font-medium text-[var(--foreground)]/70">Manage pickups and returns without map.</p>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-2 rounded-xl border border-[#d9e5d5] bg-[#eef4ea] px-3 py-2 text-xs font-bold text-[#163625]">
+                <span className="inline-flex items-center gap-2 rounded-xl border border-[#d9e5d5] bg-[#eef4ea] px-3 py-2 text-xs font-bold text-[var(--foreground)]">
                   <Bike size={14} />
                   {me?.status ?? "AVAILABLE"}
                 </span>
@@ -108,15 +108,15 @@ export default function DeliveryDashboard() {
             </div>
 
             <div className="rounded-3xl border border-[#d9e5d5] bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#163625]/60">Overview</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--foreground)]/60">Overview</p>
               <div className="mt-4 space-y-3">
                 <div className="flex items-center justify-between rounded-xl bg-[#f6faf3] p-3">
-                  <span className="text-sm font-semibold text-[#163625]/80">My active</span>
-                  <span className="text-sm font-extrabold text-[#163625]">{myActiveDeliveries.length}</span>
+                  <span className="text-sm font-semibold text-[var(--foreground)]/80">My active</span>
+                  <span className="text-sm font-extrabold text-[var(--foreground)]">{myActiveDeliveries.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-xl bg-[#f6faf3] p-3">
-                  <span className="text-sm font-semibold text-[#163625]/80">Available</span>
-                  <span className="text-sm font-extrabold text-[#163625]">{availableDeliveries.length}</span>
+                  <span className="text-sm font-semibold text-[var(--foreground)]/80">Available</span>
+                  <span className="text-sm font-extrabold text-[var(--foreground)]">{availableDeliveries.length}</span>
                 </div>
               </div>
             </div>
@@ -128,15 +128,15 @@ export default function DeliveryDashboard() {
 
           <section className="rounded-3xl border border-[#d9e5d5] bg-white p-6 shadow-sm">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-extrabold text-[#163625]">My Active Orders</h3>
-              <span className="rounded-lg border border-[#d9e5d5] bg-[#f6faf3] px-3 py-1 text-xs font-bold text-[#163625]">
+              <h3 className="text-lg font-extrabold text-[var(--foreground)]">My Active Orders</h3>
+              <span className="rounded-lg border border-[#d9e5d5] bg-[#f6faf3] px-3 py-1 text-xs font-bold text-[var(--foreground)]">
                 {myActiveDeliveries.length} orders
               </span>
             </div>
 
-            {loading ? <p className="text-sm text-[#163625]/70">Loading deliveries...</p> : null}
+            {loading ? <p className="text-sm text-[var(--foreground)]/70">Loading deliveries...</p> : null}
             {!loading && myActiveDeliveries.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#d9e5d5] bg-[#fafdf8] p-6 text-sm text-[#163625]/70">
+              <div className="rounded-2xl border border-dashed border-[#d9e5d5] bg-[#fafdf8] p-6 text-sm text-[var(--foreground)]/70">
                 No accepted active orders yet.
               </div>
             ) : null}
@@ -149,20 +149,20 @@ export default function DeliveryDashboard() {
                   className="group rounded-2xl border border-[#d9e5d5] bg-white p-5 transition hover:border-[#bdd0b3] hover:shadow-sm"
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <span className="rounded-lg bg-[#eef4ea] px-2.5 py-1 text-xs font-bold text-[#163625]">
+                    <span className="rounded-lg bg-[#eef4ea] px-2.5 py-1 text-xs font-bold text-[var(--foreground)]">
                       {d.direction === "TO_SHOP" ? "Customer to shop" : "Shop to customer"}
                     </span>
                     <span className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold ${getStatusTone(d.status)}`}>{d.status}</span>
                   </div>
-                  <p className="line-clamp-1 text-sm font-bold text-[#163625]">{d.repairJob.repairRequest.title}</p>
-                  <p className="mt-2 text-xs text-[#163625]/65">{d.pickupAddress}</p>
-                  <p className="text-xs text-[#163625]/65">to {d.dropAddress}</p>
+                  <p className="line-clamp-1 text-sm font-bold text-[var(--foreground)]">{d.repairJob.repairRequest.title}</p>
+                  <p className="mt-2 text-xs text-[var(--foreground)]/65">{d.pickupAddress}</p>
+                  <p className="text-xs text-[var(--foreground)]/65">to {d.dropAddress}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-[#eef3ea] pt-3">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[#163625]">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
                       <Package size={16} />
                       {d.repairJob.repairRequest.deviceType}
                     </div>
-                    <div className="flex items-center gap-1 text-sm font-bold text-[#163625]">
+                    <div className="flex items-center gap-1 text-sm font-bold text-[var(--foreground)]">
                       {d.fee ? `BDT ${d.fee}` : "Fee pending"}
                       <ChevronRight size={16} className="transition group-hover:translate-x-0.5" />
                     </div>
@@ -174,8 +174,8 @@ export default function DeliveryDashboard() {
 
           <section className="rounded-3xl border border-[#d9e5d5] bg-white p-6 shadow-sm">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-extrabold text-[#163625]">Available Customer Orders</h3>
-              <span className="rounded-lg border border-[#d9e5d5] bg-[#f6faf3] px-3 py-1 text-xs font-bold text-[#163625]">
+              <h3 className="text-lg font-extrabold text-[var(--foreground)]">Available Customer Orders</h3>
+              <span className="rounded-lg border border-[#d9e5d5] bg-[#f6faf3] px-3 py-1 text-xs font-bold text-[var(--foreground)]">
                 {availableDeliveries.length} waiting
               </span>
             </div>
@@ -187,7 +187,7 @@ export default function DeliveryDashboard() {
             ) : null}
 
             {!loading && availableDeliveries.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#d9e5d5] bg-[#fafdf8] p-6 text-sm text-[#163625]/70">
+              <div className="rounded-2xl border border-dashed border-[#d9e5d5] bg-[#fafdf8] p-6 text-sm text-[var(--foreground)]/70">
                 No unassigned customer orders right now.
               </div>
             ) : null}
@@ -196,34 +196,34 @@ export default function DeliveryDashboard() {
               {(hasMyActiveDelivery ? [] : availableDeliveries).map((d) => (
                 <div key={d.id} className="rounded-2xl border border-[#d9e5d5] bg-white p-5">
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <span className="rounded-lg bg-[#eef4ea] px-2.5 py-1 text-xs font-bold text-[#163625]">
+                    <span className="rounded-lg bg-[#eef4ea] px-2.5 py-1 text-xs font-bold text-[var(--foreground)]">
                       {d.direction === "TO_SHOP" ? "Customer pickup to shop" : "Shop pickup to customer"}
                     </span>
                     <span className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold ${getStatusTone(d.status)}`}>{d.status}</span>
                   </div>
-                  <p className="line-clamp-1 text-sm font-bold text-[#163625]">{d.repairJob.repairRequest.title}</p>
-                  <p className="mt-2 text-xs text-[#163625]/65">{d.pickupAddress}</p>
-                  <p className="text-xs text-[#163625]/65">to {d.dropAddress}</p>
+                  <p className="line-clamp-1 text-sm font-bold text-[var(--foreground)]">{d.repairJob.repairRequest.title}</p>
+                  <p className="mt-2 text-xs text-[var(--foreground)]/65">{d.pickupAddress}</p>
+                  <p className="text-xs text-[var(--foreground)]/65">to {d.dropAddress}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-[#eef3ea] pt-3">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[#163625]">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
                       <Package size={16} />
                       {d.repairJob.repairRequest.deviceType}
                     </div>
-                    <span className="text-sm font-bold text-[#163625]">{d.fee ? `BDT ${d.fee}` : "Fee pending"}</span>
+                    <span className="text-sm font-bold text-[var(--foreground)]">{d.fee ? `BDT ${d.fee}` : "Fee pending"}</span>
                   </div>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleAcceptOrder(d.id)}
                       disabled={acceptingOrderId === d.id}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#163625] px-4 py-2.5 text-sm font-bold text-[#E4FCD5] disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--foreground)] px-4 py-2.5 text-sm font-bold text-[#E4FCD5] disabled:opacity-60"
                     >
                       {acceptingOrderId === d.id ? <Clock3 size={16} /> : <CircleCheck size={16} />}
                       {acceptingOrderId === d.id ? "Accepting..." : "Accept order"}
                     </button>
                     <Link
                       href={`/delivery/order/${d.id}`}
-                      className="inline-flex items-center gap-1 rounded-xl border border-[#d9e5d5] px-4 py-2.5 text-sm font-bold text-[#163625]"
+                      className="inline-flex items-center gap-1 rounded-xl border border-[#d9e5d5] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]"
                     >
                       <CircleAlert size={16} />
                       View details
@@ -238,3 +238,4 @@ export default function DeliveryDashboard() {
     </div>
   );
 }
+
