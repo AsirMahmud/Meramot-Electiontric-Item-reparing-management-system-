@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuthHeaders } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
 type DashboardStats = {
   totalUsers: number;
@@ -9,24 +9,35 @@ type DashboardStats = {
   totalDeliveryUsers: number;
   pendingVendorApplications: number;
   openTickets: number;
-  activeDisputes: number;
-  pendingRefunds: number;
+  totalPayments: number;
 };
 
 export default function AdminDashboardPage() {
+  const { data: session } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      if (!session?.user) {
+        setLoading(false);
+        return;
+      }
+
       try {
+        const token = (session.user as any).accessToken;
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         });
         const data = await res.json();
         if (res.ok) {
           setStats(data.data);
+        } else {
+          console.error("Failed to fetch dashboard:", res.status, data);
         }
       } catch (error) {
         console.error(error);
@@ -36,7 +47,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [session]);
 
   const cards = stats
     ? [
@@ -45,8 +56,7 @@ export default function AdminDashboardPage() {
         { label: "Delivery Users", value: stats.totalDeliveryUsers },
         { label: "Pending Vendor Review", value: stats.pendingVendorApplications },
         { label: "Open Tickets", value: stats.openTickets },
-        { label: "Active Disputes", value: stats.activeDisputes },
-        { label: "Pending Refunds", value: stats.pendingRefunds },
+        { label: "Total Payments", value: stats.totalPayments },
       ]
     : [];
 

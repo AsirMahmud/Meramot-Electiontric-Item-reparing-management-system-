@@ -140,60 +140,16 @@ export async function login(req: Request, res: Response) {
   }
 }
 
+/**
+ * @deprecated Use standard /login endpoint instead
+ * Admins now login through the regular login endpoint using their email
+ * After login, they are redirected to the admin panel based on their role
+ */
 export async function adminDemoLogin(req: Request, res: Response) {
-  try {
-    if (env.nodeEnv === "production") {
-      return res.status(403).json({
-        message: "Demo admin login is disabled in production",
-      });
-    }
-
-    const { identifier, password } = req.body as {
-      identifier?: string;
-      password?: string;
-    };
-
-    if (!identifier || !password) {
-      return res.status(400).json({
-        message: "identifier and password are required",
-      });
-    }
-
-    const normalizedIdentifier = identifier.trim().toLowerCase();
-    const expectedIdentifier = env.demoAdminIdentifier.trim().toLowerCase();
-
-    if (
-      normalizedIdentifier !== expectedIdentifier ||
-      password !== env.demoAdminPassword
-    ) {
-      return res.status(401).json({ message: "Invalid demo admin credentials" });
-    }
-
-    const demoUser = {
-      id: "demo-admin-user",
-      name: env.demoAdminName,
-      username: "demo_admin",
-      email: env.demoAdminIdentifier,
-      phone: null,
-      role: "ADMIN",
-    };
-
-    const token = signToken({
-      id: demoUser.id,
-      username: demoUser.username,
-      email: demoUser.email,
-      role: demoUser.role,
-    });
-
-    return res.json({
-      message: "Demo admin login successful",
-      token,
-      user: demoUser,
-    });
-  } catch (error) {
-    console.error("admin demo login error:", error);
-    return res.status(500).json({ message: "Server error" });
-  }
+  return res.status(410).json({
+    message: "Deprecated: Use the standard /login endpoint instead. Admins login like any other user.",
+    hint: "Send credentials to POST /api/auth/login. After login, you will be redirected to the admin panel if you have ADMIN role."
+  });
 }
 
 export async function checkUsername(req: Request, res: Response) {

@@ -42,6 +42,40 @@ function randomSubset<T>(arr: T[], count: number) {
 }
 
 async function main() {
+  // Create hardwired admin account
+  // Credentials are NOT stored in this file - they come from environment variables
+  // Password hash is computed securely without storing plaintext anywhere in codebase
+  
+  // Admin password should be set in .env or environment
+  // If not set, the seed will fail with clear error message
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  if (!adminPassword) {
+    console.error("❌ ERROR: ADMIN_PASSWORD environment variable is required");
+    console.error("   Please set ADMIN_PASSWORD in your .env file");
+    process.exit(1);
+  }
+
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: "mustahid000@gmail.com" },
+    update: { passwordHash: adminPasswordHash, role: "ADMIN" },
+    create: {
+      email: "mustahid000@gmail.com",
+      username: "mustahid_admin",
+      name: "Mustahid",
+      phone: "+8801700000001",
+      passwordHash: adminPasswordHash,
+      role: "ADMIN",
+      status: "ACTIVE",
+      isEmailVerified: true,
+    },
+  });
+
+  console.log("✓ Admin account ready:", admin.email);
+
+  // Create demo customer account
   const passwordHash = await bcrypt.hash("password123", 10);
 
   const user = await prisma.user.upsert({

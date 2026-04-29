@@ -366,14 +366,13 @@ async function markPaymentSuccessful(
       },
     });
 
-    await tx.escrowLedger.create({
+    await tx.ledgerEntry.create({
       data: {
         paymentId: payment.id,
-        repairRequestId: payment.repairRequestId,
-        customerUserId: payment.userId,
         amount: payment.amount,
-        action: "PAYMENT_HELD",
-        note: `Payment marked as paid via SSLCommerz ${source} callback`,
+        type: "CUSTOMER_PAYMENT",
+        direction: "CREDIT",
+        description: `Payment marked as paid via SSLCommerz ${source} callback`,
       },
     });
   });
@@ -744,8 +743,7 @@ export async function getMyPaymentById(req: AuthenticatedRequest, res: Response)
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
-        refunds: true,
-        disputeCases: true,
+        ledgerEntries: true,
       },
     });
 

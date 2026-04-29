@@ -20,13 +20,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-        const identifier = credentials.identifier.trim().toLowerCase();
-        
-        // Use demo login endpoint if identifier matches demo admin
-        const isDemoAdmin = identifier === "admin@meeramoot.demo";
-        const loginPath = isDemoAdmin ? "/api/auth/admin-demo-login" : "/api/auth/login";
 
-        const res = await fetch(`${apiBase}${loginPath}`, {
+        // All users (including admins) use the standard login endpoint
+        const res = await fetch(`${apiBase}/api/auth/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -36,7 +32,6 @@ export const authOptions: NextAuthOptions = {
             password: credentials.password,
           }),
         });
-
 
         const data = await res.json().catch(() => null);
 
