@@ -23,7 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
-    "pusher": "^5.3.3"
+    "pusher": "^5.3.3",
+    "sslcommerz-lts": "^1.2.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -9,6 +9,8 @@ import vendorApplicationRoutes from "./vendor-application-routes.js";
 import vendorRequestRoutes from "./vendor-request-routes.js";
 import vendorStatusRoutes from "./vendor-status-routes.js";
 import uploadRoutes from "./upload-routes.js";
+import paymentRoutes from "./payment-routes.js";
+import invoiceRoutes from "./invoice-routes.js";
 
 const router = Router();
 
@@ -29,5 +31,7 @@ router.use("/vendor/applications", vendorApplicationRoutes);
 router.use("/vendor/application-status", vendorStatusRoutes);
 router.use("/vendor/requests", vendorRequestRoutes);
 router.use("/uploads", uploadRoutes);
+router.use("/payments", paymentRoutes);
+router.use("/invoices", invoiceRoutes);
 
 export default router;

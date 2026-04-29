@@ -1,11 +1,8 @@
-// @ts-nocheck
 import type { Request, Response } from "express";
 import { createHash } from "crypto";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sslCommerzService } from "../services/sslcommerz.js";
-import { sendInvoiceLinkEmail } from "../services/email-service.js";
-
 type AuthenticatedRequest = Request & {
   user?: {
     id: string;
@@ -35,11 +32,12 @@ type SslInitResponse = {
 };
 
 function callbackBaseUrl() {
-  return `${env.backendBaseUrl.replace(/\/$/, "")}/api/payments/sslcommerz`;
+  const base = process.env.BACKEND_BASE_URL || "http://localhost:4000";
+  return `${base.replace(/\/$/, "")}/api/payments/sslcommerz`;
 }
 
 function frontendPaymentResultUrl(params: Record<string, string | undefined>) {
-  const target = new URL(env.frontendPaymentResultPath, env.frontendOrigin);
+  const target = new URL("/checkout", env.frontendOrigin);
 
   for (const [key, value] of Object.entries(params)) {
     if (!value) {
@@ -176,10 +174,9 @@ function createTransactionRef() {
 
 function ensureSslCommerzConfigured(res: Response) {
   if (!env.sslCommerzStoreId || !env.sslCommerzStorePassword) {
-    res.status(500).json({
+    res.status(503).json({
       success: false,
-      message:
-        "SSLCommerz is not configured. Set SSLCOMMERZ_STORE_ID and SSLCOMMERZ_STORE_PASSWORD.",
+      message: "Payment gateway is not configured",
     });
     return false;
   }
@@ -189,10 +186,6 @@ function ensureSslCommerzConfigured(res: Response) {
 
 export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!ensureSslCommerzConfigured(res)) {
-      return;
-    }
-
     const amount = Number(req.body?.amount);
     const currency = String(req.body?.currency || "BDT").trim().toUpperCase();
     const repairRequestId = req.body?.repairRequestId ? String(req.body.repairRequestId) : null;
@@ -203,6 +196,10 @@ export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: 
         success: false,
         message: "amount must be a positive number",
       });
+    }
+
+    if (!ensureSslCommerzConfigured(res)) {
+      return;
     }
 
     if (!req.user?.id) {
@@ -387,17 +384,7 @@ async function markPaymentSuccessful(
 
   if (fullPayment && fullPayment.user) {
     const invoiceUrl = new URL(`/payment/invoice/${fullPayment.id}`, env.frontendOrigin).toString();
-    
-    sendInvoiceLinkEmail({
-      to: fullPayment.user.email,
-      customerName: fullPayment.user.name || fullPayment.user.username,
-      transactionRef: fullPayment.transactionRef || fullPayment.id,
-      amount: Number(fullPayment.amount),
-      currency: fullPayment.currency,
-      invoiceUrl,
-    }).catch(err => {
-      console.error("Failed to send invoice email after payment success:", err);
-    });
+    console.log(`[Invoice] Generated invoice for payment ${paymentId}: ${invoiceUrl}`);
   }
 
 
