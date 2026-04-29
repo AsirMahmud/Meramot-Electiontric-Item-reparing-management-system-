@@ -252,6 +252,7 @@ export default function VendorDashboardPage() {
         label: "Active bids",
         value: String(activeBidCount),
         description: "Bids you can still update while customer decision is pending.",
+        href: "/vendor/my-bids",
       },
       {
         label: "Assigned jobs",
@@ -524,13 +525,32 @@ export default function VendorDashboardPage() {
         ) : null}
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((card) => (
-            <article key={card.label} className="rounded-[2rem] bg-white p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">{card.label}</p>
-              <p className="mt-3 text-4xl font-bold text-[#173726]">{card.value}</p>
-              <p className="mt-2 text-sm text-[#5b7262]">{card.description}</p>
-            </article>
-          ))}
+          {summaryCards.map((card) => {
+            const inner = (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">{card.label}</p>
+                <p className="mt-3 text-4xl font-bold text-[#173726]">{card.value}</p>
+                <p className="mt-2 text-sm text-[#5b7262]">{card.description}</p>
+                {card.href ? (
+                  <p className="mt-3 text-xs font-semibold text-[#214c34]">View details →</p>
+                ) : null}
+              </>
+            );
+
+            return card.href ? (
+              <Link
+                key={card.label}
+                href={card.href}
+                className="block rounded-[2rem] bg-white p-6 shadow-sm transition-shadow hover:shadow-md hover:ring-1 hover:ring-[#cfe0c6]"
+              >
+                {inner}
+              </Link>
+            ) : (
+              <article key={card.label} className="rounded-[2rem] bg-white p-6 shadow-sm">
+                {inner}
+              </article>
+            );
+          })}
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">

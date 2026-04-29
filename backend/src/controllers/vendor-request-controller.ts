@@ -1109,3 +1109,114 @@ export async function submitVendorFinalQuote(req: AuthedRequest, res: Response) 
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+/**
+ * GET /vendor/requests/my-bids
+ *
+ * Returns every repair request where this vendor placed a bid,
+ * together with ALL competing bids (sorted by totalCost asc).
+ * Each bid carries `isOwn: true|false` so the frontend can
+ * highlight the vendor's position in the price ranking.
+ */
+export async function getVendorMyBids(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user!.id;
+    const { shop } = await getVendorContext(userId);
+
+    // All bids this vendor's shop has placed
+    const myBids = await prisma.bid.findMany({
+      where: { shopId: shop.id },
+      select: { repairRequestId: true },
+    });
+
+    const requestIds = [...new Set(myBids.map((b) => b.repairRequestId))];
+
+    if (!requestIds.length) {
+      return res.json({ requests: [] });
+    }
+
+    // Fetch those requests with ALL their bids
+    const requests = await prisma.repairRequest.findMany({
+      where: { id: { in: requestIds } },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        deviceType: true,
+        brand: true,
+        model: true,
+        issueCategory: true,
+        problem: true,
+        mode: true,
+        status: true,
+        createdAt: true,
+        bids: {
+          orderBy: { totalCost: "asc" },
+          select: {
+            id: true,
+            shopId: true,
+            partsCost: true,
+            laborCost: true,
+            totalCost: true,
+            estimatedDays: true,
+            notes: true,
+            status: true,
+            createdAt: true,
+            shop: {
+              select: {
+                name: true,
+                ratingAvg: true,
+                reviewCount: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Shape the response — flag the vendor's own bids
+    const shaped = requests.map((request) => {
+      const allBids = request.bids.map((bid, index) => ({
+        id: bid.id,
+        rank: index + 1,
+        shopName: bid.shopId === shop.id ? shop.name : bid.shop.name,
+        partsCost: bid.partsCost,
+        laborCost: bid.laborCost,
+        totalCost: bid.totalCost,
+        estimatedDays: bid.estimatedDays,
+        notes: bid.notes,
+        status: bid.status,
+        shopRating: bid.shop.ratingAvg,
+        shopReviews: bid.shop.reviewCount,
+        isOwn: bid.shopId === shop.id,
+        createdAt: bid.createdAt,
+      }));
+
+      const myRank = allBids.find((b) => b.isOwn)?.rank ?? null;
+
+      return {
+        id: request.id,
+        title: request.title,
+        deviceType: request.deviceType,
+        brand: request.brand,
+        model: request.model,
+        issueCategory: request.issueCategory,
+        status: request.status,
+        createdAt: request.createdAt,
+        totalBids: allBids.length,
+        myRank,
+        bids: allBids,
+      };
+    });
+
+    return res.json({ requests: shaped });
+  } catch (error) {
+    console.error("getVendorMyBids error:", error);
+
+    if (isHttpError(error)) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Server error" });
+  }
+}
