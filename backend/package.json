@@ -11,6 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "seed": "ts-node prisma/seed.ts",
     "seed:shops": "ts-node prisma/seed.shops.ts",
     "seed:customers": "ts-node prisma/seed.customers.ts"
   },

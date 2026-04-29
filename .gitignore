@@ -83,6 +83,11 @@ dist
 build
 *.tgz
 
+# ============== DOCUMENTATION ==============
+# Ignore markdown files except README
+*.md
+!README.md
+
 # ============== DATABASE ==============
 # SQLite (if used locally)
 *.sqlite
