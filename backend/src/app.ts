@@ -15,6 +15,11 @@ import { apiRateLimiter } from "./middleware/rate-limit.js";
 export function createApp() {
   const app = express();
 
+  app.use((req, res, next) => {
+    console.log("INCOMING:", req.method, req.originalUrl);
+    next();
+  });
+
   app.use(
     cors({
       origin: env.frontendOrigin,
@@ -35,6 +40,8 @@ export function createApp() {
   app.use("/api/admin", financialLedgerRoutes);
   app.use("/api/admin", adminDeliveryRoutes);
   app.use("/api/delivery", deliveryRoutes);
+
+  app.use("/uploads", express.static("uploads"));
 
   app.use((_req, res) => {
     res.status(404).json({ error: "Not found" });
