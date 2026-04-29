@@ -147,9 +147,10 @@ export default function VendorMyBidsPage() {
           <div>
             <Link
               href="/vendor/dashboard"
-              className="text-sm font-medium text-[#355541] hover:underline"
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#355541] transition-all hover:bg-[#f6faf4] hover:shadow-sm"
             >
-              ← Back to dashboard
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              Back to dashboard
             </Link>
             <h1 className="mt-2 text-3xl font-bold text-[#173726]">My Offers</h1>
             <p className="mt-1 text-[#5b7262]">
