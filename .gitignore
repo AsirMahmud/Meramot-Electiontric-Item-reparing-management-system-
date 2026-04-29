@@ -1,25 +1,93 @@
-# dependencies
+# ============================================
+# Meeramoot Electric Item Repairing System
+# Git Ignore Rules
+# ============================================
+
+# ============== DEPENDENCIES ==============
 node_modules/
-*/node_modules/
+backend/node_modules/
+frontend/node_modules/
+.pnp
+.pnp.*
+*.pem
 
-# Next.js
-.next/
-out/
-build/
+# ============== BUILD ARTIFACTS ==============
+# Backend
+backend/dist/
+backend/build/
+*.tsbuildinfo
 
-# env variables
+# Frontend (Next.js)
+frontend/.next/
+frontend/out/
+frontend/build/
+next-env.d.ts
+
+# ============== ENVIRONMENT FILES ==============
+# Never commit environment files with secrets
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
 
-# logs
+# ============== TESTING ==============
+/coverage
+coverage/
+*.lcov
+
+# ============== LOGS ==============
 npm-debug.log*
+npm-error.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
-# OS files
+# ============== OS FILES ==============
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# ============== IDE & EDITOR ==============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.eslintcache
+
+# ============== MISC ==============
+.cache
+.parcel-cache
+dist
+build
+*.tgz
+
+# ============== DATABASE ==============
+# SQLite (if used locally)
+*.sqlite
+*.sqlite3
+
+# ============== PRISMA ==============
+# Generated Prisma files
+prisma/seed-output.log

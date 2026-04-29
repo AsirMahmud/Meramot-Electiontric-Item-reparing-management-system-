@@ -3,27 +3,27 @@ import { env } from "../config/env.js";
 export type OrderStatusEmailInput = {
   to: string;
   customerName?: string | null;
-  orderRef: string;
+  orderTitle: string;
   status: string;
   shopName?: string | null;
 };
 
-function subjectForStatus(status: string, orderRef: string) {
+function subjectForStatus(status: string, orderTitle: string) {
   const normalized = status.toUpperCase();
-  if (normalized === "PROCESSING") return `Your Meramot order ${orderRef} is being processed`;
-  if (normalized === "ON_THE_WAY" || normalized === "RETURNING") return `Your Meramot order ${orderRef} is on the way`;
-  if (normalized === "COMPLETED") return `Your Meramot order ${orderRef} is complete`;
-  return `Update for your Meramot order ${orderRef}`;
+  if (normalized === "PROCESSING") return `Your Meramot order ${orderTitle} is being processed`;
+  if (normalized === "ON_THE_WAY" || normalized === "RETURNING") return `Your Meramot order ${orderTitle} is on the way`;
+  if (normalized === "COMPLETED") return `Your Meramot order ${orderTitle} is complete`;
+  return `Update for your Meramot order ${orderTitle}`;
 }
 
-function htmlForStatus({ customerName, orderRef, status, shopName }: OrderStatusEmailInput) {
+function htmlForStatus({ customerName, orderTitle, status, shopName }: OrderStatusEmailInput) {
   const greeting = customerName ? `Hi ${customerName},` : "Hello,";
   const readableStatus = status.replace(/_/g, " ").toLowerCase();
   return `
     <div style="font-family: Arial, sans-serif; color: #173626; line-height: 1.6;">
       <h2 style="margin-bottom: 8px;">Meramot order update</h2>
       <p>${greeting}</p>
-      <p>Your order <strong>${orderRef}</strong> is now <strong>${readableStatus}</strong>.</p>
+      <p>Your order <strong>${orderTitle}</strong> is now <strong>${readableStatus}</strong>.</p>
       ${shopName ? `<p>Shop: <strong>${shopName}</strong></p>` : ""}
       <p>You can check your order progress in your Meramot account.</p>
       <p style="margin-top: 24px;">Thanks,<br />Meramot</p>
@@ -53,7 +53,7 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
     body: JSON.stringify({
       from: env.emailFrom,
       to: [input.to],
-      subject: subjectForStatus(input.status, input.orderRef),
+      subject: subjectForStatus(input.status, input.orderTitle),
       html: htmlForStatus(input),
     }),
   });

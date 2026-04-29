@@ -5,7 +5,10 @@ import {
   RequestStatus,
   RepairJobStatus,
   ShopCategory,
+  type Shop,
+  type User,
 } from "@prisma/client";
+
 
 const prisma = new PrismaClient();
 
@@ -32,6 +35,76 @@ const specialtiesPool = [
   "Water damage recovery",
   "SSD upgrade",
 ];
+
+const reviewTexts = [
+  "Fast service and clear communication throughout the repair.",
+  "Good pricing and the technician explained the issue properly.",
+  "The repair was completed on time and the device works well now.",
+  "Friendly staff and professional handling.",
+  "Pickup and drop-off were smooth. Would use again.",
+  "The diagnosis was accurate and the final cost was fair.",
+  "Solid service overall. The shop kept me updated.",
+  "Quick turnaround and good quality parts.",
+];
+
+async function seedShopReviews(shops: Shop[], users: User[]) {
+  for (let shopIndex = 0; shopIndex < shops.length; shopIndex++) {
+    const shop = shops[shopIndex];
+
+    const reviewCount = 8 + (shopIndex % 8); 
+    const selectedUsers = users.slice(0, reviewCount);
+
+    for (let reviewIndex = 0; reviewIndex < selectedUsers.length; reviewIndex++) {
+      const user = selectedUsers[reviewIndex];
+
+      const scorePattern = [5, 5, 4, 5, 4, 3, 5, 4, 5, 4, 3, 5, 4, 5, 5];
+      const score = scorePattern[(shopIndex + reviewIndex) % scorePattern.length];
+
+      await prisma.rating.upsert({
+        where: {
+          userId_shopId: {
+            userId: user.id,
+            shopId: shop.id,
+          },
+        },
+        update: {
+          score,
+          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
+        },
+        create: {
+          userId: user.id,
+          shopId: shop.id,
+          score,
+          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
+          createdAt: new Date(Date.now() - (reviewIndex + 10) * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    const aggregate = await prisma.rating.aggregate({
+      where: {
+        shopId: shop.id,
+        isHidden: false,
+      },
+      _avg: {
+        score: true,
+      },
+      _count: {
+        score: true,
+      },
+    });
+
+    await prisma.shop.update({
+      where: {
+        id: shop.id,
+      },
+      data: {
+        ratingAvg: Number((aggregate._avg.score ?? 0).toFixed(1)),
+        reviewCount: aggregate._count.score,
+      },
+    });
+  }
+}
 
 function randomFrom<T>(arr: T[]) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -82,7 +155,7 @@ async function main() {
     { name: "Laptop Harbor", slug: "laptop-harbor" },
   ];
   
-  const shops = [];
+  const shops: Shop[] = [];
   
   for (let i = 0; i < shopSeedData.length; i++) {
     const { name, slug } = shopSeedData[i];

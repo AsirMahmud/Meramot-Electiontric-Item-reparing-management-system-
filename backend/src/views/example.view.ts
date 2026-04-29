@@ -1,16 +1,15 @@
-/** Placeholder types for example list shaping — no Prisma model named Example in schema. */
-export interface ExampleRow {
+type Example = {
   id: string;
   title: string;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
-export function exampleListView(rows: ExampleRow[]) {
+export function exampleListView(rows: Example[]) {
   return { data: rows.map(exampleItemView) };
 }
 
-export function exampleItemView(row: ExampleRow) {
+export function exampleItemView(row: Example) {
   return {
     id: row.id,
     title: row.title,
