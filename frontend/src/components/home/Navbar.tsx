@@ -97,11 +97,11 @@ export default function Navbar({
               />
             </Link>
 
-            <div className="flex justify-start md:justify-center">
+            <div className="flex justify-end md:justify-center">
               <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+            <div className="col-span-2 flex flex-wrap items-center gap-3 md:col-span-1 md:justify-end">
               <ThemeToggle />
 
               {!isLoggedIn ? (
@@ -179,7 +179,18 @@ export default function Navbar({
                 </div>
               )}
 
-              <NotificationBell />
+              <Link
+                href="/cart"
+                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
+              >
+                <Image
+                  src="/images/cart.svg"
+                  alt="Cart"
+                  width={80}
+                  height={80}
+                  className="h-[45px] w-[45px]"
+                />
+              </Link>
 
               <div className="relative">
                 <button
@@ -216,23 +227,13 @@ export default function Navbar({
                   </div>
                 )}
               </div>
-              <Link
-                href="/cart"
-                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
-              >
-                <Image
-                  src="/images/cart.svg"
-                  alt="Cart"
-                  width={80}
-                  height={80}
-                  className="h-[45px] w-[45px]"
-                />
-              </Link>
+
+              <NotificationBell />
+
             </div>
           </div>
-
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
+          <div className="flex items-end gap-6 overflow-x-auto whitespace-nowrap font-semibold text-[var(--foreground)]">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
                 return (
@@ -268,7 +269,9 @@ export default function Navbar({
         <LocationPickerModal
           selectedLocation={selectedLocation}
           onClose={() => setLocationModalOpen(false)}
-          onConfirm={saveLocation}
+          onConfirm={async (location) => {
+            await saveLocation(location);
+          }}
         />
       )}
 
