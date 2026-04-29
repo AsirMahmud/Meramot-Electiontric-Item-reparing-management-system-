@@ -149,8 +149,12 @@ export async function getShops(req: Request, res: Response) {
 
     const sorted = enriched.sort((a, b) => {
       if (sort === "price") {
-        if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
-        return b.ratingAvg - a.ratingAvg;
+        const priceA = a.baseLaborFee ?? a.inspectionFee ?? ((a.priceLevel || 1) * 1000);
+        const priceB = b.baseLaborFee ?? b.inspectionFee ?? ((b.priceLevel || 1) * 1000);
+        
+        if (priceA !== priceB) return priceA - priceB;
+        if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
+        return (b.ratingAvg || 0) - (a.ratingAvg || 0);
       }
 
       if (sort === "distance") {
@@ -163,8 +167,8 @@ export async function getShops(req: Request, res: Response) {
         return (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
       }
 
-      if (b.ratingAvg !== a.ratingAvg) return b.ratingAvg - a.ratingAvg;
-      return b.reviewCount - a.reviewCount;
+      if ((b.ratingAvg || 0) !== (a.ratingAvg || 0)) return (b.ratingAvg || 0) - (a.ratingAvg || 0);
+      return (b.reviewCount || 0) - (a.reviewCount || 0);
     });
 
     return res.json(sorted.slice(0, take));
