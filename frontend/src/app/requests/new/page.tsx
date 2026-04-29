@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { createRepairRequest } from "@/lib/api";
+import { createRepairRequest, uploadImages } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
 import { pushLocalNotification } from "@/lib/notifications";
@@ -51,6 +51,7 @@ function NewRequestPageInner() {
   const [message, setMessage] = useState("");
   const [toast, setToast] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -192,6 +193,12 @@ function NewRequestPageInner() {
                   } | null;
                   delivery?: unknown | null;
                 };
+
+                let uploadedImageUrls: string[] = [];
+                if (files.length > 0) {
+                  const uploadResult = await uploadImages(files, token);
+                  uploadedImageUrls = uploadResult.imageUrls;
+                }
                 
                 const result = (await createRepairRequest(
                   {
@@ -215,6 +222,7 @@ function NewRequestPageInner() {
                     pickupLng: form.pickupLng,
                     contactPhone: form.contactPhone,
                     shopSlug: shopSlug || undefined,
+                    imageUrls: uploadedImageUrls,
                   },
                   token
                 )) as CreateRepairRequestResult;
@@ -494,6 +502,33 @@ function NewRequestPageInner() {
               className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
               placeholder="Describe the problem"
             />
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]">
+                Upload Images (Max 4)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const selected = Array.from(e.target.files).slice(0, 4);
+                    setFiles(selected);
+                  }
+                }}
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-dark)] file:px-4 file:py-2 file:text-sm file:font-bold file:text-[var(--accent-foreground)] hover:file:opacity-90"
+              />
+              {files.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
+                  {files.map((f, i) => (
+                    <span key={i} className="inline-block rounded border border-[var(--border)] bg-[var(--card)] px-2 py-1 font-medium">
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="md:col-span-2">
               <button
