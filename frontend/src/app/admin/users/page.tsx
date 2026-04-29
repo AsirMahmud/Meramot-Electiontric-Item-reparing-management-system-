@@ -109,7 +109,7 @@ export default function AdminUsersPage() {
             <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
+                className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
             >
                 <option value="">All Roles</option>
                 <option value="CUSTOMER">Customer</option>
@@ -121,7 +121,7 @@ export default function AdminUsersPage() {
             <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
+                className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
             >
                 <option value="">All Statuses</option>
                 <option value="ACTIVE">Active</option>

@@ -60,8 +60,8 @@ export default function AdminSidebarNav() {
               href={item.href}
               className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
                 isActive
-                  ? "bg-[var(--sidebar-active)] text-[var(--sidebar-active-text)]"
-                  : "text-[var(--sidebar-inactive-text)] hover:bg-[var(--sidebar-inactive-hover)] hover:text-[var(--sidebar-active-text)]"
+                  ? "bg-[#DCEAD7] dark:bg-[#233027] text-[var(--accent-dark)] dark:text-[#5BD881]"
+                  : "text-[var(--foreground)] dark:text-[#E4FCD5] hover:bg-[var(--mint-100)] dark:hover:bg-[#1C251F] hover:text-[var(--accent-dark)] dark:hover:text-[#5BD881]"
               }`}
             >
               {item.label}
@@ -70,17 +70,17 @@ export default function AdminSidebarNav() {
         })}
       </nav>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--box-bg-trans)] p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+      <div className="rounded-2xl border border-[var(--border)] dark:border-[#2F4034] bg-white/70 dark:bg-[#1C251F]/90 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] dark:text-[#4F6C5B]">
           Signed in as
         </p>
-        <p className="mt-2 text-sm font-semibold text-[var(--accent-dark)]">{adminLabel}</p>
+        <p className="mt-2 text-sm font-semibold text-[var(--accent-dark)] dark:text-[#2E5B3D]">{adminLabel}</p>
 
         <button
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="mt-4 w-full rounded-2xl border border-[var(--box-border)] bg-[var(--box-bg)] px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-100)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 w-full rounded-2xl border border-[#C7D7C2] dark:border-[#2F4034] bg-white dark:bg-[#171F1A] px-4 py-3 text-sm font-semibold text-[var(--foreground)] dark:text-[#E4FCD5] transition hover:bg-[var(--mint-100)] dark:hover:bg-[#233027] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loggingOut ? "Signing out..." : "Sign out"}
         </button>

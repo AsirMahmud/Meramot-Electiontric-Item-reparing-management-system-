@@ -1,15 +1,9 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
-:root {
-  --box-bg: #ffffff;
-  --box-bg-trans: rgba(255, 255, 255, 0.7);
-  --box-border: #D7E2D2;
-  --sidebar-active: #DCEAD7;
-  --sidebar-active-text: #244229;
-  --sidebar-inactive-hover: #e4f3df;
-  --sidebar-inactive-text: #203126;
+@custom-variant dark (&:is(.dark *));
 
+:root {
   --background: #E4FCD5;
   --foreground: #203126;
   --card: #c8e7c5;
@@ -27,14 +21,6 @@
 }
 
 .dark {
-  --box-bg: #1f2923;
-  --box-bg-trans: rgba(31, 41, 35, 0.9);
-  --box-border: #2c3f32;
-  --sidebar-active: #243128;
-  --sidebar-active-text: #6ca065;
-  --sidebar-inactive-hover: #17201b;
-  --sidebar-inactive-text: #e4fcd5;
-
   --background: #0f1512;
   --foreground: #516b51;
   --card: #111913;

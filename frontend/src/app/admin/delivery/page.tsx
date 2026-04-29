@@ -83,19 +83,19 @@ export default function AdminDeliveryPage() {
 
       {stats && (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
             <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Total Riders</p>
             <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)]">{stats.totalRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
             <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Pending</p>
             <p className="mt-1 text-2xl font-bold text-amber-600">{stats.pendingRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
             <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Approved</p>
             <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.approvedRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
             <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Rejected</p>
             <p className="mt-1 text-2xl font-bold text-rose-600">{stats.rejectedRiders}</p>
           </div>
@@ -109,7 +109,7 @@ export default function AdminDeliveryPage() {
             No pending delivery rider applications.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
+          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white dark:bg-[#1C251F]">
             <table className="w-full text-left text-sm text-[var(--foreground)]">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
@@ -168,7 +168,7 @@ export default function AdminDeliveryPage() {
             No verified delivery riders found.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
+          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white dark:bg-[#1C251F]">
             <table className="w-full text-left text-sm text-[var(--foreground)]">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
