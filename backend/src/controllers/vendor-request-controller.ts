@@ -385,12 +385,8 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
     const biddingRequests = await prisma.repairRequest.findMany({
       where: {
         status: RequestStatus.BIDDING,
-        OR: [
-          // Requests matching vendor specialties (DB-level filtering)
-          specialtyFilter,
-          // Requests this vendor already bid on (always show regardless of match)
-          { bids: { some: { shopId: shop.id } } },
-        ],
+        bids: { none: { shopId: shop.id } },
+        ...specialtyFilter,
       },
       orderBy: { createdAt: "desc" },
       take: 50,
