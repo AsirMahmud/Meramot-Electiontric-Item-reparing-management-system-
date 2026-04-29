@@ -247,6 +247,7 @@ export default function VendorDashboardPage() {
         label: "Relevant requests",
         value: String(activeRequestCount),
         description: "Repair requests that match your current skill tags.",
+        scrollTo: "relevant-requests",
       },
       {
         label: "Active bids",
@@ -258,11 +259,13 @@ export default function VendorDashboardPage() {
         label: "Assigned jobs",
         value: String(totalOpenJobs),
         description: "Jobs currently being handled by your shop.",
+        href: "/vendor/jobs",
       },
       {
         label: "Waiting customer approval",
         value: String(waitingApprovalCount),
         description: "Final diagnosis and quote already submitted by you.",
+        href: "/vendor/approvals",
       },
     ],
     [activeBidCount, activeRequestCount, totalOpenJobs, waitingApprovalCount]
@@ -531,24 +534,40 @@ export default function VendorDashboardPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">{card.label}</p>
                 <p className="mt-3 text-4xl font-bold text-[#173726]">{card.value}</p>
                 <p className="mt-2 text-sm text-[#5b7262]">{card.description}</p>
-                {card.href ? (
-                  <p className="mt-3 text-xs font-semibold text-[#214c34]">View details →</p>
-                ) : null}
+                <p className="mt-3 text-xs font-semibold text-[#214c34]">
+                  {card.scrollTo ? "Scroll to section ↓" : "View details →"}
+                </p>
               </>
             );
 
-            return card.href ? (
-              <Link
+            const cardStyle =
+              "block rounded-[2rem] bg-white p-6 shadow-sm cursor-pointer " +
+              "transition-all duration-300 ease-out " +
+              "hover:shadow-lg hover:shadow-[#214c34]/10 hover:-translate-y-1 " +
+              "hover:ring-2 hover:ring-[#cfe0c6] " +
+              "active:translate-y-0 active:shadow-md";
+
+            if (card.href) {
+              return (
+                <Link key={card.label} href={card.href} className={cardStyle}>
+                  {inner}
+                </Link>
+              );
+            }
+
+            return (
+              <button
                 key={card.label}
-                href={card.href}
-                className="block rounded-[2rem] bg-white p-6 shadow-sm transition-shadow hover:shadow-md hover:ring-1 hover:ring-[#cfe0c6]"
+                type="button"
+                onClick={() => {
+                  if (card.scrollTo) {
+                    document.getElementById(card.scrollTo)?.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className={cardStyle + " text-left w-full"}
               >
                 {inner}
-              </Link>
-            ) : (
-              <article key={card.label} className="rounded-[2rem] bg-white p-6 shadow-sm">
-                {inner}
-              </article>
+              </button>
             );
           })}
         </section>
@@ -612,7 +631,7 @@ export default function VendorDashboardPage() {
           </article>
         </section>
 
-        <section className="mt-8">
+        <section id="relevant-requests" className="mt-8 scroll-mt-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-bold text-[#173726]">Relevant repair requests</h2>
