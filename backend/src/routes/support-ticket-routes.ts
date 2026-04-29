@@ -24,7 +24,7 @@ router.get("/tickets", async (req: Request, res: Response) => {
             username: true,
           },
         },
-        assignedAdmin: {
+        assigneeAdmin: {
           select: {
             id: true,
             name: true,
@@ -55,7 +55,7 @@ router.get("/tickets/:id", async (req: Request, res: Response) => {
       where: { id: ticketId },
       include: {
         user: true,
-        assignedAdmin: true,
+        assigneeAdmin: true,
         repairRequest: true,
         messages: {
           orderBy: { createdAt: "asc" },
@@ -104,7 +104,7 @@ router.patch("/tickets/:id", async (req: Request & { user?: any }, res: Response
         status,
         priority,
         adminNotes,
-        assignedAdminId: assignedAdminId || req.user.id,
+        assigneeAdminId: assignedAdminId || req.user.id,
       },
     });
 
@@ -148,7 +148,7 @@ router.post("/tickets/:id/reply", async (req: Request & { user?: any }, res: Res
       where: { id: ticketId },
       data: {
         status: "IN_PROGRESS",
-        assignedAdminId: req.user.id,
+        assigneeAdminId: req.user.id,
       },
     });
 
@@ -193,11 +193,8 @@ router.post("/tickets/:id/escalate", async (req: Request & { user?: any }, res: 
         data: {
           supportTicketId: ticket.id,
           repairRequestId: ticket.repairRequestId,
-          openedByUserId: ticket.userId,
+          openedById: ticket.userId,
           assignedAdminId: req.user.id,
-          filedByType: "CUSTOMER",
-          reason: ticket.subject,
-          description: ticket.message,
           status: "OPEN",
         },
       });

@@ -11,23 +11,13 @@ router.use(requireAuth, requireAdmin);
 router.get("/vendors", async (_req: Request, res: Response) => {
   try {
     const applications = await prisma.vendorApplication.findMany({
-      orderBy: { submittedAt: "desc" },
+      orderBy: { createdAt: "desc" },
       include: {
         applicant: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            phone: true,
-          },
+          select: { id: true, name: true, email: true, username: true },
         },
-        reviewedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+        reviewedByAdmin: {
+          select: { id: true, name: true, email: true },
         },
         shop: true,
       },
@@ -50,18 +40,7 @@ router.get("/vendors/pending", async (_req: Request, res: Response) => {
   try {
     const applications = await prisma.vendorApplication.findMany({
       where: { status: "PENDING" },
-      orderBy: { submittedAt: "asc" },
-      include: {
-        applicant: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            phone: true,
-          },
-        },
-      },
+      orderBy: { createdAt: "asc" },
     });
 
     return res.json({
@@ -84,8 +63,12 @@ router.get("/vendors/:id", async (req: Request, res: Response) => {
     const application = await prisma.vendorApplication.findUnique({
       where: { id: applicationId },
       include: {
-        applicant: true,
-        reviewedBy: true,
+        applicant: {
+          select: { id: true, name: true, email: true, username: true, phone: true },
+        },
+        reviewedByAdmin: {
+          select: { id: true, name: true, email: true },
+        },
         shop: true,
       },
     });
@@ -125,10 +108,15 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
       });
     }
 
-    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const result = await prisma.$transaction(async (tx) => {
+      // Find the user by business email since applicantUserId is missing from schema
+      const user = await tx.user.findUnique({
+        where: { email: application.businessEmail }
+      });
+
+      // Create the shop
       const shop = await tx.shop.create({
         data: {
-          ownerId: application.applicantUserId,
           name: application.shopName,
           slug: `${application.shopName}-${Date.now()}`
             .toLowerCase()
@@ -146,28 +134,37 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
           ],
           specialties: application.specialties,
           isActive: true,
+          vendorApplicationId: application.id
         },
       });
+
+      // If user exists, upgrade them and make them owner
+      if (user) {
+        await tx.shopStaff.create({
+          data: {
+            shopId: shop.id,
+            userId: user.id,
+            role: "OWNER",
+          }
+        });
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { role: "VENDOR" }
+        });
+      }
 
       const updatedApplication = await tx.vendorApplication.update({
         where: { id: application.id },
         data: {
           status: "APPROVED",
           reviewedAt: new Date(),
-          reviewedById: req.user.id,
-          shopId: shop.id,
-          reviewNotes: req.body.reviewNotes || "Approved by admin",
+          reviewedByAdmin: { connect: { id: req.user.id } },
+          shop: { connect: { id: shop.id } },
         },
       });
 
-      const updatedUser = await tx.user.update({
-        where: { id: application.applicantUserId },
-        data: {
-          role: "VENDOR",
-        },
-      });
-
-      return { shop, updatedApplication, updatedUser };
+      return { shop, updatedApplication };
     });
 
     return res.json({
@@ -176,10 +173,11 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
       data: result,
     });
   } catch (error) {
-    console.error("PATCH /vendors/:id/approve error:", error);
+    console.error("PATCH /vendors/:id/approve error details:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to approve vendor",
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 });
