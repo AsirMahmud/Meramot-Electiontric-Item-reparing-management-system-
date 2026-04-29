@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 
+import { useSession } from "next-auth/react";
+
 type DashboardStats = {
   totalUsers: number;
   totalVendors: number;
@@ -14,15 +16,18 @@ type DashboardStats = {
 };
 
 export default function AdminDashboardPage() {
+  const { data: session } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = (session?.user as any)?.accessToken;
+    if (!token) return;
+
     const fetchDashboard = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard`, {
-          credentials: "include",
-          headers: getAuthHeaders(),
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         if (res.ok) {
@@ -36,7 +41,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [session]);
 
   const cards = stats
     ? [

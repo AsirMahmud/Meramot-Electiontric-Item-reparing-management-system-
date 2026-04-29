@@ -5,16 +5,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-
-const navItems = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/finance", label: "Financial Ledger" },
-  { href: "/admin/vendors", label: "Vendor Review" },
-  { href: "/admin/reviews", label: "Reviews" },
-  { href: "/admin/tickets", label: "Support Tickets" },
-  { href: "/admin/disputes", label: "Disputes" },
-  { href: "/admin/payments", label: "Payments" },
-];
+import AdminSidebarNav from "@/components/admin/AdminSidebarNav";
 
 export default async function AdminLayout({
   children,
@@ -62,17 +53,7 @@ export default async function AdminLayout({
               </p>
             </div>
 
-          <nav className="space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-100)] hover:text-[var(--accent-dark)]"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+            <AdminSidebarNav />
         </aside>
       </div>
 
