@@ -235,13 +235,23 @@ export function NavbarInner({
                         </>
                       ) : null}
 
-                      <Link
-                        href="/requests/new"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Make Repair Request
-                      </Link>
+                      {userRole === "VENDOR" ? (
+                        <Link
+                          href="/vendor/my-bids"
+                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          My Offers
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/requests/new"
+                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Make Repair Request
+                        </Link>
+                      )}
 
                       <Link
                         href="/cart"

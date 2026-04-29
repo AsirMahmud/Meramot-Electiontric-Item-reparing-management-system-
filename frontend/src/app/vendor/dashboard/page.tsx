@@ -12,7 +12,6 @@ import {
   updateVendorJobStatus,
   type FinalQuoteItem,
   type VendorDashboardData,
-  type BidItem,
 } from "@/lib/api";
 
 type PartRow = {
@@ -183,10 +182,6 @@ export default function VendorDashboardPage() {
   const [finalQuoteDrafts, setFinalQuoteDrafts] = useState<Record<string, FinalQuoteDraft>>({});
   const [bidConfirm, setBidConfirm] = useState<BidConfirmation | null>(null);
 
-  const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
-  const [editOfferDraft, setEditOfferDraft] = useState<BidDraft | null>(null);
-  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
-
   const loadDashboard = useCallback(async () => {
     if (!token) {
       setDashboard(null);
@@ -255,9 +250,9 @@ export default function VendorDashboardPage() {
         scrollTo: "relevant-requests",
       },
       {
-        label: "Active bids",
+        label: "Active offers",
         value: String(activeBidCount),
-        description: "Bids you can still update while customer decision is pending.",
+        description: "Offers you can still update while customer decision is pending.",
         href: "/vendor/my-bids",
       },
       {
@@ -366,58 +361,6 @@ export default function VendorDashboardPage() {
         type: "error",
         text: error instanceof Error ? error.message : "Could not save your offer.",
       });
-    }
-  }
-
-  function openEditModal(reqId: string, myBid: BidItem) {
-    setEditingRequestId(reqId);
-    setEditOfferDraft({
-      parts: [{ name: "Parts", cost: myBid.partsCost > 0 ? String(myBid.partsCost) : "" }],
-      laborCost: myBid.laborCost > 0 ? String(myBid.laborCost) : "",
-      estimatedDays: myBid.estimatedDays ? String(myBid.estimatedDays) : "",
-      notes: myBid.notes || "",
-    });
-  }
-
-  async function submitEdit() {
-    if (!editingRequestId || !editOfferDraft || !token) return;
-    
-    const partsCost = editOfferDraft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
-    const laborCost = Number(editOfferDraft.laborCost);
-    
-    if (partsCost < 0 || editOfferDraft.parts.some((p) => Number(p.cost) < 0)) {
-      setFlash({ type: "error", text: "Part costs cannot be negative." });
-      return;
-    }
-
-    if (!Number.isFinite(laborCost) || laborCost < 0) {
-      setFlash({ type: "error", text: "Enter a valid labor cost." });
-      return;
-    }
-
-    const estimatedDays = editOfferDraft.estimatedDays.trim() ? Number(editOfferDraft.estimatedDays) : undefined;
-    
-    if (editOfferDraft.estimatedDays.trim() && (!Number.isInteger(estimatedDays) || Number(estimatedDays) < 0)) {
-      setFlash({ type: "error", text: "Estimated days must be a non-negative whole number." });
-      return;
-    }
-
-    try {
-      setIsEditSubmitting(true);
-      await submitVendorBid(token, editingRequestId, {
-        partsCost,
-        laborCost,
-        estimatedDays,
-        notes: editOfferDraft.notes.trim() || undefined,
-      });
-      setFlash({ type: "success", text: "Offer updated successfully." });
-      setEditingRequestId(null);
-      setEditOfferDraft(null);
-      await loadDashboard();
-    } catch (err) {
-      setFlash({ type: "error", text: err instanceof Error ? err.message : "Failed to update offer." });
-    } finally {
-      setIsEditSubmitting(false);
     }
   }
 
@@ -1234,65 +1177,6 @@ export default function VendorDashboardPage() {
               </div>
             ) : null}
           </div>
-        </section>
-
-        <section className="mt-8">
-          <div className="mb-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Bid history</p>
-            <h2 className="text-2xl font-bold text-[#173726]">My Offers</h2>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {dashboard.myBids.map((bid) => (
-              <article key={bid.id} className="rounded-[2rem] bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-bold text-[#173726]">{bid.repairRequest?.title || "Repair request"}</h3>
-                  <div className="flex items-center gap-3">
-                    {bid.repairRequest?.status === "BIDDING" && (
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(bid.repairRequest!.id, bid)}
-                        className="rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-xs font-semibold text-[#214c34] hover:bg-[#f6faf4] transition-colors shadow-sm"
-                      >
-                        Edit offer
-                      </button>
-                    )}
-                    <span className="rounded-full bg-[#eef5ea] px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#214c34]">
-                      {formatStatus(bid.status)}
-                    </span>
-                  </div>
-                </div>
-                <p className="mt-2 text-sm text-[#355541]">
-                  {bid.repairRequest?.deviceType}
-                  {bid.repairRequest?.brand ? ` • ${bid.repairRequest.brand}` : ""}
-                  {bid.repairRequest?.model ? ` • ${bid.repairRequest.model}` : ""}
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-[#f6faf4] p-4 text-sm text-[#355541]">
-                    <p className="font-semibold text-[#173726]">Parts</p>
-                    <p className="mt-2">{formatMoney(bid.partsCost)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-[#f6faf4] p-4 text-sm text-[#355541]">
-                    <p className="font-semibold text-[#173726]">Labor</p>
-                    <p className="mt-2">{formatMoney(bid.laborCost)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-[#f6faf4] p-4 text-sm text-[#355541]">
-                    <p className="font-semibold text-[#173726]">Total</p>
-                    <p className="mt-2">{formatMoney(bid.totalCost)}</p>
-                  </div>
-                </div>
-                <p className="mt-4 text-sm text-[#5b7262]">
-                  Updated {formatDate(bid.updatedAt)}
-                  {typeof bid.estimatedDays === "number" ? ` • ETA ${bid.estimatedDays} day(s)` : ""}
-                </p>
-              </article>
-            ))}
-
-            {!dashboard.myBids.length ? (
-              <div className="rounded-[2rem] bg-white p-8 text-[#355541] shadow-sm">
-                You have not placed any bids yet.
-              </div>
-            ) : null}
           </div>
         </section>
       </div>
@@ -1344,109 +1228,8 @@ export default function VendorDashboardPage() {
         </div>
       ) : null}
 
-      {/* ── Edit Modal ─────────────────────────────── */}
-      {editingRequestId && editOfferDraft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[2rem] bg-white p-8 shadow-xl">
-            <h2 className="text-2xl font-bold text-[#173726]">Edit your offer</h2>
-            <p className="mt-2 text-sm text-[#5b7262]">Update your parts, labor, and ETA for this request.</p>
-
-            <div className="mt-6 space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-[#173726]">Parts & Components</p>
-                <div className="mt-2 space-y-2">
-                  {editOfferDraft.parts.map((part, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          const p = [...editOfferDraft.parts];
-                          p.splice(idx + 1, 0, { name: "", cost: "" });
-                          setEditOfferDraft({ ...editOfferDraft, parts: p });
-                        }}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#214c34] text-lg text-white hover:bg-[#173726]"
-                      >+</button>
-                      <input
-                        type="text" value={part.name}
-                        onChange={(e) => {
-                          const p = [...editOfferDraft.parts]; p[idx].name = e.target.value;
-                          setEditOfferDraft({ ...editOfferDraft, parts: p });
-                        }}
-                        className="flex-1 rounded-2xl border border-[#cfe0c6] px-4 py-2 text-sm outline-none"
-                        placeholder="Part name"
-                      />
-                      <input
-                        type="number" value={part.cost}
-                        onChange={(e) => {
-                          const p = [...editOfferDraft.parts]; p[idx].cost = e.target.value;
-                          setEditOfferDraft({ ...editOfferDraft, parts: p });
-                        }}
-                        className="w-24 rounded-2xl border border-[#cfe0c6] px-4 py-2 text-sm outline-none"
-                        placeholder="Cost"
-                      />
-                      {editOfferDraft.parts.length > 1 ? (
-                        <button
-                          onClick={() => {
-                            const p = editOfferDraft.parts.filter((_, i) => i !== idx);
-                            setEditOfferDraft({ ...editOfferDraft, parts: p });
-                          }}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#5b7262] hover:bg-red-50 hover:text-red-500"
-                        >×</button>
-                      ) : <div className="w-8 shrink-0" />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-[#173726]">Labor Cost</p>
-                <input
-                  type="number" value={editOfferDraft.laborCost}
-                  onChange={(e) => setEditOfferDraft({ ...editOfferDraft, laborCost: e.target.value })}
-                  className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm outline-none"
-                  placeholder="Labor charges"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm font-semibold text-[#173726]">Estimated Days</p>
-                  <input
-                    type="number" value={editOfferDraft.estimatedDays}
-                    onChange={(e) => setEditOfferDraft({ ...editOfferDraft, estimatedDays: e.target.value })}
-                    className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm outline-none"
-                    placeholder="e.g. 2"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#173726]">Notes</p>
-                  <input
-                    type="text" value={editOfferDraft.notes}
-                    onChange={(e) => setEditOfferDraft({ ...editOfferDraft, notes: e.target.value })}
-                    className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm outline-none"
-                    placeholder="Any extra info"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 flex justify-end gap-3">
-              <button
-                onClick={() => setEditingRequestId(null)}
-                className="rounded-full border border-[#cfe0c6] px-6 py-2.5 text-sm font-semibold text-[#5b7262] hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void submitEdit()}
-                disabled={isEditSubmitting}
-                className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#173726] disabled:opacity-50"
-              >
-                {isEditSubmitting ? "Saving..." : "Save changes"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }
