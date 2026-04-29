@@ -10,12 +10,21 @@ import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import { getVendorApplicationStatus } from "@/lib/api";
 
  type NavbarProps = {
   isLoggedIn?: boolean;
   firstName?: string;
   language?: "en" | "bn";
   onLanguageChange?: (lang: "en" | "bn") => void;
+};
+
+type VendorNavbarStatus = {
+  application?: {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    setupComplete?: boolean;
+  };
+  message?: string;
 };
 
 const categoryTabs = [
@@ -49,9 +58,45 @@ export function NavbarInner({
   const activeCategory =
     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
+  const { data: session, status } = useSession();
+
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
+
+  useEffect(() => {
+    async function loadVendorStatus() {
+      if (userRole !== "VENDOR" || !token) {
+        setVendorStatus(null);
+        return;
+      }
+
+      try {
+        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
+        setVendorStatus(result);
+      } catch {
+        setVendorStatus(null);
+      }
+    }
+
+    loadVendorStatus();
+  }, [userRole, token]);
+
+  const vendorApplication = vendorStatus?.application;
+  const isVendorSetupComplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete === true;
+
+  const isVendorSetupIncomplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete !== true;
+
   const displayName = useMemo(() => {
-    return firstName?.trim() || "User";
-  }, [firstName]);
+    return firstName?.trim() || session?.user?.name?.split(" ")[0] || "User";
+  }, [firstName, session]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
@@ -140,6 +185,55 @@ export function NavbarInner({
                       >
                         Requests history
                       </Link>
+
+                      {userRole === "ADMIN" && (
+                        <Link
+                          href="/admin/vendors"
+                          className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Admin dashboard
+                        </Link>
+                      )}
+
+                      {userRole === "VENDOR" ? (
+                        <>
+                          {isVendorSetupComplete ? (
+                            <>
+                              <Link
+                                href="/vendor/dashboard"
+                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Vendor dashboard
+                              </Link>
+                              <Link
+                                href="/vendor/analytics"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Shop analytics
+                              </Link>
+                            </>
+                          ) : isVendorSetupIncomplete ? (
+                            <Link
+                              href="/vendor/setup-shop"
+                              className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Set up your shop
+                            </Link>
+                          ) : (
+                            <Link
+                              href="/vendor/onboarding"
+                              className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Vendor onboarding
+                            </Link>
+                          )}
+                        </>
+                      ) : null}
 
                       <Link
                         href="/requests/new"
