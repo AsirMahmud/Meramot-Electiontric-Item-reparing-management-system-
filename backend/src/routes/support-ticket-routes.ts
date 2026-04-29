@@ -94,8 +94,8 @@ router.get("/tickets/:id", async (req: Request, res: Response) => {
 });
 
 router.patch("/tickets/:id", async (req: Request & { user?: any }, res: Response) => {
+  const ticketId = String(req.params.id);
   try {
-    const ticketId = String(req.params.id);
     const { status, priority, adminNotes, assignedAdminId } = req.body;
 
     const ticket = await prisma.supportTicket.update({

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ShopsResultsClient from "./ShopsResultsClient";
+import ShopsResultsClient from "./shops-results-client";
 
 export default function ShopsPage() {
   return (
