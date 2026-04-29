@@ -45,6 +45,7 @@ model User {
   vendorApplications         VendorApplication[]  @relation("VendorApplicant")
   supportMessages            SupportMessage[]
   refundsApproved            Refund[]             @relation("RefundApprover")
+  aiChatSessions             AiChatSession[]
 }
 
 model VendorApplication {
@@ -1003,4 +1004,24 @@ model SupportMessage {
 
   @@index([ticketId])
   @@index([authorId])
+}
+model AiChatSession {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @default("New Chat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AiChatMessage[]
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String
+  text      String
+  createdAt DateTime @default(now())
+
+  session   AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

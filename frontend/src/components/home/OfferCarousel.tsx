@@ -3,26 +3,30 @@ import { offerCards } from "@/lib/mock-data";
 
 export default function OfferCarousel() {
   return (
-    <section className="grid gap-4 md:grid-cols-2">
+    <section className="grid grid-cols-2 gap-3 md:gap-4">
       {offerCards.map((offer) => (
         <article
           key={offer.title}
-          className="rounded-[2rem] bg-[var(--mint-100)] p-6 shadow-sm"
+          className="rounded-[1.4rem] bg-[var(--mint-100)] p-4 shadow-sm md:rounded-[2rem] md:p-6"
         >
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--foreground)]">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--foreground)] md:mb-2 md:text-sm md:tracking-[0.2em]">
             Offer available
           </p>
-          <h2 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+
+          <h2 className="text-lg font-bold leading-tight text-[var(--foreground)] md:text-3xl">
             {offer.title}
           </h2>
-          <p className="mt-2 max-w-xl text-sm text-[var(--muted-foreground)]">
+
+          <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--muted-foreground)] md:max-w-xl md:text-sm">
             {offer.subtitle}
           </p>
+
           <Link
             href={offer.href}
-            className="mt-4 inline-flex rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white"
+            className="mt-3 inline-flex rounded-full bg-[var(--accent-dark)] px-3 py-2 text-xs font-semibold text-white md:mt-4 md:px-4 md:text-sm"
           >
-            Explore shops
+            Explore
+            <span className="hidden md:inline">&nbsp;shops</span>
           </Link>
         </article>
       ))}

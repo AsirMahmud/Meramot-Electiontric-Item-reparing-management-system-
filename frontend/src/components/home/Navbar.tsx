@@ -6,8 +6,12 @@ import { useMemo, useState, FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import NavbarLocationButton from "@/components/location/NavbarLocationButton";
+import LocationPickerModal from "@/components/location/LocationPickerModal";
+import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
-type NavbarProps = {
+ type NavbarProps = {
   isLoggedIn?: boolean;
   firstName?: string;
   language?: "en" | "bn";
@@ -30,10 +34,17 @@ export default function Navbar({
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const {
+    selectedLocation,
+    locationLabel,
+    saveLocation,
+  } = useSelectedLocation(isLoggedIn);
 
   const activeCategory =
     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
@@ -46,14 +57,14 @@ export default function Navbar({
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
 
-    // Clear custom auth storage used by HomePage and other components
-    localStorage.removeItem("meramot.user");
-    localStorage.removeItem("meramot.token");
-    
-    // Notify HomePage and others to update their state
-    window.dispatchEvent(new Event("meramot-auth-changed"));
-
-    // Standard next-auth signout
+    if (typeof window !== "undefined") {
+      // Clear custom auth storage used by HomePage and other components
+      localStorage.removeItem("meramot.user");
+      localStorage.removeItem("meramot.token");
+      
+      // Notify HomePage and others to update their state
+      window.dispatchEvent(new Event("meramot-auth-changed"));
+    }
     await signOut({ callbackUrl: "/" });
   };
 
@@ -66,11 +77,17 @@ export default function Navbar({
     router.push(`/shops?q=${encodeURIComponent(trimmed)}`);
   };
 
+  function openLocationModal() {
+    setLocationModalOpen(true);
+    setIsUserMenuOpen(false);
+    setIsLangMenuOpen(false);
+  }
+
   return (
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="grid grid-cols-[auto_1fr] gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
             <Link href="/" className="inline-flex items-center">
               <Image
                 src="/images/meramot.svg"
@@ -82,7 +99,11 @@ export default function Navbar({
               />
             </Link>
 
-            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+            <div className="flex justify-end md:justify-center">
+              <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
+            </div>
+
+            <div className="col-span-2 flex flex-wrap items-center gap-3 md:col-span-1 md:justify-end">
               <ThemeToggle />
 
               {!isLoggedIn ? (
@@ -146,14 +167,6 @@ export default function Navbar({
                         AI help chat
                       </Link>
 
-                      <Link
-                        href="/checkout"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Pay with SSLCommerz
-                      </Link>
-
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
@@ -167,6 +180,19 @@ export default function Navbar({
                   )}
                 </div>
               )}
+
+              <Link
+                href="/cart"
+                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
+              >
+                <Image
+                  src="/images/cart.svg"
+                  alt="Cart"
+                  width={80}
+                  height={80}
+                  className="h-[45px] w-[45px]"
+                />
+              </Link>
 
               <div className="relative">
                 <button
@@ -203,11 +229,13 @@ export default function Navbar({
                   </div>
                 )}
               </div>
+
+              <NotificationBell />
+
             </div>
           </div>
-
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
+          <div className="flex items-end gap-6 overflow-x-auto whitespace-nowrap font-semibold text-[var(--foreground)]">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
                 return (
@@ -238,6 +266,16 @@ export default function Navbar({
           </div>
         </div>
       </header>
+
+      {locationModalOpen && (
+        <LocationPickerModal
+          selectedLocation={selectedLocation}
+          onClose={() => setLocationModalOpen(false)}
+          onConfirm={async (location) => {
+            await saveLocation(location);
+          }}
+        />
+      )}
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">

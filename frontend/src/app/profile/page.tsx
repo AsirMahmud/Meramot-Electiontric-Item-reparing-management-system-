@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getProfile, updateProfile } from "@/lib/api";
+import { signOut } from "next-auth/react";
+import { getProfile, updateProfile, deleteProfile } from "@/lib/api";
 
 type Profile = {
   id?: string;
@@ -26,6 +27,8 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<Partial<Profile>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const token = (session?.user as { accessToken?: string } | undefined)
     ?.accessToken;
@@ -63,6 +66,34 @@ export default function ProfilePage() {
   if (!session?.user) {
     router.push("/login");
     return null;
+  }
+  
+  async function handleDeleteProfile() {
+    if (!token) return;
+  
+    setDeleting(true);
+    setMessage("");
+  
+    try {
+      await deleteProfile(token);
+  
+      localStorage.removeItem("meramot.user");
+      localStorage.removeItem("meramot.token");
+      localStorage.removeItem("meramot.selectedLocation");
+      localStorage.removeItem("meramot.guestCart");
+      window.dispatchEvent(new Event("meramot-auth-changed"));
+  
+      await signOut({
+        callbackUrl: "/",
+      });
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Could not delete profile."
+      );
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   }
 
   return (
@@ -197,6 +228,15 @@ export default function ProfilePage() {
             >
               My orders
             </Link>
+            
+            <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded-full border border-red-500 bg-[var(--card)] px-6 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+          >
+            Delete profile
+          </button>
+
           </div>
 
           {message && (
@@ -204,6 +244,46 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {showDeleteConfirm && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+          onClick={() => setShowDeleteConfirm(false)}
+        />
+
+        <div className="relative z-[101] w-full max-w-md rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-2xl">
+          <h2 className="text-center text-2xl font-bold text-red-600">
+            Delete profile?
+          </h2>
+
+          <p className="mt-3 text-center text-sm leading-6 text-[var(--muted-foreground)]">
+            This will permanently delete your account and profile data. This action
+            cannot be undone.
+          </p>
+
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleting}
+              className="rounded-full border border-[var(--accent-dark)] bg-[var(--card)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)] disabled:opacity-60"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteProfile}
+              disabled={deleting}
+              className="rounded-full bg-red-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+            >
+              {deleting ? "Deleting..." : "Yes, delete"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </main>
   );
 }

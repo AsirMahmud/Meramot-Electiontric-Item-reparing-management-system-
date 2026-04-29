@@ -19,18 +19,37 @@ function clamp(value: number, min: number, max: number) {
 
 export default function FloatingAiChatButton() {
   const pathname = usePathname();
-  const hiddenPrefixes = [
-    "/ai-chat",
-    "/admin",
-    "/delivery",
-    "/vendor",
-    "/login",
-    "/signup",
+  const userPagePrefixes = [
+    "/",
+    "/shops",
+    "/cart",
+    "/orders",
+    "/profile",
+    "/requests",
+    "/checkout",
   ];
 
-  const shouldHide = hiddenPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  const blockedPrefixes = [
+    "/ai-chat",
+    "/login",
+    "/signup",
+    "/register",
+    "/admin",
+    "/vendor",
+    "/delivery",
+    "/delivery-admin",
+  ];
+
+  const isBlockedPage = blockedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
   );
+
+  const isUserPage = userPagePrefixes.some((prefix) => {
+    if (prefix === "/") return pathname === "/";
+    return pathname === prefix || pathname.startsWith(prefix + "/");
+  });
+
+  const shouldHide = isBlockedPage || !isUserPage;
 
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState<Position>({

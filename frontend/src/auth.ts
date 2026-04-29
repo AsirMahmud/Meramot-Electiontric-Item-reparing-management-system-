@@ -3,15 +3,19 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.AUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        identifier: { label: "Identifier", type: "text" },
+        identifier: { label: "Username or email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -40,14 +44,14 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: data.user.id,
-          name: data.user.name || data.user.username || "User",
-          email: data.user.email || null,
-          username: data.user.username || null,
-          phone: data.user.phone || null,
-          role: data.user.role || null,
-          accessToken: data.token,
-        } as any;
+        id: data.user.id,
+        name: data.user.name || data.user.username || "User",
+        email: data.user.email || null,
+        username: data.user.username || null,
+        phone: data.user.phone || null,
+        role: data.user.role || null,
+        accessToken: data.token,
+      } as any;
       },
     }),
   ],
@@ -95,15 +99,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).username = token.username;
-        (session.user as any).phone = token.phone;
-        (session.user as any).role = token.role ?? null;
-        (session.user as any).accessToken = token.accessToken ?? null;
-      }
-      return session;
-    },
+   async session({ session, token }) {
+    if (session.user) {
+      (session.user as any).id = token.id;
+      (session.user as any).username = token.username;
+      (session.user as any).phone = token.phone;
+      (session.user as any).role = token.role ?? null;
+      (session.user as any).accessToken = token.accessToken ?? null;
+    }
+    return session;
+  },
   },
 };

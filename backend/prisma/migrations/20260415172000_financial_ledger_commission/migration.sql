@@ -8,7 +8,6 @@ CREATE TABLE "EscrowLedger" (
     "platformCommissionAmount" DECIMAL(10,2),
     "vendorNetAmount" DECIMAL(10,2)
 );
-
 -- CreateIndex
 CREATE INDEX "EscrowLedger_vendorUserId_idx" ON "EscrowLedger"("vendorUserId");
 CREATE INDEX "EscrowLedger_action_idx" ON "EscrowLedger"("action");
