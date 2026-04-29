@@ -961,7 +961,7 @@ export function fetchDeliveryAdminStats(token: string) {
 }
 
 export function fetchDeliveryAdminMe(token: string) {
-  return authedRequest<DeliveryAdminMeResponse>("/delivery-admin/auth/me", token);
+  return authedRequest<DeliveryAdminMeResponse>("/delivery-admin/me", token);
 }
 
 export function fetchDeliveryAdminPartners(token: string, status?: string) {
