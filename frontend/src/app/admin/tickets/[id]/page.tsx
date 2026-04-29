@@ -106,7 +106,6 @@ export default function AdminTicketDetailPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(token),
         },
         body: JSON.stringify({ message: replyMessage }),
@@ -142,7 +141,6 @@ export default function AdminTicketDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(token),
         },
         body: JSON.stringify({

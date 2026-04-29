@@ -102,7 +102,6 @@ export default function AdminDisputeDetailPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(token),
         },
         body: JSON.stringify({ note: newNote, isInternal }),
@@ -140,7 +139,6 @@ export default function AdminDisputeDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(token),
         },
         body: JSON.stringify({ resolution: resolutionText, status: statusToResolve }),
