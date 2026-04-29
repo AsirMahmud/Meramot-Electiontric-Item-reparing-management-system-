@@ -1,4 +1,4 @@
-﻿import { DeliveryStatus } from "@prisma/client";
+import { DeliveryStatus } from "@prisma/client";
 import { Response } from "express";
 import prisma from "../models/prisma.js";
 import { AuthedRequest } from "../middleware/auth.js";
@@ -39,7 +39,7 @@ export async function getDeliveryMe(req: AuthedRequest, res: Response) {
 
     if (!riderProfile) {
       return res.json({
-        riderName: {
+        riderProfile: {
           id: "",
           userId: userId,
           registrationStatus: "PENDING",

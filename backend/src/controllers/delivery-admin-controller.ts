@@ -1,4 +1,4 @@
-// @ts-nocheck
+// delivery-admin-controller.ts
 import { DeliveryPartnerApprovalStatus, Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
@@ -54,20 +54,20 @@ export async function getDeliveryAdminStats(_req: Request, res: Response) {
       totalPartners,
       completedDeliveriesTotal,
     ] = await Promise.all([
-      prisma.riderName.count({ where: { ...partnerUser, registrationStatus: "PENDING" } }),
-      prisma.riderName.count({
+      prisma.riderProfile.count({ where: { ...partnerUser, registrationStatus: "PENDING" } }),
+      prisma.riderProfile.count({
         where: { ...partnerUser, registrationStatus: "APPROVED", isActive: true },
       }),
-      prisma.riderName.count({ where: { ...partnerUser, registrationStatus: "REJECTED" } }),
-      prisma.riderName.count({ where: partnerUser }),
+      prisma.riderProfile.count({ where: { ...partnerUser, registrationStatus: "REJECTED" } }),
+      prisma.riderProfile.count({ where: partnerUser }),
       prisma.delivery.count({ where: { status: "DELIVERED" } }),
     ]);
 
     const partnersWithCompleted = await prisma.delivery.groupBy({
-      by: ["riderName"],
+      by: ["deliveryAgentId"],
       where: {
         status: "DELIVERED",
-        riderName: { not: null },
+        deliveryAgentId: { not: null },
       },
       _count: { _all: true },
     });
@@ -102,7 +102,7 @@ export async function listDeliveryPartners(req: Request, res: Response) {
       ...(statusFilter ? { registrationStatus: statusFilter } : {}),
     };
 
-    const partners = await prisma.riderName.findMany({
+    const partners = await prisma.riderProfile.findMany({
       where,
       include: {
         user: {
@@ -126,16 +126,16 @@ export async function listDeliveryPartners(req: Request, res: Response) {
       ids.length === 0
         ? []
         : await prisma.delivery.groupBy({
-            by: ["riderName"],
+            by: ["deliveryAgentId"],
             where: {
               status: "DELIVERED",
-              riderName: { in: ids },
+              deliveryAgentId: { in: ids },
             },
             _count: { _all: true },
           });
 
     const completedMap = new Map(
-      completedByRider.map((row) => [row.riderName, row._count._all]),
+      completedByRider.map((row) => [row.deliveryAgentId, row._count._all]),
     );
 
     const rows = partners.map((p) => ({
@@ -173,7 +173,7 @@ export async function approveDeliveryPartner(req: Request, res: Response) {
     const generatedPassword = generatePassword();
 
     const updated = await prisma.$transaction(async (tx) => {
-      const rider = await tx.riderName.findUnique({
+      const rider = await tx.riderProfile.findUnique({
         where: { id: partnerId },
         include: {
           user: {
@@ -209,7 +209,7 @@ export async function approveDeliveryPartner(req: Request, res: Response) {
         },
       });
 
-      return tx.riderName.update({
+      return tx.riderProfile.update({
         where: { id: partnerId },
         data: {
           registrationStatus: "APPROVED",
@@ -273,7 +273,7 @@ export async function rejectDeliveryPartner(req: Request, res: Response) {
       return res.status(400).json({ message: "Partner id is required" });
     }
 
-    const updated = await prisma.riderName.update({
+    const updated = await prisma.riderProfile.update({
       where: { id: rawId.trim() },
       data: {
         registrationStatus: "REJECTED",
@@ -314,7 +314,7 @@ export async function deleteDeliveryPartner(req: Request, res: Response) {
 
     const id = rawId.trim();
 
-    const existing = await prisma.riderName.findUnique({
+    const existing = await prisma.riderProfile.findUnique({
       where: { id },
       select: { id: true, userId: true },
     });
@@ -323,7 +323,7 @@ export async function deleteDeliveryPartner(req: Request, res: Response) {
       return res.status(404).json({ message: "Partner not found" });
     }
 
-    await prisma.riderName.delete({
+    await prisma.riderProfile.delete({
       where: { id }
     });
 
@@ -441,12 +441,12 @@ export async function assignDeliveryOrder(req: Request, res: Response) {
       return res.status(400).json({ message: "Delivery agent must be active" });
     }
 
-    let riderName = await prisma.riderName.findUnique({
+    let riderProfile = await prisma.riderProfile.findUnique({
       where: { userId: partnerUserId },
       select: { id: true },
     });
-    if (!riderName) {
-      riderName = await prisma.riderName.create({
+    if (!riderProfile) {
+      riderProfile = await prisma.riderProfile.create({
         data: {
           userId: partnerUserId,
           registrationStatus: "APPROVED",
@@ -459,7 +459,7 @@ export async function assignDeliveryOrder(req: Request, res: Response) {
 
     const activeDelivery = await prisma.delivery.findFirst({
       where: {
-        riderName: riderName.id,
+        deliveryAgentId: riderProfile.id,
         status: { in: ["SCHEDULED", "DISPATCHED", "PICKED_UP", "IN_TRANSIT"] },
       },
       select: { id: true },
@@ -474,7 +474,7 @@ export async function assignDeliveryOrder(req: Request, res: Response) {
     const updated = await prisma.delivery.update({
       where: { id: deliveryId },
       data: {
-        riderName: riderName.id,
+        deliveryAgentId: riderProfile.id,
         riderName: partner.name ?? null,
         riderPhone: partner.phone ?? null,
         status: "SCHEDULED",
@@ -693,11 +693,11 @@ export async function listDeliveryPayoutRequests(req: Request, res: Response) {
 
     const payouts = await prisma.vendorPayout.findMany({
       where: {
-        riderNameId: { not: null },
+        riderProfileId: { not: null },
         ...(statusFilter ? { status: statusFilter } : {}),
       },
       include: {
-        riderName: {
+        riderProfile: {
           include: {
             user: {
               select: {
@@ -736,12 +736,12 @@ export async function approveDeliveryPayoutRequest(req: Request, res: Response) 
       where: { id: payoutId },
       select: {
         id: true,
-        riderNameId: true,
+        riderProfileId: true,
         status: true,
       },
     });
 
-    if (!existing || !existing.riderNameId) {
+    if (!existing || !existing.riderProfileId) {
       return res.status(404).json({ message: "Payout request not found" });
     }
     if (existing.status !== "PENDING" && existing.status !== "PROCESSING") {
@@ -755,7 +755,7 @@ export async function approveDeliveryPayoutRequest(req: Request, res: Response) 
         paidAt: new Date(),
       },
       include: {
-        riderName: {
+        riderProfile: {
           include: {
             user: {
               select: {
