@@ -9,7 +9,7 @@ import { forwardGeocode, reverseGeocode } from "./location-utils";
 type LocationPickerModalProps = {
   selectedLocation: StoredLocation | null;
   onClose: () => void;
-  onConfirm: (location: StoredLocation) => Promise<void>;
+  onConfirm: (location: StoredLocation) => Promise<unknown>;
 };
 
 export default function LocationPickerModal({

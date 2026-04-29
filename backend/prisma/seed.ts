@@ -87,10 +87,48 @@ async function main() {
   for (let i = 0; i < shopSeedData.length; i++) {
     const { name, slug } = shopSeedData[i];
   
-    const shop = await prisma.shop.upsert({
-      where: { slug },
+    const shopUserEmail = `vendor${i}@meramot.demo`;
+    const shopUser = await prisma.user.upsert({
+      where: { email: shopUserEmail },
       update: {},
       create: {
+        username: `vendor_${slug}`,
+        email: shopUserEmail,
+        passwordHash,
+        name: `${name} Owner`,
+        phone: `+88018000000${i.toString().padStart(2, '0')}`,
+        role: "VENDOR",
+      },
+    });
+
+    const vendorApp = await prisma.vendorApplication.upsert({
+      where: { businessEmail: shopUserEmail },
+      update: {},
+      create: {
+        userId: shopUser.id,
+        ownerName: `${name} Owner`,
+        businessEmail: shopUserEmail,
+        phone: shopUser.phone!,
+        shopName: name,
+        address: `${10 + i + 1} Main Road`,
+        city: "Dhaka",
+        area: randomFrom(areas),
+        specialties: randomSubset(specialtiesPool, 3),
+        courierPickup: true,
+        inShopRepair: true,
+        spareParts: false,
+        status: "APPROVED",
+        reviewedAt: new Date(),
+      },
+    });
+
+    const shop = await prisma.shop.upsert({
+      where: { slug },
+      update: {
+        vendorApplicationId: vendorApp.id,
+      },
+      create: {
+        vendorApplicationId: vendorApp.id,
         name,
         slug,
         description: "Professional electronics repair service.",
@@ -114,6 +152,22 @@ async function main() {
           ShopCategory.IN_SHOP_REPAIR,
         ],
         specialties: randomSubset(specialtiesPool, 3),
+      },
+    });
+
+    await prisma.shopStaff.upsert({
+      where: {
+        shopId_userId: {
+          shopId: shop.id,
+          userId: shopUser.id,
+        },
+      },
+      update: {},
+      create: {
+        shopId: shop.id,
+        userId: shopUser.id,
+        role: "OWNER",
+        isActive: true,
       },
     });
   

@@ -4,7 +4,8 @@ import {
   listVendorApplications,
   approveVendorApplication,
   rejectVendorApplication,
-  updateMyVendorApplication
+  updateMyVendorApplication,
+  deleteVendorApplication
 } from "../controllers/vendor-application-controller.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { vendorApplyRateLimiter } from "../middleware/rate-limit.js";
@@ -16,5 +17,6 @@ router.post("/", vendorApplyRateLimiter, createVendorApplication);
 router.get("/admin", requireAuth, requireAdmin, listVendorApplications);
 router.patch("/admin/:id/approve", requireAuth, requireAdmin, approveVendorApplication);
 router.patch("/admin/:id/reject", requireAuth, requireAdmin, rejectVendorApplication);
+router.delete("/admin/:id", requireAuth, requireAdmin, deleteVendorApplication);
 router.patch("/vendor/application-status", requireAuth, updateMyVendorApplication);
 export default router;

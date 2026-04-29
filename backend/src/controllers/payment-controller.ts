@@ -38,7 +38,7 @@ function callbackBaseUrl() {
 }
 
 function frontendPaymentResultUrl(params: Record<string, string | undefined>) {
-  const target = new URL("/checkout", env.frontendOrigin);
+  const target = new URL("/payment/result", env.frontendOrigin);
 
   for (const [key, value] of Object.entries(params)) {
     if (!value) {

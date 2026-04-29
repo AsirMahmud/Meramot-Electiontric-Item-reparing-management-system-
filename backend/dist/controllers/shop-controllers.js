@@ -106,6 +106,8 @@ export async function getShops(req, res) {
                 hasDeals: true,
                 categories: true,
                 specialties: true,
+                baseLaborFee: true,
+                inspectionFee: true,
             },
         });
         const enriched = shops
@@ -116,7 +118,9 @@ export async function getShops(req, res) {
                 ...shop,
                 distanceKm,
                 etaMinutes,
-                offerSummary: `৳${(700 + shop.priceLevel * 250 + Math.max(0, 5 - Math.round(shop.ratingAvg)) * 80).toLocaleString("en-BD")}`,
+                offerSummary: shop.baseLaborFee
+                    ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
+                    : `Inspection ৳${(shop.inspectionFee ?? 0).toLocaleString("en-BD")}`,
                 resultTag: resultTag({
                     priceLevel: shop.priceLevel,
                     distanceKm,
@@ -182,9 +186,17 @@ export async function getFeaturedShops(_req, res) {
                 hasDeals: true,
                 categories: true,
                 specialties: true,
+                baseLaborFee: true,
+                inspectionFee: true,
             },
         });
-        return res.json(shops);
+        const enriched = shops.map((shop) => ({
+            ...shop,
+            offerSummary: shop.baseLaborFee
+                ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
+                : `Inspection ৳${(shop.inspectionFee ?? 0).toLocaleString("en-BD")}`,
+        }));
+        return res.json(enriched);
     }
     catch (error) {
         console.error("getFeaturedShops error:", error);

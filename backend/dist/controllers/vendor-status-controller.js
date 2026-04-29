@@ -283,7 +283,7 @@ export async function completeVendorShopSetup(req, res) {
                 message: "Only approved vendors can complete shop setup",
             });
         }
-        const { shopName, description, phone, address, city, area, courierPickup, inShopRepair, spareParts, inspectionFee, baseLaborFee, pickupFee, expressFee, skillTags, } = req.body;
+        const { shopName, description, phone, address, city, area, courierPickup, inShopRepair, spareParts, inspectionFee, baseLaborFee, pickupFee, expressFee, skillTags, lat, lng, } = req.body;
         const normalizedShopName = shopName?.trim() || "";
         const normalizedPhone = phone?.trim() || "";
         const normalizedAddress = address?.trim() || "";
@@ -325,6 +325,8 @@ export async function completeVendorShopSetup(req, res) {
         const expressFeeNumber = expressFee === "" || expressFee === undefined || expressFee === null
             ? null
             : Number(expressFee);
+        const latNumber = lat === "" || lat === undefined || lat === null ? null : Number(lat);
+        const lngNumber = lng === "" || lng === undefined || lng === null ? null : Number(lng);
         if ((inspectionFeeNumber !== null && (Number.isNaN(inspectionFeeNumber) || inspectionFeeNumber < 0)) ||
             (baseLaborFeeNumber !== null && (Number.isNaN(baseLaborFeeNumber) || baseLaborFeeNumber < 0)) ||
             (pickupFeeNumber !== null && (Number.isNaN(pickupFeeNumber) || pickupFeeNumber < 0)) ||
@@ -356,6 +358,8 @@ export async function completeVendorShopSetup(req, res) {
                     address: normalizedAddress,
                     city: normalizedCity,
                     area: normalizedArea,
+                    lat: latNumber,
+                    lng: lngNumber,
                     specialties: normalizedSkillTags,
                     courierPickup: Boolean(courierPickup),
                     inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : true,
@@ -372,6 +376,8 @@ export async function completeVendorShopSetup(req, res) {
                     address: normalizedAddress,
                     city: normalizedCity,
                     area: normalizedArea,
+                    lat: latNumber,
+                    lng: lngNumber,
                     categories: serviceCategories,
                     specialties: normalizedSkillTags,
                     inspectionFee: inspectionFeeNumber,

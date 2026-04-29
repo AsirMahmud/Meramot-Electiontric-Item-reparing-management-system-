@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
           Dashboard
         </p>
-        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Admin overview</h2>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Admin Overview</h2>
         <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Monitor platform health, vendor approvals, customer support, and financial mediation.
         </p>

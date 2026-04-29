@@ -1,8 +1,21 @@
 // @ts-nocheck
+import { PaymentMethod, RequestMode, RequestStatus, RepairJobStatus, DeliveryType, DeliveryDirection, DeliveryStatus, CartStatus, PaymentStatus } from "@prisma/client";
 import prisma from "../models/prisma.js";
+const REGULAR_DELIVERY_FEE = 80;
+const EXPRESS_DELIVERY_FEE = 150;
+const SERVICE_CHARGE_RATE = 0.05;
+const MIN_SERVICE_CHARGE = 30;
+function calculateServiceCharge(subtotal) {
+    if (subtotal <= 0)
+        return 0;
+    return Math.max(MIN_SERVICE_CHARGE, Math.round(subtotal * SERVICE_CHARGE_RATE));
+}
+function calculateDeliveryFee(type) {
+    return type === "EXPRESS" ? EXPRESS_DELIVERY_FEE : REGULAR_DELIVERY_FEE;
+}
 function normalizePaymentMethod(method) {
-    if (method === "BKASH")
-        return PaymentMethod.BKASH;
+    if (method === "SSLCOMMERZ")
+        return PaymentMethod.SSLCOMMERZ;
     return PaymentMethod.CASH;
 }
 function normalizeScheduledAt(input, when) {
@@ -278,6 +291,10 @@ export async function checkoutCart(req, res) {
             return res.status(400).json({ message: "Valid scheduledAt is required for later bookings" });
         }
         const subtotal = cart.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+        const selectedDeliveryType = deliveryType === "EXPRESS" ? DeliveryType.EXPRESS : DeliveryType.REGULAR;
+        const serviceCharge = calculateServiceCharge(subtotal);
+        const deliveryFee = calculateDeliveryFee(deliveryType);
+        const totalAmount = subtotal + serviceCharge + deliveryFee;
         const serviceLines = cart.items
             .map((item, index) => `${index + 1}. ${item.serviceName} × ${item.quantity} — ৳${Number(item.price).toFixed(2)}`)
             .join("\n");
@@ -304,6 +321,10 @@ export async function checkoutCart(req, res) {
                     description: `Direct order cart checkout\n\n` +
                         `Schedule: ${scheduleType === "NOW" ? "Now" : pickupTime?.toISOString()}\n` +
                         `Payment: ${paymentMethod || "CASH"}\n` +
+                        `Services subtotal: ৳${subtotal.toFixed(2)}\n` +
+                        `Service charge: ৳${serviceCharge.toFixed(2)}\n` +
+                        `Delivery fee: ৳${deliveryFee.toFixed(2)}\n` +
+                        `Total: ৳${totalAmount.toFixed(2)}\n` +
                         `Address: ${chosenAddress.trim()}\n` +
                         `City: ${city || cart.user.city || ""}\n` +
                         `Area: ${area || cart.user.area || ""}\n\n` +
@@ -316,7 +337,9 @@ export async function checkoutCart(req, res) {
                     imageUrls: [],
                     mode: RequestMode.DIRECT_REPAIR,
                     preferredPickup: true,
-                    deliveryType: deliveryType === "EXPRESS" ? DeliveryType.EXPRESS : DeliveryType.REGULAR,
+                    deliveryType: selectedDeliveryType,
+                    checkupFee: serviceCharge,
+                    quotedFinalAmount: totalAmount,
                     status: RequestStatus.ASSIGNED,
                 },
             });
@@ -331,28 +354,31 @@ export async function checkoutCart(req, res) {
                 data: {
                     repairJobId: repairJob.id,
                     direction: DeliveryDirection.TO_SHOP,
-                    type: deliveryType === "EXPRESS" ? DeliveryType.EXPRESS : DeliveryType.REGULAR,
+                    type: selectedDeliveryType,
                     status: DeliveryStatus.SCHEDULED,
+                    fee: deliveryFee,
                     pickupAddress: chosenAddress.trim(),
                     dropAddress: cart.shop.address,
                     scheduledAt: pickupTime,
                 },
             });
-            const payment = await tx.payment.create({
-                data: {
-                    userId,
-                    repairRequestId: request.id,
-                    amount: subtotal,
-                    currency: "BDT",
-                    method: normalizePaymentMethod(paymentMethod),
-                    status: PaymentStatus.PENDING,
-                },
-            });
+            const payment = paymentMethod === "SSLCOMMERZ"
+                ? null
+                : await tx.payment.create({
+                    data: {
+                        userId,
+                        repairRequestId: request.id,
+                        amount: totalAmount,
+                        currency: "BDT",
+                        method: normalizePaymentMethod(paymentMethod),
+                        status: PaymentStatus.PENDING,
+                    },
+                });
             await tx.cart.update({
                 where: { id: cart.id },
                 data: { status: CartStatus.CHECKED_OUT },
             });
-            return { request, repairJob, delivery, payment };
+            return { request, repairJob, delivery, payment, totals: { subtotal, serviceCharge, deliveryFee, total: totalAmount } };
         });
         return res.status(201).json({
             message: "Direct order confirmed",

@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import prisma from "../models/prisma.js";
 import { sendDeliveryCredentialsEmail } from "../services/delivery-credentials-email-service.js";
+import { sendSms } from "../services/sms-service.js";
 
 function randomChars(length: number) {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -240,6 +241,15 @@ export async function approveDeliveryPartner(req: Request, res: Response) {
       console.error("approveDeliveryPartner email send error:", emailError);
     }
 
+    if (updated.user.phone) {
+      sendSms(
+        updated.user.phone,
+        `Your delivery partner registration is approved. Username: ${updated.user.username}, Password: ${generatedPassword}. Please change your password after login.`
+      ).catch((smsError) => {
+        console.error("approveDeliveryPartner sms send error:", smsError);
+      });
+    }
+
     return res.json({
       message: "Delivery partner approved and credentials emailed",
       partner: updated,
@@ -295,6 +305,37 @@ export async function rejectDeliveryPartner(req: Request, res: Response) {
   }
 }
 
+export async function deleteDeliveryPartner(req: Request, res: Response) {
+  try {
+    const rawId = (req.params as { id?: unknown }).id;
+    if (typeof rawId !== "string" || !rawId.trim()) {
+      return res.status(400).json({ message: "Partner id is required" });
+    }
+
+    const id = rawId.trim();
+
+    const existing = await prisma.riderName.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Partner not found" });
+    }
+
+    await prisma.riderName.delete({
+      where: { id }
+    });
+
+    return res.json({ message: "Delivery partner registration deleted successfully" });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return res.status(404).json({ message: "Partner not found" });
+    }
+    console.error("deleteDeliveryPartner error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
 
 export async function listDeliveryOrders(req: Request, res: Response) {
   try {

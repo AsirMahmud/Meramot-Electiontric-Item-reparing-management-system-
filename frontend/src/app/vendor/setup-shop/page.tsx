@@ -406,8 +406,8 @@ if (app) {
                       const result = await forwardGeocode(query);
                       setIsGeocoding(false);
                       if (result) {
-                        setLat(result.lat);
-                        setLng(result.lng);
+                        setLat(result.lat ?? null);
+                        setLng(result.lng ?? null);
                       }
                     }
                     setMapModalOpen(true);
@@ -628,8 +628,8 @@ if (app) {
           selectedLocation={lat && lng ? { lat, lng, address, city, area, source: "map" } : null}
           onClose={() => setMapModalOpen(false)}
           onConfirm={async (loc) => {
-            setLat(loc.lat);
-            setLng(loc.lng);
+            setLat(loc.lat ?? null);
+            setLng(loc.lng ?? null);
             if (loc.address && !address) setAddress(loc.address);
             if (loc.city && !city) setCity(loc.city);
             if (loc.area && !area) setArea(loc.area);

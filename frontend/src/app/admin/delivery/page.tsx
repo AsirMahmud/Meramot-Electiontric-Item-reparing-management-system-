@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { fetchAdminDeliveryRiders, updateAdminDeliveryRiderStatus, fetchAdminDeliveryStats, type AdminDeliveryRider, type AdminDeliveryStats } from "@/lib/api";
+import { fetchAdminDeliveryRiders, updateAdminDeliveryRiderStatus, deleteAdminDeliveryRider, fetchAdminDeliveryStats, type AdminDeliveryRider, type AdminDeliveryStats } from "@/lib/api";
 
 type SessionUser = {
   accessToken?: string;
@@ -50,6 +50,27 @@ export default function AdminDeliveryPage() {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Status update failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleDeleteRider(userId: string) {
+    if (!sessionUser?.accessToken) return;
+    if (!window.confirm("Are you sure you want to completely delete this delivery partner registration? They will have to apply again from scratch.")) return;
+    
+    const passkey = window.prompt("SECURITY CHECK:\nPlease enter your 10-minute Admin Passkey (sent to your email) to confirm this deletion:");
+    if (!passkey) {
+      alert("Deletion cancelled. Passkey is required.");
+      return;
+    }
+
+    setActionId(userId);
+    try {
+      await deleteAdminDeliveryRider(sessionUser.accessToken, userId, passkey);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Deletion failed");
     } finally {
       setActionId(null);
     }
@@ -176,6 +197,7 @@ export default function AdminDeliveryPage() {
                   <th className="px-6 py-4 font-semibold">Contact</th>
                   <th className="px-6 py-4 font-semibold">Reg. Status</th>
                   <th className="px-6 py-4 font-semibold">System Status</th>
+                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea]">
@@ -204,6 +226,16 @@ export default function AdminDeliveryPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-medium text-[var(--muted-foreground)]">{rider.status}</span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                        <button
+                          type="button"
+                          disabled={actionId === rider.id}
+                          onClick={() => handleDeleteRider(rider.id)}
+                          className="rounded-xl border border-[#8A2A2A] px-3 py-1 text-xs font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
                     </td>
                   </tr>
                 ))}

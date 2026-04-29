@@ -8,9 +8,9 @@ import { useMemo, useState } from "react";
 const navItems = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/finance", label: "Finance Ledger" },
-  { href: "/admin/vendors", label: "Vendor Review" },
   { href: "/admin/tickets", label: "Support Tickets" },
   { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/vendors", label: "Vendors" },
   { href: "/admin/delivery", label: "Delivery Riders" },
 ];
 

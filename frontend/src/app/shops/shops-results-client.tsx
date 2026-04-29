@@ -14,6 +14,7 @@ import {
   normalizeSearchState,
   toShopQuery,
 } from "@/lib/shop-search";
+import { useSelectedLocation } from "@/components/location/useSelectedLocation";
 
 const sortTabs = [
   { label: "Lowest Price", value: "price" },
@@ -65,7 +66,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
               </h3>
 
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
-                <span>⭐ {shop.ratingAvg.toFixed(1)}</span>
+                <span>⭐ {(shop.ratingAvg ?? 0).toFixed(1)}</span>
                 <span>({shop.reviewCount})</span>
                 {typeof shop.distanceKm === "number" ? (
                   <span>{shop.distanceKm.toFixed(1)} km away</span>
@@ -75,7 +76,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
             </div>
 
             <div className="shrink-0 text-right">
-              <div className="text-2xl font-extrabold leading-none text-[var(--accent-dark)]">
+              <div className="text-sm font-bold leading-tight text-[var(--accent-dark)]">
                 {shop.offerSummary ?? "৳--"}
               </div>
               <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">
@@ -107,7 +108,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
           </span>
         ) : null}
         <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
-          {formatPriceLevel(shop.priceLevel)}
+          {formatPriceLevel(shop.priceLevel ?? 1)}
         </span>
       </div>
     </Link>
@@ -128,6 +129,8 @@ function ShopsResultsClientInner() {
     );
   }, [session]);
 
+  const { selectedLocation } = useSelectedLocation(!!session?.user);
+
   const searchState = useMemo(
     () =>
       normalizeSearchState({
@@ -140,8 +143,10 @@ function ShopsResultsClientInner() {
         maxDistanceKm: Number(
           searchParams.get("maxDistanceKm") ?? defaultSearchState.maxDistanceKm
         ),
+        lat: selectedLocation?.lat,
+        lng: selectedLocation?.lng,
       }),
-    [searchParams]
+    [searchParams, selectedLocation]
   );
 
   const categoryBrowseMode = Boolean(searchState.category && !searchState.q);

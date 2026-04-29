@@ -33,7 +33,7 @@ export async function deliveryRegister(req, res) {
             return res.status(409).json({
                 message: existing.role === "DELIVERY"
                     ? "Delivery account already exists for this email"
-                    : "This email is already registered",
+                    : "Cannot register as a Delivery Partner using an existing Customer/Vendor email. Please use a separate email.",
             });
         }
         const tempUsername = `pending_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;

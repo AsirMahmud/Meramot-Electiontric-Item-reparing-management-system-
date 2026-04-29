@@ -10,6 +10,7 @@ import type { Response } from "express";
 import prisma from "../models/prisma.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { sendOrderStatusEmail } from "../services/email-service.js";
+import { sendSms } from "../services/sms-service.js";
 
 function normalizeRequestStatus(status?: string): RequestStatus | undefined {
   if (!status) return undefined;
@@ -139,6 +140,41 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
         status: created.request.status,
         shopName: matchedShop?.name,
       }).catch((error) => console.error("request created email failed", error));
+    }
+
+    // Send SMS to matching vendors for marketplace requests
+    if (!isDirectFlow) {
+      const keywords = [
+        String(deviceType).trim(),
+        typeof brand === "string" ? brand.trim() : "",
+        typeof issueCategory === "string" ? issueCategory.trim() : ""
+      ].filter(Boolean);
+
+      if (keywords.length > 0) {
+        const matchingShops = await prisma.shop.findMany({
+          where: {
+            isActive: true,
+            phone: { not: null },
+            specialties: { hasSome: keywords }
+          },
+          select: { phone: true, name: true }
+        });
+
+        // Fire and forget
+        matchingShops.forEach((shop) => {
+          if (shop.phone) {
+            sendSms(shop.phone, `New repair request posted for ${keywords[0]}. Log in to Meramot to place your bid!`).catch(() => {});
+          }
+        });
+      }
+    } else if (isDirectFlow && matchedShop) {
+      const directShop = await prisma.shop.findUnique({
+        where: { id: matchedShop.id },
+        select: { phone: true }
+      });
+      if (directShop?.phone) {
+        sendSms(directShop.phone, `You have a new direct repair request: ${title}. Please check your dashboard.`).catch(() => {});
+      }
     }
 
     return res.status(201).json({
@@ -398,6 +434,19 @@ export async function acceptRequestBid(req: AuthedRequest, res: Response) {
       }).catch((error) => console.error("accept bid email failed", error));
     }
 
+    // Send SMS to vendor whose bid was accepted
+    const acceptedVendorShop = await prisma.shop.findUnique({
+      where: { id: selectedBid.shopId },
+      select: { phone: true, name: true }
+    });
+
+    if (acceptedVendorShop?.phone) {
+      sendSms(
+        acceptedVendorShop.phone,
+        `Congratulations! Your bid for "${existingRequest.title}" was accepted. Please prepare for the device.`
+      ).catch(() => {});
+    }
+
     return res.json({
       message: "Bid accepted and repair job assigned",
       request: result.request,
@@ -568,6 +617,20 @@ export async function respondToFinalQuote(req: AuthedRequest, res: Response) {
         status: result.request.status,
         shopName: existingRequest.repairJob.shop.name,
       }).catch((error) => console.error("final quote response email failed", error));
+    }
+
+    // Send SMS to vendor on quote response
+    const repairJobShop = await prisma.shop.findFirst({
+      where: { repairJobs: { some: { id: existingRequest.repairJob.id } } },
+      select: { phone: true }
+    });
+
+    if (repairJobShop?.phone) {
+      const responseText = approved ? "accepted" : "declined";
+      sendSms(
+        repairJobShop.phone,
+        `The customer has ${responseText} your final quote for "${existingRequest.title}".`
+      ).catch(() => {});
     }
 
     return res.json({

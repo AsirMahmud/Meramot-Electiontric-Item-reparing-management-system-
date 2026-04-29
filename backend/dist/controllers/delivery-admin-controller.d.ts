@@ -3,6 +3,7 @@ export declare function getDeliveryAdminStats(_req: Request, res: Response): Pro
 export declare function listDeliveryPartners(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function approveDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function rejectDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function deleteDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function listDeliveryOrders(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function assignDeliveryOrder(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function getDeliveryOrderTimeline(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

@@ -3,7 +3,7 @@ import prisma from "../models/prisma.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
 import { AuthedRequest } from "../middleware/auth.js";
-import { DeliveryPartnerApprovalStatus } from "@prisma/client";
+import { currentAdminPasskey } from "../services/admin-passkey-service.js";
 
 const router = Router();
 
@@ -110,6 +110,38 @@ router.post("/delivery/riders/:userId/reject", async (req: AuthedRequest, res: R
   } catch (error) {
     console.error("POST /admin/delivery/riders/:userId/reject error:", error);
     return res.status(500).json({ success: false, message: "Failed to reject delivery rider" });
+  }
+});
+
+// DELETE /api/admin/delivery/riders/:userId
+router.delete("/delivery/riders/:userId", async (req: AuthedRequest, res: Response) => {
+  try {
+    const passkey = req.headers["x-admin-passkey"];
+    if (!passkey || passkey !== currentAdminPasskey) {
+      return res.status(403).json({ success: false, message: "Invalid or expired admin passkey." });
+    }
+
+    const userId = String(req.params.userId);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId, role: "DELIVERY" },
+      include: { riderProfile: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Delivery user not found" });
+    }
+
+    if (user.riderProfile) {
+      await prisma.riderProfile.delete({
+        where: { id: user.riderProfile.id }
+      });
+    }
+
+    return res.json({ success: true, message: "Delivery partner registration deleted successfully" });
+  } catch (error) {
+    console.error("DELETE /admin/delivery/riders/:userId error:", error);
+    return res.status(500).json({ success: false, message: "Failed to delete delivery rider" });
   }
 });
 

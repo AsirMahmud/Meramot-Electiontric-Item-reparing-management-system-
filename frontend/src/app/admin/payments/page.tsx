@@ -19,7 +19,6 @@ export default function AdminPaymentsPage() {
       try {
         const response = await getAdminPayments({
           status: filter === "ALL" ? undefined : filter,
-          take: 50,
         });
 
         setPayments(response.data || []);

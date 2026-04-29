@@ -8,7 +8,7 @@ router.use(requireAuth, requireAdmin);
 router.get("/vendors", async (_req, res) => {
     try {
         const applications = await prisma.vendorApplication.findMany({
-            orderBy: { submittedAt: "desc" },
+            orderBy: { createdAt: "desc" },
             include: {
                 user: {
                     select: {
@@ -46,7 +46,7 @@ router.get("/vendors/pending", async (_req, res) => {
     try {
         const applications = await prisma.vendorApplication.findMany({
             where: { status: "PENDING" },
-            orderBy: { submittedAt: "asc" },
+            orderBy: { createdAt: "asc" },
             include: {
                 user: {
                     select: {

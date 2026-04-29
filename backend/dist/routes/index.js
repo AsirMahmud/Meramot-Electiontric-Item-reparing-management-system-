@@ -11,6 +11,9 @@ import vendorStatusRoutes from "./vendor-status-routes.js";
 import uploadRoutes from "./upload-routes.js";
 import paymentRoutes from "./payment-routes.js";
 import invoiceRoutes from "./invoice-routes.js";
+import aiChatHistoryRoutes from "./ai-chat-history-routes.js";
+import cartRoutes from "./cart-routes.js";
+import aiRoutes from "./ai-routes.js";
 const router = Router();
 router.get("/health", (_req, res) => {
     res.json({
@@ -30,5 +33,8 @@ router.use("/vendor/requests", vendorRequestRoutes);
 router.use("/uploads", uploadRoutes);
 router.use("/payments", paymentRoutes);
 router.use("/invoices", invoiceRoutes);
+router.use("/ai-chat", aiChatHistoryRoutes);
+router.use("/cart", cartRoutes);
+router.use("/ai", aiRoutes);
 export default router;
 //# sourceMappingURL=index.js.map

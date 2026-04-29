@@ -8,6 +8,8 @@ export type SearchState = {
   freeDelivery: boolean;
   deals: boolean;
   maxDistanceKm: number;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export const defaultSearchState: SearchState = {
@@ -28,6 +30,8 @@ export function normalizeSearchState(input: Partial<SearchState>): SearchState {
     category: input.category ?? "",
     sort: (input.sort as SearchState["sort"]) ?? defaultSearchState.sort,
     maxDistanceKm: Number.isFinite(input.maxDistanceKm) ? Math.max(1, Number(input.maxDistanceKm)) : defaultSearchState.maxDistanceKm,
+    lat: typeof input.lat === "number" ? input.lat : undefined,
+    lng: typeof input.lng === "number" ? input.lng : undefined,
   };
 }
 
@@ -41,6 +45,8 @@ export function toShopQuery(state: SearchState): ShopQuery {
     deals: state.deals || undefined,
     maxDistanceKm: state.maxDistanceKm,
     take: 24,
+    lat: state.lat,
+    lng: state.lng,
   };
 }
 
@@ -87,7 +93,7 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
 
   const sorted = [...filtered].sort((a, b) => {
     if (state.sort === "price") {
-      if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
+      if ((a.priceLevel ?? 0) !== (b.priceLevel ?? 0)) return (a.priceLevel ?? 0) - (b.priceLevel ?? 0);
       return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
     }
 
@@ -96,14 +102,14 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
     }
 
     if (state.sort === "topRated") {
-      if (b.ratingAvg !== a.ratingAvg) return b.ratingAvg - a.ratingAvg;
-      return b.reviewCount - a.reviewCount;
+      if ((b.ratingAvg ?? 0) !== (a.ratingAvg ?? 0)) return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
+      return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
     }
 
     const scoreDiff = relevanceScore(b, state.q) - relevanceScore(a, state.q);
     if (scoreDiff !== 0) return scoreDiff;
     if ((a.distanceKm ?? 999) !== (b.distanceKm ?? 999)) return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
-    return b.ratingAvg - a.ratingAvg;
+    return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
   });
 
   return sorted;

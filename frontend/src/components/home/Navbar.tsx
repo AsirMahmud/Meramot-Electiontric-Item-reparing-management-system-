@@ -188,7 +188,7 @@ export function NavbarInner({
 
                       {userRole === "ADMIN" && (
                         <Link
-                          href="/admin/vendors"
+                          href="/admin"
                           className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                           onClick={() => setIsUserMenuOpen(false)}
                         >

@@ -118,6 +118,43 @@ export default function AdminVendorDetailPage() {
     }
   };
 
+  const handleDeleteApplication = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete this application? The vendor will have to apply again from scratch.")) {
+      return;
+    }
+
+    const passkey = window.prompt("SECURITY CHECK:\nPlease enter your 10-minute Admin Passkey (sent to your email) to confirm this deletion:");
+    if (!passkey) {
+      alert("Deletion cancelled. Passkey is required.");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          ...getAuthHeaders(),
+          "x-admin-passkey": passkey
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Application deleted successfully.");
+        router.push("/admin/vendors");
+      } else {
+        alert(data.message || "Failed to delete application");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting application.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleShopSuspendToggle = async (isActive: boolean) => {
       if (!application?.shop) return;
       if (!window.confirm(`Are you sure you want to ${isActive ? 'reinstate' : 'suspend'} this shop?`)) {
@@ -279,6 +316,21 @@ export default function AdminVendorDetailPage() {
                             Reject Application
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* If application is REJECTED, show delete option */}
+            {application.status === "REJECTED" && (
+                <div className="rounded-[28px] border border-[#8A2A2A]/20 bg-[#FDEAEA] p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-bold text-[#8A2A2A]">Danger Zone</h3>
+                    <p className="mb-4 text-sm text-[#8A2A2A]">The vendor can update their information and resubmit this rejected application. If you delete it completely, they will have to apply again from scratch.</p>
+                    <button
+                        onClick={handleDeleteApplication}
+                        disabled={isProcessing}
+                        className="w-full rounded-xl bg-[#8A2A2A] px-4 py-3 font-semibold text-white transition hover:bg-[#6b2020] disabled:opacity-50"
+                    >
+                        Delete Request Entirely
+                    </button>
                 </div>
             )}
 

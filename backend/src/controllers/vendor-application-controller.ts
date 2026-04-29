@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "../models/prisma.js";
+import { currentAdminPasskey } from "../services/admin-passkey-service.js";
 
 function parseCsvList(input?: string) {
   if (!input) return [];
@@ -501,6 +502,34 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("updateMyVendorApplication error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function deleteVendorApplication(req: Request, res: Response) {
+  try {
+    const passkey = req.headers["x-admin-passkey"];
+    if (!passkey || passkey !== currentAdminPasskey) {
+      return res.status(403).json({ message: "Invalid or expired admin passkey." });
+    }
+
+    const { id } = req.params;
+    
+    const application = await prisma.vendorApplication.findUnique({
+      where: { id }
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Vendor application not found" });
+    }
+
+    await prisma.vendorApplication.delete({
+      where: { id }
+    });
+
+    return res.json({ message: "Vendor application deleted successfully" });
+  } catch (error) {
+    console.error("deleteVendorApplication error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 }

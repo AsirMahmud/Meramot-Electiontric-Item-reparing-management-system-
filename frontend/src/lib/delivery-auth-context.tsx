@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   createContext,
@@ -70,25 +70,32 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
   const applyAuthPayload = useCallback(async (payload: DeliveryAuthPayload) => {
     persistToken(payload.token);
 
+    const rp = payload.riderProfile;
+    const u = payload.user;
+
+    if (!rp || !u) return;
+
     // Use login/register response immediately so auth does not fail on an extra /me round-trip.
     setMe({
-      id: payload.riderProfile.id,
-      userId: payload.user.id,
-      vehicleType: payload.riderProfile.vehicleType ?? null,
-      status: payload.riderProfile.status,
-      isActive: payload.riderProfile.isActive ?? true,
-      registrationStatus: payload.riderProfile.registrationStatus ?? "APPROVED",
+      id: rp.id,
+      email: u.email,
+      name: u.name ?? null,
+      phone: u.phone ?? null,
+      userId: u.id,
+      vehicleType: rp.vehicleType ?? null,
+      status: rp.status,
+      isActive: rp.isActive ?? true,
+      registrationStatus: rp.registrationStatus ?? "APPROVED",
       currentLat: null,
       currentLng: null,
       user: {
-        id: payload.user.id,
-        name: payload.user.name ?? null,
-        username: payload.user.username,
-        email: payload.user.email,
-        phone: payload.user.phone ?? null,
-        role: payload.user.role,
+        id: u.id,
+        name: u.name ?? null,
+        username: u.username,
+        email: u.email,
+        phone: u.phone ?? null,
+        role: u.role,
         status: "ACTIVE",
-        avatarUrl: null,
       },
       coverageZones: [],
     });
@@ -100,6 +107,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
       // Keep session from login payload even if /me is temporarily unavailable.
     }
   }, [persistToken]);
+
 
   const refreshMe = useCallback(async () => {
     if (!token) {

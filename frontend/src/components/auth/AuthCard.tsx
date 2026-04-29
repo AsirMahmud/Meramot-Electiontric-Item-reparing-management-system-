@@ -212,7 +212,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     }
 
     if (user.role === "ADMIN") {
-      router.replace("/admin/vendors");
+      router.replace("/admin");
       router.refresh();
       return;
     }

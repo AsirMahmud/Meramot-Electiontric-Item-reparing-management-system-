@@ -2,12 +2,13 @@ import { createHash } from "crypto";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sslCommerzService } from "../services/sslcommerz.js";
+import { sendInvoiceLinkEmail } from "../services/email-service.js";
 function callbackBaseUrl() {
     const base = process.env.BACKEND_BASE_URL || "http://localhost:4000";
     return `${base.replace(/\/$/, "")}/api/payments/sslcommerz`;
 }
 function frontendPaymentResultUrl(params) {
-    const target = new URL("/checkout", env.frontendOrigin);
+    const target = new URL("/payment/result", env.frontendOrigin);
     for (const [key, value] of Object.entries(params)) {
         if (!value) {
             continue;
@@ -297,6 +298,16 @@ async function markPaymentSuccessful(paymentId, validationResponse, source) {
     if (fullPayment && fullPayment.user) {
         const invoiceUrl = new URL(`/payment/invoice/${fullPayment.id}`, env.frontendOrigin).toString();
         console.log(`[Invoice] Generated invoice for payment ${paymentId}: ${invoiceUrl}`);
+        sendInvoiceLinkEmail({
+            to: fullPayment.user.email,
+            customerName: fullPayment.user.name || fullPayment.user.username,
+            transactionRef: fullPayment.transactionRef || fullPayment.id,
+            amount: Number(fullPayment.amount),
+            currency: fullPayment.currency,
+            invoiceUrl,
+        }).catch(err => {
+            console.error("Failed to send invoice email after payment success:", err);
+        });
     }
     return {
         success: true,

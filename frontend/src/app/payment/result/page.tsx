@@ -91,7 +91,7 @@ export default function PaymentResultPage() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/checkout"
+            href="/cart"
             className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
           >
             Try payment again

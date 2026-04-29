@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -202,7 +202,7 @@ export default function MapPage() {
 
   useEffect(() => {
     if (!mapRef.current || !leafletModuleRef.current) return;
-    const L = leafletModuleRef.current.default;
+    const L = ((leafletModuleRef.current as any).default || leafletModuleRef.current) as typeof import("leaflet");
     const map = mapRef.current;
 
     if (!deliveryMarkersRef.current) {
@@ -274,7 +274,7 @@ export default function MapPage() {
 
   useEffect(() => {
     if (!mapRef.current || !leafletModuleRef.current) return;
-    const L = leafletModuleRef.current.default;
+    const L = ((leafletModuleRef.current as any).default || leafletModuleRef.current) as typeof import("leaflet");
 
     if (routeLineRef.current) {
       routeLineRef.current.remove();
@@ -283,10 +283,14 @@ export default function MapPage() {
 
     if (!selectedPoint || typeof riderLat !== "number" || typeof riderLng !== "number") return;
 
+    const sp = selectedPoint;
+    const rlat = riderLat;
+    const rlng = riderLng;
+
     let disposed = false;
     async function drawRoadRoute() {
       try {
-        const url = `${OSRM_ROUTE_ENDPOINT}/${riderLng},${riderLat};${selectedPoint.lng},${selectedPoint.lat}?overview=full&geometries=geojson`;
+        const url = `${OSRM_ROUTE_ENDPOINT}/${rlng},${rlat};${sp.lng},${sp.lat}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         if (!res.ok) throw new Error("Route service unavailable");
         const data = (await res.json()) as {
@@ -305,8 +309,8 @@ export default function MapPage() {
         if (disposed) return;
         routeLineRef.current = L.polyline(
           [
-            [riderLat, riderLng],
-            [selectedPoint.lat, selectedPoint.lng],
+            [rlat, rlng],
+            [sp.lat, sp.lng],
           ],
           { color: "#163625", weight: 4, opacity: 0.85, dashArray: "8,6" },
         ).addTo(mapRef.current!);
@@ -374,7 +378,7 @@ export default function MapPage() {
       markerRef.current = null;
     }
 
-    const L = leafletModuleRef.current.default;
+    const L = ((leafletModuleRef.current as any).default || leafletModuleRef.current) as typeof import("leaflet");
     const riderMarkerIcon = L.divIcon({
       className: "",
       html: `<div style="position:relative;width:24px;height:32px;">

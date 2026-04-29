@@ -10,6 +10,8 @@ import refundRoutes from "./routes/refund-routes.js";
 import financialLedgerRoutes from "./routes/financial-ledger-routes.js";
 import adminDeliveryRoutes from "./routes/admin-delivery-routes.js";
 import deliveryRoutes from "./routes/delivery-routes.js";
+import deliveryAuthRoutes from "./routes/delivery-auth-routes.js";
+import deliveryAdminAuthRoutes from "./routes/delivery-admin-auth-routes.js";
 import { apiRateLimiter } from "./middleware/rate-limit.js";
 export function createApp() {
     const app = express();
@@ -22,6 +24,7 @@ export function createApp() {
         credentials: true,
     }));
     app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
     app.use("/api", apiRateLimiter);
     app.use("/api", routes);
     app.use("/api/admin", adminRoutes);
@@ -31,7 +34,9 @@ export function createApp() {
     app.use("/api/admin", refundRoutes);
     app.use("/api/admin", financialLedgerRoutes);
     app.use("/api/admin", adminDeliveryRoutes);
+    app.use("/api/admin/delivery/auth", deliveryAdminAuthRoutes);
     app.use("/api/delivery", deliveryRoutes);
+    app.use("/api/delivery/auth", deliveryAuthRoutes);
     app.use("/uploads", express.static("uploads"));
     app.use((_req, res) => {
         res.status(404).json({ error: "Not found" });

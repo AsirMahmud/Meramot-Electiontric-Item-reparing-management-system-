@@ -128,13 +128,13 @@ function ShopsResultsClientInner() {
                         {shop.description || shop.address}
                       </p>
                       <p className="mt-2 text-sm text-[var(--foreground)]">
-                        ⭐ {shop.ratingAvg.toFixed(1)} ({shop.reviewCount} reviews)
+                        ⭐ {(shop.ratingAvg ?? 0).toFixed(1)} ({shop.reviewCount ?? 0} reviews)
                       </p>
                     </div>
 
                     <div className="text-right">
                       <div className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-sm font-semibold text-[var(--foreground)]">
-                        {"$".repeat(Math.max(1, shop.priceLevel))}
+                        {"$".repeat(Math.max(1, shop.priceLevel ?? 1))}
                       </div>
                     </div>
                   </div>

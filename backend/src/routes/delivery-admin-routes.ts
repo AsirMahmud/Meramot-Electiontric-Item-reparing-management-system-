@@ -5,6 +5,7 @@ import {
   getDeliveryAdminStats,
   listDeliveryPartners,
   rejectDeliveryPartner,
+  deleteDeliveryPartner
 } from "../controllers/delivery-admin-controller.js";
 import { getDeliveryAdminMe } from "../controllers/delivery-admin-auth-controller.js";
 import { requireAuthAuth } from "../middleware/auth.js";
@@ -18,5 +19,6 @@ router.get("/stats", getDeliveryAdminStats);
 router.get("/partners", listDeliveryPartners);
 router.patch("/partners/:id/approve", approveDeliveryPartner);
 router.patch("/partners/:id/reject", rejectDeliveryPartner);
+router.delete("/partners/:id", deleteDeliveryPartner);
 
 export default router;

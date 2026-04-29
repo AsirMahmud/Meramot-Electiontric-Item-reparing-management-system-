@@ -63,13 +63,13 @@ export type Shop = {
   name: string;
   slug: string;
   description?: string | null;
-  address: string;
+  address: string | null;
   city?: string | null;
   area?: string | null;
 
-  ratingAvg: number;
-  reviewCount: number;
-  priceLevel: number;
+  ratingAvg?: number;
+  reviewCount?: number;
+  priceLevel?: number;
 
   logoUrl?: string | null;
   bannerUrl?: string | null;
@@ -87,9 +87,9 @@ export type Shop = {
 
   /** flags */
   isFeatured?: boolean;
-  hasVoucher: boolean;
-  freeDelivery: boolean;
-  hasDeals: boolean;
+  hasVoucher?: boolean;
+  freeDelivery?: boolean;
+  hasDeals?: boolean;
 
   /** classification */
   categories?: ShopCategory[] | string[];
@@ -103,6 +103,8 @@ export type Shop = {
   /** details */
   phone?: string | null;
   email?: string | null;
+  baseLaborFee?: number | null;
+  inspectionFee?: number | null;
 };
 export type VendorApplicationPayload = {
   ownerName: string;
@@ -201,7 +203,9 @@ export type VendorSetupShopPayload = {
   baseLaborFee: number;
   pickupFee?: number | null;
   expressFee?: number | null;
-  skillTags: string[];\n  lat?: number | null;\n  lng?: number | null;
+  skillTags: string[];
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export function getMyVendorApplication(token: string) {
@@ -434,6 +438,8 @@ export type ShopQuery = {
   deals?: boolean;
   maxDistanceKm?: number;
   take?: number;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 function buildQuery(params: ShopQuery = {}) {
@@ -448,6 +454,8 @@ function buildQuery(params: ShopQuery = {}) {
   if (params.deals) q.set("deals", "true");
   if (params.maxDistanceKm) q.set("maxDistanceKm", String(params.maxDistanceKm));
   if (params.take) q.set("take", String(params.take));
+  if (typeof params.lat === "number") q.set("lat", String(params.lat));
+  if (typeof params.lng === "number") q.set("lng", String(params.lng));
 
   return q.toString() ? `?${q}` : "";
 }
@@ -563,6 +571,15 @@ export type CreateRepairRequestPayload = {
   mode?: string;
   preferredPickup?: boolean;
   deliveryType?: string | null;
+  scheduleType?: string;
+  scheduledAt?: string;
+  addressMode?: string;
+  address?: string;
+  city?: string;
+  area?: string;
+  pickupLat?: string;
+  pickupLng?: string;
+  contactPhone?: string;
   shopSlug?: string;
   imageUrls?: string[];
 };
@@ -834,12 +851,22 @@ export async function getReviewEligibility(
     eligible: boolean;
     hasCompletedJob: boolean;
     hasExistingReview: boolean;
+    existingReview?: {
+      id: string;
+      score: number;
+      review?: string | null;
+      createdAt?: string;
+      updatedAt?: string;
+      canEdit?: boolean;
+      editExpiresAt?: string;
+    } | null;
   }>(`/shops/${shopSlug}/review-eligibility`, {
     headers: {
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   });
 }
+
 
 export async function createReview(
   slug: string,
@@ -900,18 +927,18 @@ export function fetchDeliveryMe(token: string) {
 
 export function fetchDeliveryDeliveries(token: string, status?: string) {
   const q = status ? `?status=${status}` : "";
-  return authedRequest(`/delivery/deliveries${q}`, token);
+  return authedRequest<{ deliveries: DeliveryWithJob[] }>(`/delivery/deliveries${q}`, token);
 }
 
 export function updateDeliveryStatus(token: string, id: string, status: string) {
-  return authedRequest(`/delivery/deliveries/${id}/status`, token, {
+  return authedRequest<{ delivery: DeliveryWithJob }>(`/delivery/deliveries/${id}/status`, token, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
 }
 
 export function acceptDelivery(token: string, id: string) {
-  return authedRequest(`/delivery/deliveries/${id}/accept`, token, {
+  return authedRequest<{ delivery: DeliveryWithJob }>(`/delivery/deliveries/${id}/accept`, token, {
     method: "PATCH",
   });
 }
@@ -930,7 +957,7 @@ export function deliveryAdminLogin(data: { identifier: string; password: string 
 }
 
 export function fetchDeliveryAdminStats(token: string) {
-  return authedRequest("/delivery-admin/stats", token);
+  return authedRequest<{ stats: DeliveryAdminStats }>("/delivery-admin/stats", token);
 }
 
 export function fetchDeliveryAdminMe(token: string) {
@@ -939,7 +966,7 @@ export function fetchDeliveryAdminMe(token: string) {
 
 export function fetchDeliveryAdminPartners(token: string, status?: string) {
   const q = status ? `?registrationStatus=${status}` : "";
-  return authedRequest(`/delivery-admin/partners${q}`, token);
+  return authedRequest<{ partners: DeliveryAdminPartnerRow[] }>(`/delivery-admin/partners${q}`, token);
 }
 
 export function approveDeliveryPartnerAdmin(token: string, id: string) {
@@ -977,18 +1004,18 @@ export interface ApiShop {
   specialties?: string[];
   categories?: string[];
   address: string | null;
-  city: string | null;
+  city?: string | null;
   area?: string | null;
   phone?: string | null;
   email?: string | null;
-  distanceKm?: number;
+  distanceKm?: number | null;
   priceLevel?: number;
   hasVoucher?: boolean;
   freeDelivery?: boolean;
   hasDeals?: boolean;
   resultTag?: string | null;
   offerSummary?: string | null;
-  etaMinutes?: number;
+  etaMinutes?: number | null;
 }
 
 export interface ShopSummary {
@@ -1033,6 +1060,12 @@ export interface DeliveryAuthPayload {
     vehicleType?: string | null;
     isActive?: boolean;
     registrationStatus?: string;
+    currentLat?: number | null;
+    currentLng?: number | null;
+    lat?: number | null;
+    lng?: number | null;
+    user?: DeliveryAuthPayload['user'];
+    coverageZones?: unknown[];
   };
 }
 
@@ -1051,6 +1084,8 @@ export interface DeliveryAdminAuthPayload {
     username?: string | null;
     phone?: string | null;
     role: string;
+    status?: string;
+    createdAt?: string;
   };
 }
 
@@ -1131,6 +1166,15 @@ export async function updateAdminDeliveryRiderStatus(token: string, userId: stri
   const action = status === "APPROVED" ? "approve" : "reject";
   return authedRequest<{ success: boolean; data: any }>(`/admin/delivery/riders/${userId}/${action}`, token, {
     method: "POST",
+  });
+}
+
+export async function deleteAdminDeliveryRider(token: string, userId: string, passkey: string) {
+  return authedRequest<{ success: boolean; data: any }>(`/admin/delivery/riders/${userId}`, token, {
+    method: "DELETE",
+    headers: {
+      "x-admin-passkey": passkey
+    }
   });
 }
 
@@ -1252,51 +1296,7 @@ export type DeliveryStatusValue =
   | "CANCELLED";
 
 
-export type DeliveryAuthPayload = {
-  token: string;
-  user: {
-    id: string;
-    name?: string | null;
-    username: string;
-    email: string;
-    phone?: string | null;
-    role: string;
-  };
-  riderProfile: {
-    id: string;
-    vehicleType?: string | null;
-    status: string;
-    isActive?: boolean;
-    registrationStatus?: string;
-  };
-};
 
-
-export type DeliveryMeResponse = {
-  riderProfile: {
-    id: string;
-    userId: string;
-    vehicleType?: string | null;
-    status: string;
-    isActive?: boolean;
-    registrationStatus?: string;
-    currentLat?: number | null;
-    currentLng?: number | null;
-    lat?: number | null;
-    lng?: number | null;
-    coverageZones?: string[];
-    user: {
-      id: string;
-      name?: string | null;
-      username: string;
-      email: string;
-      phone?: string | null;
-      role: string;
-      status?: string;
-      avatarUrl?: string | null;
-    };
-  };
-};
 
 
 export type DeliveryWithJob = {
@@ -1438,18 +1438,7 @@ export function sendDeliveryChatMessage(token: string, deliveryId: string, messa
 ========================================================= */
 
 
-export type DeliveryAdminMeResponse = {
-  user: {
-    id: string;
-    name?: string | null;
-    username: string;
-    email: string;
-    phone?: string | null;
-    role: string;
-    status: string;
-    createdAt: string;
-  };
-};
+
 
 
 export type DeliveryAdminStats = {
@@ -1769,7 +1758,7 @@ export async function getAiChatSessions(token?: string) {
 
 
 export async function createAiChatSession(title = "New Chat", token?: string) {
-  return authedRequest("/ai-chat/sessions", token, {
+  return authedRequest<{ id: string; title: string }>("/ai-chat/sessions", token, {
     method: "POST",
     body: JSON.stringify({ title }),
   });

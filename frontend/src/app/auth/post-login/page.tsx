@@ -64,7 +64,7 @@ export default function PostLoginPage() {
       }
 
       if (role === "ADMIN") {
-        router.replace("/admin/vendors");
+        router.replace("/admin");
         router.refresh();
         return;
       }
