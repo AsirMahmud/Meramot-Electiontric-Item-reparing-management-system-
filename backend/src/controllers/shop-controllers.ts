@@ -149,8 +149,9 @@ export async function getShops(req: Request, res: Response) {
 
     const sorted = enriched.sort((a, b) => {
       if (sort === "price") {
-        const priceA = a.baseLaborFee ?? a.inspectionFee ?? ((a.priceLevel || 1) * 1000);
-        const priceB = b.baseLaborFee ?? b.inspectionFee ?? ((b.priceLevel || 1) * 1000);
+        const getPrice = (s: any) => s.baseLaborFee ? s.baseLaborFee : (s.inspectionFee ?? ((s.priceLevel || 1) * 1000));
+        const priceA = getPrice(a);
+        const priceB = getPrice(b);
         
         if (priceA !== priceB) return priceA - priceB;
         if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
