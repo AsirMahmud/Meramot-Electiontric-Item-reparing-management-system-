@@ -14,8 +14,13 @@ import {
   type VendorDashboardData,
 } from "@/lib/api";
 
+type PartRow = {
+  name: string;
+  cost: string;
+};
+
 type BidDraft = {
-  partsCost: string;
+  parts: PartRow[];
   laborCost: string;
   estimatedDays: string;
   notes: string;
@@ -84,11 +89,13 @@ function buildBidDraft(
   dashboard: VendorDashboardData,
   requestItem: VendorDashboardData["relevantRequests"][number]
 ): BidDraft {
+  const existingParts: PartRow[] =
+    typeof requestItem.myBid?.partsCost === "number" && requestItem.myBid.partsCost > 0
+      ? [{ name: "Parts", cost: String(requestItem.myBid.partsCost) }]
+      : [{ name: "", cost: "" }];
+
   return {
-    partsCost:
-      typeof requestItem.myBid?.partsCost === "number"
-        ? String(requestItem.myBid.partsCost)
-        : "",
+    parts: existingParts,
     laborCost:
       typeof requestItem.myBid?.laborCost === "number"
         ? String(requestItem.myBid.laborCost)
@@ -261,11 +268,11 @@ export default function VendorDashboardPage() {
     const draft = bidDrafts[requestId];
     if (!draft) return;
 
-    const partsCost = Number(draft.partsCost);
+    const partsCost = draft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
     const laborCost = Number(draft.laborCost);
 
-    if (!Number.isFinite(partsCost) || partsCost < 0) {
-      setFlash({ type: "error", text: "Enter a valid parts cost." });
+    if (partsCost < 0 || draft.parts.some((p) => Number(p.cost) < 0)) {
+      setFlash({ type: "error", text: "Part costs cannot be negative." });
       return;
     }
 
@@ -555,8 +562,8 @@ export default function VendorDashboardPage() {
             {dashboard.relevantRequests.map((requestItem) => {
               const draft = bidDrafts[requestItem.id] || buildBidDraft(dashboard, requestItem);
               const isSubmitting = pendingKey === `bid:${requestItem.id}`;
-              const totalPreview =
-                (Number(draft.partsCost) || 0) + (Number(draft.laborCost) || 0);
+              const partsTotal = draft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+              const totalPreview = partsTotal + (Number(draft.laborCost) || 0);
 
               return (
                 <article key={requestItem.id} className="rounded-[2rem] bg-white p-6 shadow-sm">
@@ -619,73 +626,145 @@ export default function VendorDashboardPage() {
                       ) : null}
                     </div>
 
-                    <div className="mt-4 grid gap-4 lg:grid-cols-4">
-                      <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-[#355541]">Parts cost</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={draft.partsCost}
-                          onChange={(event) =>
-                            setBidDrafts((prev) => ({
-                              ...prev,
-                              [requestItem.id]: {
-                                ...draft,
-                                partsCost: event.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full rounded-2xl border border-[#cfe0c6] bg-white px-4 py-3 text-sm outline-none"
-                          placeholder="0"
-                        />
-                      </label>
+                    <div className="mt-4 space-y-3">
+                      {/* Parts list */}
+                      <div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#355541]">Parts / Components</span>
+                          <span className="text-sm font-semibold text-[#214c34]">
+                            Subtotal: {formatMoney(partsTotal)}
+                          </span>
+                        </div>
 
-                      <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-[#355541]">Labor cost</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={draft.laborCost}
-                          onChange={(event) =>
-                            setBidDrafts((prev) => ({
-                              ...prev,
-                              [requestItem.id]: {
-                                ...draft,
-                                laborCost: event.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full rounded-2xl border border-[#cfe0c6] bg-white px-4 py-3 text-sm outline-none"
-                          placeholder="0"
-                        />
-                      </label>
+                        <div className="space-y-2">
+                          {draft.parts.map((part, partIndex) => (
+                            <div key={partIndex} className="flex items-center gap-2">
+                              {/* + button to insert row below */}
+                              <button
+                                type="button"
+                                title="Add part below"
+                                onClick={() => {
+                                  const newParts = [...draft.parts];
+                                  newParts.splice(partIndex + 1, 0, { name: "", cost: "" });
+                                  setBidDrafts((prev) => ({
+                                    ...prev,
+                                    [requestItem.id]: { ...draft, parts: newParts },
+                                  }));
+                                }}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#214c34] text-white text-lg leading-none hover:bg-[#173726] transition-colors"
+                              >
+                                +
+                              </button>
 
-                      <label className="block">
-                        <span className="mb-2 block text-sm font-medium text-[#355541]">Estimated days</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={draft.estimatedDays}
-                          onChange={(event) =>
-                            setBidDrafts((prev) => ({
-                              ...prev,
-                              [requestItem.id]: {
-                                ...draft,
-                                estimatedDays: event.target.value,
-                              },
-                            }))
-                          }
-                          className="w-full rounded-2xl border border-[#cfe0c6] bg-white px-4 py-3 text-sm outline-none"
-                          placeholder="Optional"
-                        />
-                      </label>
+                              {/* Part name */}
+                              <input
+                                type="text"
+                                value={part.name}
+                                onChange={(e) => {
+                                  const newParts = [...draft.parts];
+                                  newParts[partIndex] = { ...part, name: e.target.value };
+                                  setBidDrafts((prev) => ({
+                                    ...prev,
+                                    [requestItem.id]: { ...draft, parts: newParts },
+                                  }));
+                                }}
+                                className="flex-1 rounded-2xl border border-[#cfe0c6] bg-white px-4 py-2.5 text-sm outline-none"
+                                placeholder={`Part ${partIndex + 1} name`}
+                              />
 
-                      <div className="rounded-2xl border border-dashed border-[#cfe0c6] bg-white px-4 py-3 text-sm text-[#355541]">
-                        <p className="font-semibold text-[#173726]">Bid total</p>
-                        <p className="mt-2 text-2xl font-bold text-[#214c34]">{formatMoney(totalPreview)}</p>
+                              {/* Part cost */}
+                              <div className="relative w-32">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[#5b7262]">৳</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={part.cost}
+                                  onChange={(e) => {
+                                    const newParts = [...draft.parts];
+                                    newParts[partIndex] = { ...part, cost: e.target.value };
+                                    setBidDrafts((prev) => ({
+                                      ...prev,
+                                      [requestItem.id]: { ...draft, parts: newParts },
+                                    }));
+                                  }}
+                                  className="w-full rounded-2xl border border-[#cfe0c6] bg-white py-2.5 pl-7 pr-3 text-sm outline-none"
+                                  placeholder="Cost"
+                                />
+                              </div>
+
+                              {/* × remove button (only if more than 1 row) */}
+                              {draft.parts.length > 1 ? (
+                                <button
+                                  type="button"
+                                  title="Remove part"
+                                  onClick={() => {
+                                    const newParts = draft.parts.filter((_, i) => i !== partIndex);
+                                    setBidDrafts((prev) => ({
+                                      ...prev,
+                                      [requestItem.id]: { ...draft, parts: newParts },
+                                    }));
+                                  }}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#5b7262] hover:bg-red-50 hover:text-red-500 transition-colors"
+                                >
+                                  ×
+                                </button>
+                              ) : (
+                                <div className="w-7 shrink-0" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Labor + Estimated days + Total row */}
+                      <div className="grid gap-4 lg:grid-cols-3">
+                        <label className="block">
+                          <span className="mb-2 block text-sm font-medium text-[#355541]">Labor cost</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={draft.laborCost}
+                            onChange={(event) =>
+                              setBidDrafts((prev) => ({
+                                ...prev,
+                                [requestItem.id]: {
+                                  ...draft,
+                                  laborCost: event.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full rounded-2xl border border-[#cfe0c6] bg-white px-4 py-3 text-sm outline-none"
+                            placeholder="0"
+                          />
+                        </label>
+
+                        <label className="block">
+                          <span className="mb-2 block text-sm font-medium text-[#355541]">Estimated days</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={draft.estimatedDays}
+                            onChange={(event) =>
+                              setBidDrafts((prev) => ({
+                                ...prev,
+                                [requestItem.id]: {
+                                  ...draft,
+                                  estimatedDays: event.target.value,
+                                },
+                              }))
+                            }
+                            className="w-full rounded-2xl border border-[#cfe0c6] bg-white px-4 py-3 text-sm outline-none"
+                            placeholder="Optional"
+                          />
+                        </label>
+
+                        <div className="rounded-2xl border border-dashed border-[#cfe0c6] bg-white px-4 py-3 text-sm text-[#355541]">
+                          <p className="font-semibold text-[#173726]">Bid total</p>
+                          <p className="mt-2 text-2xl font-bold text-[#214c34]">{formatMoney(totalPreview)}</p>
+                        </div>
                       </div>
                     </div>
 
