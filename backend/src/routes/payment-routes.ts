@@ -17,6 +17,7 @@ import { requireAdmin } from "../middleware/require-admin.js";
 const router = Router();
 
 router.post("/sslcommerz/init", requireAuth, initiateSslCommerzPayment);
+router.post("/init", requireAuth, initiateSslCommerzPayment); // Compatibility alias
 
 router.all("/sslcommerz/success", handleSslCommerzSuccess);
 router.all("/sslcommerz/fail", handleSslCommerzFail);

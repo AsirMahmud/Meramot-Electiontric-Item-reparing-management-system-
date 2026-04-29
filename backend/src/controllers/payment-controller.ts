@@ -198,15 +198,15 @@ export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: 
       });
     }
 
-    if (!ensureSslCommerzConfigured(res)) {
-      return;
-    }
-
     if (!req.user?.id) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
+    }
+
+    if (!ensureSslCommerzConfigured(res)) {
+      return;
     }
 
     const user = await prisma.user.findUnique({
