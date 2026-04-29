@@ -57,7 +57,7 @@ export default function NewRequestPage() {
     deviceType: "Laptop",
     brand: "",
     model: "",
-    issueCategory: "Checkup and diagnosis",
+    issueCategory: "Screen or display",
     problem: "",
     mode: shopSlug ? "DIRECT_REPAIR" : "CHECKUP_AND_REPAIR",
     preferredPickup: true,

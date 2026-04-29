@@ -85,7 +85,7 @@ export default function Navbar({
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
-          <div className="grid gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
+          <div className="grid grid-cols-[auto_1fr] gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
             <Link href="/" className="inline-flex items-center">
               <Image
                 src="/images/meramot.svg"
