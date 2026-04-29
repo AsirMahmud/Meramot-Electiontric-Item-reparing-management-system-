@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type InvoiceLineItem = {
@@ -81,6 +82,8 @@ function formatDate(iso: string | null | undefined) {
 export default function InvoicePage() {
   const params = useParams<{ paymentId: string }>();
   const paymentId = params?.paymentId ?? "";
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,13 +91,13 @@ export default function InvoicePage() {
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!paymentId) return;
+    if (!paymentId || !token) return;
 
     const fetchInvoice = async () => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/payments/${encodeURIComponent(paymentId)}/invoice`,
-          { credentials: "include", headers: getAuthHeaders() },
+          { credentials: "include", headers: getAuthHeaders(token) },
         );
         const data = await res.json();
         if (!res.ok) {
@@ -110,7 +113,7 @@ export default function InvoicePage() {
     };
 
     void fetchInvoice();
-  }, [paymentId]);
+  }, [paymentId, token]);
 
   const handlePrint = () => window.print();
 

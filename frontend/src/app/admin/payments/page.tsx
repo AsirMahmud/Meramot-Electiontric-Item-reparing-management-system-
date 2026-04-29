@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getAdminPayments, type AdminPaymentRecord } from "@/lib/api";
 
 const FILTERS = ["ALL", "PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] as const;
 
 export default function AdminPaymentsPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("ALL");
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!token) return;
+
     const fetchPayments = async () => {
       setLoading(true);
       setError("");
@@ -19,7 +24,7 @@ export default function AdminPaymentsPage() {
       try {
         const response = await getAdminPayments({
           status: filter === "ALL" ? undefined : filter,
-        });
+        }, token);
 
         setPayments(response.data || []);
       } catch (err) {
@@ -30,7 +35,7 @@ export default function AdminPaymentsPage() {
     };
 
     fetchPayments();
-  }, [filter]);
+  }, [filter, token]);
 
   return (
     <section>

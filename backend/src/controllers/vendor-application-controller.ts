@@ -288,6 +288,33 @@ export async function listVendorApplications(req: Request, res: Response) {
   }
 }
 
+  // existing implementation stays unchanged
+
+
+// New endpoint: fetch a single vendor application with related user and shop info
+export async function getVendorApplication(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const application = await prisma.vendorApplication.findUnique({
+      where: { id },
+      include: {
+        user: { select: { name: true, username: true, email: true, phone: true } },
+        shop: true,
+      },
+    });
+    if (!application) {
+      return res.status(404).json({ message: "Vendor application not found" });
+    }
+    return res.json({ application });
+  } catch (error) {
+    console.error("getVendorApplication error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+
+
+
 export async function approveVendorApplication(req: Request, res: Response) {
   try {
     const { id } = req.params;
@@ -301,7 +328,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
     }
 
     const result = await prisma.$transaction(async (tx: any) => {
-      const updatedApplication = await prisma.vendorApplication.update({
+      const updatedApplication = await tx.vendorApplication.update({
         where: { id },
         data: {
           status: "APPROVED",
@@ -311,7 +338,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
         },
       });
 
-      await prisma.user.update({
+      await tx.user.update({
         where: { id: application.userId },
         data: { role: "VENDOR" },
       });
@@ -325,7 +352,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
     if (!existingShop) {
       const slug = await generateUniqueShopSlug(application.shopName, tx);
 
-      await prisma.shop.create({
+      await tx.shop.create({
         data: {
           name: application.shopName,
           slug,

@@ -343,4 +343,6 @@ router.patch("/shops/:id/active", async (req: Request, res: Response) => {
   }
 });
 
+import adminVendorRoutes from "./admin-vendor-application-routes.js";
+router.use("/vendors", adminVendorRoutes);
 export default router;

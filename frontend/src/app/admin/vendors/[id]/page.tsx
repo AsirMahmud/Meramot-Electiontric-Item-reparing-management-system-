@@ -282,7 +282,7 @@ export default function AdminVendorDetailPage() {
           <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
             <h3 className="text-lg font-bold text-[var(--accent-dark)]">Applicant Account</h3>
             <div className="mt-4">
-                <p className="font-semibold text-[var(--accent-dark)]">{application.applicant.name || application.applicant.username}</p>
+                <p className="font-semibold text-[var(--accent-dark)]">{application.applicant?.name || application.applicant?.username}</p>
                 <p className="text-[var(--muted-foreground)]">{application.applicant.email}</p>
             </div>
           </div>

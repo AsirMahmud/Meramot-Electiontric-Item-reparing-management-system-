@@ -53,6 +53,6 @@ router.use("/vendor/applications", vendorApplicationRoutes);
 router.use("/vendor/application-status", vendorStatusRoutes);
 router.use("/vendor/requests", vendorRequestRoutes);
 router.use("/uploads", uploadRoutes);
-router.use("/invoices", invoiceRoutes);
+router.use(invoiceRoutes);
 
 export default router;
