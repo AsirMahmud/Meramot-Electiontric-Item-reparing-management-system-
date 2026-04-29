@@ -9,6 +9,8 @@ type Position = {
   y: number;
 };
 
+const BUTTON_WIDTH = 220;
+const BUTTON_HEIGHT = 72;
 const EDGE_MARGIN = 16;
 
 function clamp(value: number, min: number, max: number) {
@@ -50,101 +52,83 @@ export default function FloatingAiChatButton() {
   const shouldHide = isBlockedPage || !isUserPage;
 
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState<Position | null>(null);
+  const [position, setPosition] = useState<Position>({
+    x: 0,
+    y: 0,
+  });
   const [dragging, setDragging] = useState(false);
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const movedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
 
-    const saved = window.localStorage.getItem("meramot-ai-chat-pos-v2");
+    const saved = window.localStorage.getItem("meramot-ai-chat-position");
 
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Position;
         setPosition(parsed);
+        return;
       } catch {
         // ignore broken saved data
       }
     }
+
+    setPosition({
+      x: window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN,
+      y: window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN,
+    });
   }, []);
 
   useEffect(() => {
-    if (!mounted || !position) return;
+    if (!mounted) return;
     window.localStorage.setItem(
-      "meramot-ai-chat-pos-v2",
+      "meramot-ai-chat-position",
       JSON.stringify(position)
     );
   }, [position, mounted]);
 
   useEffect(() => {
     function keepInsideViewport() {
-      if (!position || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      
-      setPosition((prev) => {
-        if (!prev) return prev;
-        return {
-          x: clamp(
-            prev.x,
-            EDGE_MARGIN,
-            window.innerWidth - rect.width - EDGE_MARGIN
-          ),
-          y: clamp(
-            prev.y,
-            EDGE_MARGIN,
-            window.innerHeight - rect.height - EDGE_MARGIN
-          ),
-        };
-      });
+      setPosition((prev) => ({
+        x: clamp(
+          prev.x,
+          EDGE_MARGIN,
+          window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
+        ),
+        y: clamp(
+          prev.y,
+          EDGE_MARGIN,
+          window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
+        ),
+      }));
     }
 
     window.addEventListener("resize", keepInsideViewport);
     return () => window.removeEventListener("resize", keepInsideViewport);
-  }, [position]);
+  }, []);
 
   function startDrag(clientX: number, clientY: number) {
     movedRef.current = false;
     setDragging(true);
-
-    let startX = position?.x;
-    let startY = position?.y;
-
-    if (startX === undefined || startY === undefined) {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        startX = rect.left;
-        startY = rect.top;
-        // Lock it to inline styles immediately so it doesn't jump
-        setPosition({ x: startX, y: startY });
-      } else {
-        startX = 0;
-        startY = 0;
-      }
-    }
-
     dragOffsetRef.current = {
-      x: clientX - startX,
-      y: clientY - startY,
+      x: clientX - position.x,
+      y: clientY - position.y,
     };
   }
 
   function updateDrag(clientX: number, clientY: number) {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-
     const nextX = clamp(
       clientX - dragOffsetRef.current.x,
       EDGE_MARGIN,
-      window.innerWidth - rect.width - EDGE_MARGIN
+      window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
     );
     const nextY = clamp(
       clientY - dragOffsetRef.current.y,
       EDGE_MARGIN,
-      window.innerHeight - rect.height - EDGE_MARGIN
+      window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
     );
 
     movedRef.current = true;
@@ -190,13 +174,11 @@ export default function FloatingAiChatButton() {
 
   return (
     <div
-      ref={containerRef}
-      className={`fixed z-[90] ${!position ? "bottom-4 right-4 md:bottom-8 md:right-8" : ""}`}
-      style={
-        position
-          ? { left: `${position.x}px`, top: `${position.y}px` }
-          : undefined
-      }
+      className="fixed z-[90]"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
     >
       <Link
         href="/ai-chat"
