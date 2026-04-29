@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,8 @@ type AdminLoginResponse = {
   };
 };
 
+import { signIn } from "next-auth/react";
+
 export default function AdminLoginPage() {
   const router = useRouter();
 
@@ -28,35 +30,21 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const apiBase = useMemo(() => {
-    return (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
-  }, []);
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiBase}/api/auth/admin-demo-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+      const result = await signIn("credentials", {
+        redirect: false,
+        identifier,
+        password,
       });
 
-      const data = (await response.json().catch(() => null)) as AdminLoginResponse | null;
-
-      if (!response.ok || !data?.token || !data?.user) {
-        throw new Error(data?.message || "Invalid admin credentials");
+      if (result?.error) {
+        throw new Error(result.error);
       }
-
-      if (data.user.role !== "ADMIN") {
-        throw new Error("This page only allows admin accounts.");
-      }
-
-      localStorage.setItem("meramot.token", data.token);
-      localStorage.setItem("meramot.user", JSON.stringify(data.user));
-      window.dispatchEvent(new Event("meramot-auth-changed"));
 
       router.replace("/admin");
       router.refresh();
