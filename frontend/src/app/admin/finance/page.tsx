@@ -234,16 +234,16 @@ export default function AdminFinancePage() {
         <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading financial data...</div>
       ) : summary ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm transition hover:shadow-md">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Total Volume</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalCustomerPayments)}</p>
           </div>
-          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm transition hover:shadow-md">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--accent-dark)]">Platform Earnings</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalPlatformCommission)}</p>
             <p className="mt-1 text-xs text-[var(--muted-foreground)]">Net Commission ({(summary.commissionRate * 100).toFixed(0)}%)</p>
           </div>
-          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm transition hover:shadow-md">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Vendor Payouts</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalVendorEarningsReleased)}</p>
           </div>
@@ -264,7 +264,7 @@ export default function AdminFinancePage() {
 
       {/* Charts Section */}
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+        <div className="xl:col-span-2 rounded-[32px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-8 shadow-sm">
           <h3 className="text-xl font-bold text-[var(--accent-dark)]">Revenue & Commission Trends</h3>
           <p className="mb-8 text-sm text-[var(--muted-foreground)]">Last 30 days of platform activity</p>
           
@@ -319,7 +319,7 @@ export default function AdminFinancePage() {
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+        <div className="rounded-[32px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-8 shadow-sm">
           <h3 className="text-xl font-bold text-[var(--accent-dark)]">Fund Distribution</h3>
           <p className="mb-4 text-sm text-[var(--muted-foreground)]">Transaction volume by type</p>
 
@@ -363,7 +363,7 @@ export default function AdminFinancePage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <form onSubmit={handleSettleSingle} className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+        <form onSubmit={handleSettleSingle} className="rounded-[32px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-8 shadow-sm">
           <h3 className="text-xl font-bold text-[var(--accent-dark)]">Manual Settlement</h3>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Process a single vendor payout with automated commission deduction.
@@ -393,7 +393,7 @@ export default function AdminFinancePage() {
           </button>
         </form>
 
-        <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+        <div className="rounded-[32px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-8 shadow-sm">
           <h3 className="text-xl font-bold text-[var(--accent-dark)]">Batch Operations</h3>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Execute automated settlement tasks across all eligible paid payments.
@@ -431,7 +431,7 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      <div className="rounded-[32px] border border-[var(--border)] bg-white p-8 shadow-sm">
+      <div className="rounded-[32px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-8 shadow-sm">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-[var(--accent-dark)]">Recent Ledger Activity</h3>
           <button onClick={loadEntries} className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--accent-dark)]">Refresh</button>

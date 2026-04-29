@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --background: #E4FCD5;
   --foreground: #203126;
@@ -20,32 +22,20 @@
 
 .dark {
   --background: #0f1512;
-  --foreground: #e4fcd5;
-  --card: #1d2720;
-  --card-foreground: #d1e8d1;
+  --foreground: #516b51;
+  --card: #111913;
+  --card-foreground: #98b498;
   --muted: #2b342f;
   --muted-foreground: #9caf9e;
-  --border: #2f4034;
-  --mint-50: #161e18;
-  --mint-100: #212c24;
-  --mint-200: #2c3a30;
-  --mint-300: #384a3c;
-  --mint-500: #6ca065;
-  --mint-700: #a0ba9a;
-  --accent-dark: #6eb56c;
+  --border: #243128;
+  --mint-50: #0f1512;
+  --mint-100: #17201b;
+  --mint-200: #243128;
+  --mint-300: #2c4433;
+  --mint-500: #7eae77;
+  --mint-700: #b3caad;
+  --accent-dark: #a6cd9c;
 }
-
-/* Global dark mode overrides for hardcoded light mode colors */
-.dark .bg-white { background-color: var(--card) !important; }
-.dark .bg-white\/90 { background-color: color-mix(in srgb, var(--card) 90%, transparent) !important; }
-.dark .bg-white\/70 { background-color: color-mix(in srgb, var(--card) 70%, transparent) !important; }
-.dark .bg-white\/50 { background-color: color-mix(in srgb, var(--card) 50%, transparent) !important; }
-.dark .bg-\[\#FFF9E6\] { background-color: var(--mint-50) !important; }
-.dark .bg-\[\#F9FBFA\] { background-color: var(--mint-50) !important; }
-.dark .bg-\[\#DCEAD7\] { background-color: var(--mint-100) !important; }
-.dark .border-\[\#FDE68A\], .dark .border-\[\#C9D9C5\], .dark .border-\[\#D7E2D2\], .dark .border-\[\#c9dbc3\], .dark .border-\[\#bed2b8\], .dark .border-\[\#c8d9c2\], .dark .border-\[\#C7D7C2\] { border-color: var(--border) !important; }
-.dark .text-\[\#1F4D2E\] { color: var(--accent-dark) !important; }
-.dark .text-\[\#2f4d3d\], .dark .text-\[\#1f3a2d\] { color: var(--foreground) !important; }
 
 @theme inline {
   --color-background: var(--background);

@@ -227,7 +227,7 @@ export default function AdminTicketDetailPage() {
             <span className="rounded-full bg-[var(--mint-100)] px-4 py-2 font-semibold tracking-wide text-[var(--accent-dark)]">
                 {ticket.status}
             </span>
-            <span className="rounded-full border border-[var(--border)] bg-white px-4 py-2 font-semibold tracking-wide text-[var(--muted-foreground)]">
+            <span className="rounded-full border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-2 font-semibold tracking-wide text-[var(--muted-foreground)]">
                 {ticket.priority}
             </span>
         </div>
@@ -235,7 +235,7 @@ export default function AdminTicketDetailPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 flex-1 min-h-0">
         {/* Left Column: Messages Chat View */}
-        <div className="lg:col-span-2 flex flex-col h-[70vh] rounded-[28px] border border-[var(--border)] bg-white overflow-hidden shadow-sm">
+        <div className="lg:col-span-2 flex flex-col h-[70vh] rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] overflow-hidden shadow-sm">
           
           <div className="bg-[var(--mint-50)] p-6 border-b border-[var(--border)]">
               <h3 className="font-semibold text-[var(--accent-dark)]">Initial Request ({ticket.category})</h3>
@@ -258,7 +258,7 @@ export default function AdminTicketDetailPage() {
                               <span>•</span>
                               <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
-                          <div className={`rounded-2xl px-5 py-3 max-w-[80%] shadow-sm ${isAdmin ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] rounded-br-none" : "bg-white border border-[var(--border)] text-[var(--foreground)] rounded-bl-none"}`}>
+                          <div className={`rounded-2xl px-5 py-3 max-w-[80%] shadow-sm ${isAdmin ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] rounded-br-none" : "bg-white dark:bg-[#1C251F] border border-[var(--border)] text-[var(--foreground)] rounded-bl-none"}`}>
                               {msg.message}
                           </div>
                       </div>
@@ -268,7 +268,7 @@ export default function AdminTicketDetailPage() {
           </div>
 
           {!isClosed && (
-            <div className="bg-white p-4 border-t border-[var(--border)]">
+            <div className="bg-white dark:bg-[#1C251F] p-4 border-t border-[var(--border)]">
                 <form onSubmit={handleSendReply} className="flex gap-3">
                     <input
                         type="text"
@@ -291,7 +291,7 @@ export default function AdminTicketDetailPage() {
 
         {/* Right Column: Action Panel & Properties */}
         <div className="space-y-6 overflow-y-auto max-h-[70vh]">
-            <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm">
+            <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
                 <h3 className="mb-5 text-lg font-bold text-[var(--accent-dark)]">Properties & Actions</h3>
                 
                 <div className="space-y-4">
@@ -339,7 +339,7 @@ export default function AdminTicketDetailPage() {
                     <button
                         onClick={handleUpdateProperties}
                         disabled={isUpdatingProps}
-                        className="w-full rounded-xl border border-[var(--accent-dark)] bg-white px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
+                        className="w-full rounded-xl border border-[var(--accent-dark)] bg-white dark:bg-[#1C251F] px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
                     >
                         {isUpdatingProps ? "Saving..." : "Save Properties"}
                     </button>
