@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
+import { notifyVendorOfMatchingRequests } from "../services/vendor-onboarding-notify.js";
 
 type AuthPayload = {
   sub: string;
@@ -108,7 +109,12 @@ export async function getVendorApplicationStatus(req: Request, res: Response) {
     }
 
     const shop = await prisma.shop.findFirst({
-      where: { email: application.businessEmail },
+      where: {
+        OR: [
+          { vendorApplicationId: application.id },
+          ...(application.businessEmail ? [{ email: application.businessEmail }] : []),
+        ],
+      },
       select: {
         id: true,
         setupComplete: true,
@@ -246,7 +252,12 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
     }
 
     const existingShop = await prisma.shop.findFirst({
-      where: { email: existing.businessEmail },
+      where: {
+        OR: [
+          { vendorApplicationId: existing.id },
+          ...(existing.businessEmail ? [{ email: existing.businessEmail }] : []),
+        ],
+      },
       select: { id: true },
     });
 
@@ -478,7 +489,12 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
     }
 
     const existingShop = await prisma.shop.findFirst({
-      where: { email: application.businessEmail },
+      where: {
+        OR: [
+          { vendorApplicationId: application.id },
+          ...(application.businessEmail ? [{ email: application.businessEmail }] : []),
+        ],
+      },
       select: { id: true },
     });
 
@@ -539,6 +555,12 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
 
       return updatedShop;
     });
+
+    // Fire-and-forget: notify vendor about matching BIDDING requests
+    notifyVendorOfMatchingRequests(
+      user.id,
+      normalizedSkillTags,
+    ).catch((err) => console.error("Shop-setup onboarding notify failed:", err));
 
     return res.json({
       message: "Shop setup completed successfully",
