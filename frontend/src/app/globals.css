@@ -18,11 +18,12 @@
   --mint-500: #7eae77;
   --mint-700: #436440;
   --accent-dark: #244229;
+  --accent-foreground: #ffffff;
 }
 
 .dark {
   --background: #0f1512;
-  --foreground: #516b51;
+  --foreground: #e4fcd5;
   --card: #111913;
   --card-foreground: #98b498;
   --muted: #2b342f;
@@ -35,6 +36,7 @@
   --mint-500: #7eae77;
   --mint-700: #b3caad;
   --accent-dark: #a6cd9c;
+  --accent-foreground: #0f1c12;
 }
 
 @theme inline {
@@ -53,6 +55,7 @@
   --color-mint-500: var(--mint-500);
   --color-mint-700: var(--mint-700);
   --color-accent-dark: var(--accent-dark);
+  --color-accent-foreground: var(--accent-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
