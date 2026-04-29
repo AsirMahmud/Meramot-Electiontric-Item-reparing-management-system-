@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
 type Note = {
   id: string;
@@ -56,6 +57,9 @@ export default function AdminDisputeDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
 
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
+
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +75,7 @@ export default function AdminDisputeDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -98,8 +102,7 @@ export default function AdminDisputeDetailPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ note: newNote, isInternal }),
       });
@@ -136,8 +139,7 @@ export default function AdminDisputeDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ resolution: resolutionText, status: statusToResolve }),
       });

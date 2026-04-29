@@ -1,4 +1,4 @@
-﻿import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import {
   PrismaClient,
   RequestMode,
@@ -16,12 +16,12 @@ import {
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("≡ƒî▒ Starting Comprehensive Seeding...");
+  console.log("🌱 Starting Comprehensive Seeding...");
 
   const passwordHash = await bcrypt.hash("password123", 10);
 
   // 1. Users
-  console.log("≡ƒæñ Creating Users...");
+  console.log("👤 Creating Users...");
   const customer = await prisma.user.upsert({
     where: { email: "customer@meramot.demo" },
     update: {},
@@ -49,7 +49,7 @@ async function main() {
   });
 
   // 2. Shops
-  console.log("≡ƒÅ¬ Creating Shops...");
+  console.log("🏪 Creating Shops...");
   const shop = await prisma.shop.upsert({
     where: { slug: "dhaka-pro-fix" },
     update: {},
@@ -74,7 +74,7 @@ async function main() {
   });
 
   // 3. Repair Requests & Jobs (For Settlement Testing)
-  console.log("≡ƒ¢á∩╕Å Creating Repair Flow Data...");
+  console.log("🛠️ Creating Repair Flow Data...");
   for (let i = 1; i <= 10; i++) {
     const request = await prisma.repairRequest.create({
       data: {
@@ -128,7 +128,7 @@ async function main() {
   }
 
   // 4. Disputes
-  console.log("ΓÜû∩╕Å Creating Disputes...");
+  console.log("⚖️ Creating Disputes...");
   const disputeRequest = await prisma.repairRequest.create({
     data: {
       userId: customer.id,
@@ -174,7 +174,7 @@ async function main() {
   });
 
   // 5. Support Tickets
-  console.log("≡ƒÄ½ Creating Support Tickets...");
+  console.log("🎫 Creating Support Tickets...");
   await prisma.supportTicket.create({
     data: {
       userId: customer.id,
@@ -185,7 +185,7 @@ async function main() {
     },
   });
 
-  console.log("Γ£à Seeding Completed Successfully!");
+  console.log("✅ Seeding Completed Successfully!");
 }
 
 main()

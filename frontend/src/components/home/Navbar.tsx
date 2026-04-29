@@ -103,11 +103,13 @@ export function NavbarInner({
     setShowLogoutConfirm(false);
 
     if (typeof window !== "undefined") {
+      // Clear custom auth storage used by HomePage and other components
       localStorage.removeItem("meramot.user");
       localStorage.removeItem("meramot.token");
+      
+      // Notify HomePage and others to update their state
       window.dispatchEvent(new Event("meramot-auth-changed"));
     }
-
     await signOut({ callbackUrl: "/" });
   };
 

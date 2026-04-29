@@ -25,6 +25,7 @@ export const authOptions: NextAuthOptions = {
 
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+        // All users (including admins) use the standard login endpoint
         const res = await fetch(`${apiBase}/api/auth/login`, {
           method: "POST",
           headers: {

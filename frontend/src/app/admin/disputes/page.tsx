@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
 type Dispute = {
   id: string;
@@ -23,6 +24,9 @@ type Dispute = {
 };
 
 export default function AdminDisputesPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
+
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +35,7 @@ export default function AdminDisputesPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {

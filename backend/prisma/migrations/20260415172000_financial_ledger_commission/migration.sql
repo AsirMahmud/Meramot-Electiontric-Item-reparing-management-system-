@@ -1,13 +1,13 @@
+-- CreateTable
 CREATE TABLE "EscrowLedger" (
     "id" TEXT PRIMARY KEY,
     "action" TEXT NOT NULL,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
     "vendorUserId" TEXT,
     "grossAmount" DECIMAL(10,2),
     "platformCommissionAmount" DECIMAL(10,2),
-    "vendorNetAmount" DECIMAL(10,2),
-    "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+    "vendorNetAmount" DECIMAL(10,2)
 );
-
 -- CreateIndex
 CREATE INDEX "EscrowLedger_vendorUserId_idx" ON "EscrowLedger"("vendorUserId");
 CREATE INDEX "EscrowLedger_action_idx" ON "EscrowLedger"("action");

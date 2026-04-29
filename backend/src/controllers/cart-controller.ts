@@ -20,6 +20,7 @@ function calculateDeliveryFee(type?: "REGULAR" | "EXPRESS") {
 
 function normalizePaymentMethod(method?: string): PaymentMethod {
   if (method === "SSLCOMMERZ") return PaymentMethod.SSLCOMMERZ;
+  if (method === "BKASH") return PaymentMethod.BKASH;
   return PaymentMethod.CASH;
 }
 
@@ -326,7 +327,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
     } = req.body as {
       scheduleType?: "NOW" | "LATER";
       scheduledAt?: string;
-      paymentMethod?: "CASH" | "SSLCOMMERZ";
+      paymentMethod?: "CASH" | "SSLCOMMERZ" | "BKASH";
       addressMode?: "PROFILE" | "MANUAL" | "MAP";
       address?: string;
       city?: string;

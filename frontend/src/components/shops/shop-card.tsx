@@ -27,7 +27,7 @@ export default function ShopCard({
             {shop.description || shop.address}
           </p>
           <p className="mt-2 text-sm text-[var(--foreground)]">
-            ⭐ {(shop.ratingAvg ?? 0).toFixed(1)} ({shop.reviewCount ?? 0} reviews)
+            ⭐ {shop.ratingAvg.toFixed(1)} ({shop.reviewCount} reviews)
           </p>
           {typeof shop.distanceKm === "number" && (
             <p className="mt-1 text-sm text-[var(--foreground)]">
@@ -36,8 +36,13 @@ export default function ShopCard({
           )}
         </div>
 
-        <div className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-sm font-semibold text-[var(--foreground)]">
-          {shop.offerSummary ?? formatPriceLevel(shop.priceLevel ?? 1)}
+        <div className="text-right">
+          <div className="text-lg font-bold text-[var(--accent-dark)]">
+            {shop.offerSummary || `৳${(700 + (shop.priceLevel || 1) * 250).toLocaleString("en-BD")}`}
+          </div>
+          <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">
+            {formatPriceLevel(shop.priceLevel)}
+          </div>
         </div>
       </div>
 

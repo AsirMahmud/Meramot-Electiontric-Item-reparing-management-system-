@@ -61,7 +61,6 @@ export default function AdminUsersPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(),
         },
         body: JSON.stringify({ status: newStatus }),

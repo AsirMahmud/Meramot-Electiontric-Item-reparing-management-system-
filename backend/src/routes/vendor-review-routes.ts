@@ -1,10 +1,8 @@
-// @ts-nocheck
 import { Router, Request, Response } from "express";
 import type { Prisma } from "@prisma/client";
 import prisma from "../models/prisma.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
-import { notifyVendorOfMatchingRequests } from "../services/vendor-onboarding-notify.js";
 
 const router = Router();
 
@@ -15,21 +13,11 @@ router.get("/vendors", async (_req: Request, res: Response) => {
     const applications = await prisma.vendorApplication.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            phone: true,
-          },
+        applicant: {
+          select: { id: true, name: true, email: true, username: true },
         },
         reviewedByAdmin: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+          select: { id: true, name: true, email: true },
         },
         shop: true,
       },
@@ -53,17 +41,6 @@ router.get("/vendors/pending", async (_req: Request, res: Response) => {
     const applications = await prisma.vendorApplication.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            phone: true,
-          },
-        },
-      },
     });
 
     return res.json({
@@ -86,8 +63,12 @@ router.get("/vendors/:id", async (req: Request, res: Response) => {
     const application = await prisma.vendorApplication.findUnique({
       where: { id: applicationId },
       include: {
-        user: true,
-        reviewedByAdmin: true,
+        applicant: {
+          select: { id: true, name: true, email: true, username: true, phone: true },
+        },
+        reviewedByAdmin: {
+          select: { id: true, name: true, email: true },
+        },
         shop: true,
       },
     });
@@ -127,10 +108,15 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
       });
     }
 
-    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const result = await prisma.$transaction(async (tx) => {
+      // Find the user by business email since applicantUserId is missing from schema
+      const user = await tx.user.findUnique({
+        where: { email: application.businessEmail }
+      });
+
+      // Create the shop
       const shop = await tx.shop.create({
         data: {
-          vendorApplicationId: application.id,
           name: application.shopName,
           slug: `${application.shopName}-${Date.now()}`
             .toLowerCase()
@@ -148,43 +134,38 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
           ],
           specialties: application.specialties,
           isActive: true,
+          vendorApplicationId: application.id
         },
       });
 
-      await tx.shopStaff.create({
-        data: {
-          shopId: shop.id,
-          userId: application.userId,
-          role: "OWNER",
-          isActive: true,
-        },
+      // If user exists, upgrade them and make them owner
+      if (user) {
+        await tx.shopStaff.create({
+          data: {
+            shopId: shop.id,
+            userId: user.id,
+            role: "OWNER",
+          }
+        });
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { role: "VENDOR" }
+        });
+      }
+
+      // Use raw SQL for VendorApplication update to bypass stale client
+      await tx.$executeRawUnsafe(
+        `UPDATE "VendorApplication" SET status = $1::"VendorApplicationStatus", "reviewedAt" = $2, "reviewedByAdminId" = $3, "shopId" = $4 WHERE id = $5`,
+        "APPROVED", new Date(), req.user.id, shop.id, application.id
+      );
+
+      const updatedApplication = await tx.vendorApplication.findUnique({
+        where: { id: application.id }
       });
 
-      const updatedApplication = await tx.vendorApplication.update({
-        where: { id: application.id },
-        data: {
-          status: "APPROVED",
-          reviewedAt: new Date(),
-          reviewedByAdminId: req.user.id,
-                    
-        },
-      });
-
-      const updatedUser = await tx.user.update({
-        where: { id: application.userId },
-        data: {
-          role: "VENDOR",
-        },
-      });
-
-      return { shop, updatedApplication, updatedUser };
+      return { shop, updatedApplication };
     });
-
-    // Fire-and-forget: notify vendor of matching repair requests via email + SMS
-    notifyVendorOfMatchingRequests(
-      application.userId,
-      application.specialties || [],
-    ).catch((err) => console.error("Vendor onboarding notify failed:", err));
 
     return res.json({
       success: true,
@@ -192,10 +173,11 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
       data: result,
     });
   } catch (error) {
-    console.error("PATCH /vendors/:id/approve error:", error);
+    console.error("PATCH /vendors/:id/approve error details:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to approve vendor",
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 });
@@ -216,15 +198,13 @@ router.patch("/vendors/:id/reject", async (req: Request & { user?: any }, res: R
       });
     }
 
-    const application = await prisma.vendorApplication.update({
-      where: { id: applicationId },
-      data: {
-        status: "REJECTED",
-        reviewedAt: new Date(),
-        reviewedByAdminId: req.user.id,
-        rejectionReason: req.body.reviewNotes || "Rejected by admin",
-        rejectedAt: new Date(),
-      },
+    await prisma.$executeRawUnsafe(
+      `UPDATE "VendorApplication" SET status = $1::"VendorApplicationStatus", "reviewedAt" = $2, "reviewedByAdminId" = $3, "reviewNotes" = $4 WHERE id = $5`,
+      "REJECTED", new Date(), req.user.id, req.body.reviewNotes || "Rejected by admin", applicationId
+    );
+
+    const application = await prisma.vendorApplication.findUnique({
+      where: { id: applicationId }
     });
 
     return res.json({
@@ -257,15 +237,13 @@ router.patch("/vendors/:id/request-info", async (req: Request & { user?: any }, 
       });
     }
 
-    const application = await prisma.vendorApplication.update({
-      where: { id: applicationId },
-      data: {
-        status: "PENDING",
-        reviewedAt: new Date(),
-        reviewedByAdminId: req.user.id,
-        rejectionReason: req.body.reviewNotes || "More information requested",
-        rejectionVisibleUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
+    await prisma.$executeRawUnsafe(
+      `UPDATE "VendorApplication" SET status = $1::"VendorApplicationStatus", "reviewedAt" = $2, "reviewedByAdminId" = $3, "reviewNotes" = $4 WHERE id = $5`,
+      "MORE_INFO_REQUIRED", new Date(), req.user.id, req.body.reviewNotes || "More information requested", applicationId
+    );
+
+    const application = await prisma.vendorApplication.findUnique({
+      where: { id: applicationId }
     });
 
     return res.json({
@@ -298,25 +276,19 @@ router.patch("/vendors/:id/suspend", async (req: Request & { user?: any }, res: 
     }
 
     const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      await tx.vendorApplication.update({
-        where: { id: application.id },
-        data: {
-          status: "REJECTED",
-          reviewedAt: new Date(),
-          reviewedByAdminId: req.user.id,
-          rejectionReason: req.body.reviewNotes || "Vendor suspended by admin",
-          rejectedAt: new Date(),
-        },
-      });
+      await tx.$executeRawUnsafe(
+        `UPDATE "VendorApplication" SET status = $1::"VendorApplicationStatus", "reviewedAt" = $2, "reviewedByAdminId" = $3, "reviewNotes" = $4 WHERE id = $5`,
+        "SUSPENDED", new Date(), req.user.id, req.body.reviewNotes || "Vendor suspended by admin", application.id
+      );
 
-      const user = await tx.user.update({
-        where: { id: application.userId },
-        data: {
-          status: "SUSPENDED",
-        },
-      });
+      if (application.applicantUserId) {
+        await tx.$executeRawUnsafe(
+          `UPDATE "User" SET status = $1 WHERE id = $2`,
+          "SUSPENDED", application.applicantUserId
+        );
+      }
 
-      return user;
+      return { status: "SUSPENDED" };
     });
 
     return res.json({

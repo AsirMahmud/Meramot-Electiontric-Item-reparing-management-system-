@@ -365,14 +365,13 @@ async function markPaymentSuccessful(
       },
     });
 
-    await tx.escrowLedger.create({
+    await tx.ledgerEntry.create({
       data: {
         paymentId: payment.id,
-        repairRequestId: payment.repairRequestId,
-        customerUserId: payment.userId,
         amount: payment.amount,
-        action: "PAYMENT_HELD",
-        note: `Payment marked as paid via SSLCommerz ${source} callback`,
+        type: "CUSTOMER_PAYMENT",
+        direction: "CREDIT",
+        description: `Payment marked as paid via SSLCommerz ${source} callback`,
       },
     });
   });
@@ -744,8 +743,7 @@ export async function getMyPaymentById(req: AuthenticatedRequest, res: Response)
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
-        refunds: true,
-        disputeCases: true,
+        ledgerEntries: true,
       },
     });
 
@@ -773,6 +771,48 @@ export async function getMyPaymentById(req: AuthenticatedRequest, res: Response)
       success: false,
       message: "Failed to fetch payment",
     });
+  }
+}
+
+export async function updatePayment(req: AuthenticatedRequest, res: Response) {
+  try {
+    const paymentId = String(req.params.paymentId || "").trim();
+    const { method } = req.body;
+
+    if (!paymentId) {
+      return res.status(400).json({ success: false, message: "paymentId is required" });
+    }
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
+
+    if (payment.userId !== req.user?.id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    if (payment.status === "PAID") {
+      return res.status(400).json({ success: false, message: "Cannot update a paid payment" });
+    }
+
+    const updated = await prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        method: method || payment.method,
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("PATCH /payments/:paymentId error:", error);
+    return res.status(500).json({ success: false, message: "Failed to update payment" });
   }
 }
 

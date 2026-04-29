@@ -114,13 +114,13 @@ router.post("/disputes/:id/note", async (req: Request & { user?: any }, res: Res
       },
     });
 
-    await prisma.disputeCase.update({
-      where: { id: disputeId },
-      data: {
-        assignedAdminId: req.user.id,
-        status: "INVESTIGATING",
-      },
-    });
+    // Using raw SQL to bypass stale Prisma Client enum validation
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DisputeCase" SET "assignedAdminId" = $1, status = $2::"DisputeStatus" WHERE id = $3`,
+      req.user.id,
+      "INVESTIGATING",
+      disputeId
+    );
 
     return res.json({
       success: true,
@@ -141,13 +141,30 @@ router.patch("/disputes/:id/resolve", async (req: Request & { user?: any }, res:
     const disputeId = String(req.params.id);
     const { resolution, status = "RESOLVED" } = req.body;
 
-    const dispute = await prisma.disputeCase.update({
+    // Using raw SQL to bypass stale Prisma Client enum validation
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DisputeCase" SET status = $1::"DisputeStatus", resolution = $2, "assignedAdminId" = $3, "resolvedAt" = $4 WHERE id = $5`,
+      status, 
+      resolution, 
+      req.user.id, 
+      new Date(), 
+      disputeId
+    );
+
+    const dispute = await prisma.disputeCase.findUnique({
       where: { id: disputeId },
-      data: {
-        assignedAdminId: req.user.id,
-        resolution,
-        status,
-        resolvedAt: new Date(),
+      include: {
+        openedBy: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        against: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        assignedAdmin: {
+          select: { id: true, name: true, email: true },
+        },
+        payment: true,
+        repairRequest: true,
       },
     });
 
@@ -168,12 +185,16 @@ router.patch("/disputes/:id/resolve", async (req: Request & { user?: any }, res:
 router.patch("/disputes/:id/hold", async (req: Request & { user?: any }, res: Response) => {
   try {
     const disputeId = String(req.params.id);
-    const dispute = await prisma.disputeCase.update({
+    // Using raw SQL to bypass stale Prisma Client enum validation
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DisputeCase" SET "assignedAdminId" = $1, status = $2::"DisputeStatus" WHERE id = $3`,
+      req.user.id,
+      "WAITING_EVIDENCE",
+      disputeId
+    );
+
+    const dispute = await prisma.disputeCase.findUnique({
       where: { id: disputeId },
-      data: {
-        assignedAdminId: req.user.id,
-        status: "WAITING_EVIDENCE",
-      },
     });
 
     return res.json({

@@ -60,48 +60,36 @@ router.post("/refunds/:caseId/issue", async (req: Request & { user?: any }, res:
       });
     }
 
-    const refund = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const createdRefund = await tx.refund.create({
-        data: {
-          paymentId: normalizedPaymentId,
-          disputeCaseId: caseId,
-          approvedById: req.user.id,
-          amount: normalizedAmount,
-          reason,
-          status: "APPROVED",
-          processedAt: new Date(),
-        },
-      });
+    const refund = await prisma.$transaction(async (tx: any) => {
+      const refundId = `re${Math.random().toString(36).substring(2, 15)}`;
+      
+      // Use raw SQL for Refund creation
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "Refund" (id, "paymentId", "disputeCaseId", "approvedById", amount, status, reason, "processedAt", "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+        refundId, normalizedPaymentId, caseId, req.user.id, normalizedAmount, "APPROVED", reason, new Date()
+      );
 
-      await tx.payment.update({
-        where: { id: normalizedPaymentId },
-        data: {
-          status: "REFUNDED",
-          escrowStatus: "REFUNDED",
-        },
-      });
+      // Use raw SQL for Payment update
+      await tx.$executeRawUnsafe(
+        `UPDATE "Payment" SET status = $1, "escrowStatus" = $2 WHERE id = $3`,
+        "REFUNDED", "REFUNDED", normalizedPaymentId
+      );
 
-      await tx.disputeCase.update({
-        where: { id: caseId },
-        data: {
-          status: "REFUNDED",
-          resolution: reason || "Refund approved by admin",
-          resolvedAt: new Date(),
-          assignedAdminId: req.user.id,
-        },
-      });
+      // Use raw SQL for DisputeCase update
+      await tx.$executeRawUnsafe(
+        `UPDATE "DisputeCase" SET status = $1::"DisputeStatus", resolution = $2, "resolvedAt" = $3, "assignedAdminId" = $4 WHERE id = $5`,
+        "REFUNDED", reason || "Refund approved by admin", new Date(), req.user.id, caseId
+      );
 
-      await tx.escrowLedger.create({
-        data: {
-          paymentId: normalizedPaymentId,
-          disputeCaseId: caseId,
-          amount: normalizedAmount,
-          action: "FULL_REFUND",
-          note: reason || "Full refund issued by admin",
-        },
-      });
+      // Use raw SQL for EscrowLedger creation
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "EscrowLedger" (id, "paymentId", "disputeCaseId", amount, action, note, "createdAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        `el${Math.random().toString(36).substring(2, 15)}`, normalizedPaymentId, caseId, normalizedAmount, "FULL_REFUND", reason || "Full refund issued by admin"
+      );
 
-      return createdRefund;
+      return { id: refundId };
     });
 
     return res.json({
@@ -139,48 +127,32 @@ router.post("/refunds/:caseId/partial", async (req: Request & { user?: any }, re
       });
     }
 
-    const refund = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const createdRefund = await tx.refund.create({
-        data: {
-          paymentId: normalizedPaymentId,
-          disputeCaseId: caseId,
-          approvedById: req.user.id,
-          amount: normalizedAmount,
-          reason,
-          status: "APPROVED",
-          processedAt: new Date(),
-        },
-      });
+    const refund = await prisma.$transaction(async (tx: any) => {
+      const refundId = `re${Math.random().toString(36).substring(2, 15)}`;
+      
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "Refund" (id, "paymentId", "disputeCaseId", "approvedById", amount, status, reason, "processedAt", "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+        refundId, normalizedPaymentId, caseId, req.user.id, normalizedAmount, "APPROVED", reason, new Date()
+      );
 
-      await tx.payment.update({
-        where: { id: normalizedPaymentId },
-        data: {
-          status: "PARTIALLY_REFUNDED",
-          escrowStatus: "PARTIALLY_REFUNDED",
-        },
-      });
+      await tx.$executeRawUnsafe(
+        `UPDATE "Payment" SET status = $1, "escrowStatus" = $2 WHERE id = $3`,
+        "PARTIALLY_REFUNDED", "PARTIALLY_REFUNDED", normalizedPaymentId
+      );
 
-      await tx.disputeCase.update({
-        where: { id: caseId },
-        data: {
-          status: "PARTIALLY_REFUNDED",
-          resolution: reason || "Partial refund approved by admin",
-          resolvedAt: new Date(),
-          assignedAdminId: req.user.id,
-        },
-      });
+      await tx.$executeRawUnsafe(
+        `UPDATE "DisputeCase" SET status = $1::"DisputeStatus", resolution = $2, "resolvedAt" = $3, "assignedAdminId" = $4 WHERE id = $5`,
+        "PARTIALLY_REFUNDED", reason || "Partial refund approved by admin", new Date(), req.user.id, caseId
+      );
 
-      await tx.escrowLedger.create({
-        data: {
-          paymentId: normalizedPaymentId,
-          disputeCaseId: caseId,
-          amount: normalizedAmount,
-          action: "PARTIAL_REFUND",
-          note: reason || "Partial refund issued by admin",
-        },
-      });
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "EscrowLedger" (id, "paymentId", "disputeCaseId", amount, action, note, "createdAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        `el${Math.random().toString(36).substring(2, 15)}`, normalizedPaymentId, caseId, normalizedAmount, "PARTIAL_REFUND", reason || "Partial refund issued by admin"
+      );
 
-      return createdRefund;
+      return { id: refundId };
     });
 
     return res.json({
@@ -218,26 +190,19 @@ router.post("/refunds/:caseId/deny", async (req: Request & { user?: any }, res: 
       });
     }
 
-    const refund = await prisma.refund.create({
-      data: {
-        paymentId: normalizedPaymentId,
-        disputeCaseId: caseId,
-        approvedById: req.user.id,
-        amount: normalizedAmount,
-        reason: reason || "Refund denied by admin",
-        status: "DENIED",
-      },
-    });
+    const refundId = `re${Math.random().toString(36).substring(2, 15)}`;
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Refund" (id, "paymentId", "disputeCaseId", "approvedById", amount, status, reason, "createdAt", "updatedAt") 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+      refundId, normalizedPaymentId, caseId, req.user.id, normalizedAmount, "DENIED", reason || "Refund denied by admin"
+    );
 
-    await prisma.disputeCase.update({
-      where: { id: caseId },
-      data: {
-        status: "REJECTED",
-        resolution: reason || "Refund denied by admin",
-        resolvedAt: new Date(),
-        assignedAdminId: req.user.id,
-      },
-    });
+    await prisma.$executeRawUnsafe(
+      `UPDATE "DisputeCase" SET status = $1::"DisputeStatus", resolution = $2, "resolvedAt" = $3, "assignedAdminId" = $4 WHERE id = $5`,
+      "REJECTED", reason || "Refund denied by admin", new Date(), req.user.id, caseId
+    );
+
+    const refund = { id: refundId };
 
     return res.json({
       success: true,
