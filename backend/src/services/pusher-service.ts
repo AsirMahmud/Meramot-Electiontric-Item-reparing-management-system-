@@ -1,4 +1,4 @@
-const Pusher = require("pusher");
+import Pusher from "pusher";
 import { env } from "../config/env.js";
 
 const isPusherConfigured = Boolean(
