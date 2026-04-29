@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "../models/prisma.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
+import { notifyVendorOfMatchingRequests } from "../services/vendor-onboarding-notify.js";
 
 const router = Router();
 
@@ -152,10 +153,11 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
 
       await tx.shopStaff.create({
         data: {
-                    userId: application.userId,
+          shopId: shop.id,
+          userId: application.userId,
           role: "OWNER",
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       const updatedApplication = await tx.vendorApplication.update({
@@ -177,6 +179,12 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
 
       return { shop, updatedApplication, updatedUser };
     });
+
+    // Fire-and-forget: notify vendor of matching repair requests via email + SMS
+    notifyVendorOfMatchingRequests(
+      application.userId,
+      application.specialties || [],
+    ).catch((err) => console.error("Vendor onboarding notify failed:", err));
 
     return res.json({
       success: true,
