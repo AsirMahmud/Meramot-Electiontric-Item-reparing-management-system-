@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
+import { pushLocalNotification } from "@/lib/notifications";
 
 type ScheduleType = "NOW" | "LATER";
 type PaymentMethod = "CASH" | "SSLCOMMERZ";
@@ -326,6 +327,13 @@ export default function CartPage() {
         return;
       }
 
+      pushLocalNotification({
+        title: "Order confirmed",
+        message: "Your repair order has been placed successfully.",
+        type: "order",
+        href: "/orders",
+      });
+      
       router.push("/orders");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not confirm order.");

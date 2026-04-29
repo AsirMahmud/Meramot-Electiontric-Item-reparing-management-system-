@@ -15,6 +15,7 @@ import {
   getShopReviews,
   type Shop,
 } from "@/lib/api";
+import { pushLocalNotification } from "@/lib/notifications";
 
 const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 const GUEST_CART_KEY = "meramot.guestCart";
@@ -401,6 +402,12 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       } else {
         await createReview(shop.slug, { score, review: reviewText }, token);
         setReviewToast("Review submitted successfully.");
+
+        pushLocalNotification({
+          title: "Review submitted",
+          message: "Your review has been posted.",
+          type: "review",
+        });
       }
 
       await refreshReviewsAndEligibility();
@@ -535,8 +542,17 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       window.dispatchEvent(new Event("meramot-cart-changed"));
     }
   
-    setCartToast(`${payload.serviceName} added to cart.`);
-  }
+    const msg = `${payload.serviceName} added to cart.`;
+
+    setCartToast(msg);
+
+    pushLocalNotification({
+      title: "Added to cart",
+      message: msg,
+      type: "cart",
+      href: "/cart",
+    });
+      }
   
   async function handleAddService(item: {
     name: string;

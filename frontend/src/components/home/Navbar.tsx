@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/theme/ThemeToggle";
 import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
  type NavbarProps = {
   isLoggedIn?: boolean;
@@ -177,6 +178,8 @@ export default function Navbar({
                   )}
                 </div>
               )}
+
+              <NotificationBell />
 
               <div className="relative">
                 <button
