@@ -630,6 +630,7 @@ export type VendorDashboardData = {
     status: string;
     createdAt: string;
     bidCount: number;
+    lowestBidAmount?: number | null;
     relevanceScore: number;
     matchReasons: string[];
     myBid?: BidItem | null;

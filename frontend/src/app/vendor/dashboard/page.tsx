@@ -42,6 +42,13 @@ type FlashMessage = {
   text: string;
 };
 
+type BidConfirmation = {
+  requestId: string;
+  totalOffer: number;
+  message: string;
+  variant: "success" | "warning" | "info";
+};
+
 const VENDOR_JOB_STATUSES = [
   "AT_SHOP",
   "DIAGNOSING",
@@ -173,6 +180,7 @@ export default function VendorDashboardPage() {
   const [bidDrafts, setBidDrafts] = useState<Record<string, BidDraft>>({});
   const [jobStatusDrafts, setJobStatusDrafts] = useState<Record<string, string>>({});
   const [finalQuoteDrafts, setFinalQuoteDrafts] = useState<Record<string, FinalQuoteDraft>>({});
+  const [bidConfirm, setBidConfirm] = useState<BidConfirmation | null>(null);
 
   const loadDashboard = useCallback(async () => {
     if (!token) {
@@ -259,7 +267,7 @@ export default function VendorDashboardPage() {
     [activeBidCount, activeRequestCount, totalOpenJobs, waitingApprovalCount]
   );
 
-  async function handleBidSubmit(requestId: string) {
+  function handleBidClick(requestId: string) {
     if (!token) {
       setFlash({ type: "error", text: "Please sign in again to continue." });
       return;
@@ -293,6 +301,46 @@ export default function VendorDashboardPage() {
       return;
     }
 
+    const totalOffer = partsCost + laborCost;
+
+    // Build contextual message
+    const requestItem = dashboard?.relevantRequests.find((r) => r.id === requestId);
+    const bidCount = requestItem?.bidCount ?? 0;
+    const lowestBid = requestItem?.lowestBidAmount ?? null;
+
+    let message: string;
+    let variant: BidConfirmation["variant"];
+
+    if (bidCount === 0 || (bidCount === 1 && requestItem?.myBid)) {
+      // First offer (or only our own previous one)
+      message = `🎉 This is the first offer on this request! Your offer of ${formatMoney(totalOffer)} will be the one to beat.`;
+      variant = "info";
+    } else if (lowestBid !== null && totalOffer <= lowestBid) {
+      message = `🏆 Great price! Your offer of ${formatMoney(totalOffer)} is the lowest — the current best is ${formatMoney(lowestBid)}.`;
+      variant = "success";
+    } else {
+      message = `⚠️ Your offer of ${formatMoney(totalOffer)} is higher than the current lowest of ${formatMoney(lowestBid)}. The customer may prefer a lower price.`;
+      variant = "warning";
+    }
+
+    setBidConfirm({ requestId, totalOffer, message, variant });
+  }
+
+  async function handleBidConfirm() {
+    if (!bidConfirm || !token) return;
+
+    const { requestId } = bidConfirm;
+    const draft = bidDrafts[requestId];
+    if (!draft) return;
+
+    const partsCost = draft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+    const laborCost = Number(draft.laborCost);
+    const estimatedDays = draft.estimatedDays.trim()
+      ? Number(draft.estimatedDays)
+      : undefined;
+
+    setBidConfirm(null);
+
     try {
       setPendingKey(`bid:${requestId}`);
       await submitVendorBid(token, requestId, {
@@ -301,13 +349,13 @@ export default function VendorDashboardPage() {
         estimatedDays,
         notes: draft.notes.trim() || undefined,
       });
-      setFlash({ type: "success", text: "Bid saved successfully." });
+      setFlash({ type: "success", text: "Offer saved successfully." });
       await loadDashboard();
     } catch (error) {
       setPendingKey(null);
       setFlash({
         type: "error",
-        text: error instanceof Error ? error.message : "Could not save your bid.",
+        text: error instanceof Error ? error.message : "Could not save your offer.",
       });
     }
   }
@@ -795,7 +843,7 @@ export default function VendorDashboardPage() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => void handleBidSubmit(requestItem.id)}
+                        onClick={() => handleBidClick(requestItem.id)}
                         disabled={isSubmitting}
                         className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                       >
@@ -1141,6 +1189,53 @@ export default function VendorDashboardPage() {
           </div>
         </section>
       </div>
+      {/* ── Bid Confirmation Modal ─────────────────────────────── */}
+      {bidConfirm ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setBidConfirm(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-[#173726]">Confirm your offer</h3>
+
+            <div
+              className={`mt-4 rounded-2xl p-4 text-sm leading-relaxed ${
+                bidConfirm.variant === "warning"
+                  ? "border border-amber-200 bg-amber-50 text-amber-800"
+                  : bidConfirm.variant === "success"
+                    ? "border border-green-200 bg-green-50 text-green-800"
+                    : "border border-blue-200 bg-blue-50 text-blue-800"
+              }`}
+            >
+              {bidConfirm.message}
+            </div>
+
+            <p className="mt-4 text-center text-2xl font-bold text-[#214c34]">
+              {formatMoney(bidConfirm.totalOffer)}
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setBidConfirm(null)}
+                className="flex-1 rounded-full border border-[#cfe0c6] px-5 py-3 text-sm font-semibold text-[#355541] hover:bg-[#f6faf4] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleBidConfirm()}
+                className="flex-1 rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173726] transition-colors"
+              >
+                Confirm offer
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

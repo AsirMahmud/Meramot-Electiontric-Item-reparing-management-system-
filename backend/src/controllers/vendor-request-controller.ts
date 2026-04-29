@@ -427,6 +427,17 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
       },
     });
 
+    // Build a map of lowest bid per request for competitive context
+    const requestIds = biddingRequests.map((r) => r.id);
+    const lowestBids = await prisma.bid.groupBy({
+      by: ["repairRequestId"],
+      where: { repairRequestId: { in: requestIds }, status: BidStatus.ACTIVE },
+      _min: { totalCost: true },
+    });
+    const lowestBidMap = new Map(
+      lowestBids.map((lb) => [lb.repairRequestId, lb._min.totalCost])
+    );
+
     const relevantRequests = biddingRequests
       .map((request) => {
         const relevance = buildRelevance(request, shop.specialties);
@@ -451,6 +462,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
           status: request.status,
           createdAt: request.createdAt,
           bidCount: request._count.bids,
+          lowestBidAmount: lowestBidMap.get(request.id) ?? null,
           myBid,
           relevanceScore: relevance.score,
           matchReasons: relevance.reasons,
