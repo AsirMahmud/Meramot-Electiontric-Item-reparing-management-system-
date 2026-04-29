@@ -75,7 +75,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_#f6faf3_0%,_#e8f2e3_48%,_#d8e8d2_100%)] px-4 py-12">
-      <section className="w-full max-w-md rounded-[32px] border border-[#c9dbc3] bg-white dark:bg-[#1C251F]/90 p-7 shadow-xl backdrop-blur">
+      <section className="w-full max-w-md rounded-[32px] border border-[#c9dbc3] bg-white p-7 shadow-xl backdrop-blur">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#5b7567]">
           Admin Only
         </p>
@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
           <button
             type="button"
             onClick={fillDemoCredentials}
-            className="mt-3 inline-flex rounded-xl border border-[#bed2b8] bg-white dark:bg-[#1C251F] px-3 py-2 text-xs font-semibold text-[#2f4d3d] transition hover:bg-[#ebf5e6]"
+            className="mt-3 inline-flex rounded-xl border border-[#bed2b8] bg-white px-3 py-2 text-xs font-semibold text-[#2f4d3d] transition hover:bg-[#ebf5e6]"
           >
             Fill demo credentials
           </button>
@@ -106,7 +106,7 @@ export default function AdminLoginPage() {
             <input
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
-              className="mt-1 w-full rounded-2xl border border-[#c8d9c2] bg-white dark:bg-[#1C251F] px-4 py-2.5 text-sm text-[#1f3a2d] outline-none transition focus:border-[#8ab58c] focus:ring-2 focus:ring-[#d8ebd4]"
+              className="mt-1 w-full rounded-2xl border border-[#c8d9c2] bg-white px-4 py-2.5 text-sm text-[#1f3a2d] outline-none transition focus:border-[#8ab58c] focus:ring-2 focus:ring-[#d8ebd4]"
               placeholder="admin@meeramoot.demo"
               autoComplete="username"
               required
@@ -119,7 +119,7 @@ export default function AdminLoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 w-full rounded-2xl border border-[#c8d9c2] bg-white dark:bg-[#1C251F] px-4 py-2.5 text-sm text-[#1f3a2d] outline-none transition focus:border-[#8ab58c] focus:ring-2 focus:ring-[#d8ebd4]"
+              className="mt-1 w-full rounded-2xl border border-[#c8d9c2] bg-white px-4 py-2.5 text-sm text-[#1f3a2d] outline-none transition focus:border-[#8ab58c] focus:ring-2 focus:ring-[#d8ebd4]"
               placeholder="AdminDemo123!"
               autoComplete="current-password"
               required

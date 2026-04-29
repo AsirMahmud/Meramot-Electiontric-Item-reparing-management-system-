@@ -201,7 +201,7 @@ export default function AdminDisputeDetailPage() {
           <div className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6 md:p-8">
             <h3 className="text-xl font-bold text-[var(--accent-dark)]">{dispute.reason}</h3>
             {dispute.description && (
-                <p className="mt-4 rounded-xl bg-white dark:bg-[#1C251F] p-4 text-[var(--foreground)] shadow-sm">
+                <p className="mt-4 rounded-xl bg-white p-4 text-[var(--foreground)] shadow-sm">
                     {dispute.description}
                 </p>
             )}
@@ -227,12 +227,12 @@ export default function AdminDisputeDetailPage() {
                 <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Related Items</p>
                 <div className="mt-3 flex flex-wrap gap-3">
                     {dispute.repairRequest && (
-                        <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
+                        <span className="rounded-full bg-white px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
                             Repair: {dispute.repairRequest.title}
                         </span>
                     )}
                     {dispute.payment && (
-                        <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
+                        <span className="rounded-full bg-white px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
                             Payment: {dispute.payment.amount} {dispute.payment.currency} ({dispute.payment.status})
                         </span>
                     )}
@@ -255,7 +255,7 @@ export default function AdminDisputeDetailPage() {
                     <p className="text-[var(--muted-foreground)]">No notes added yet.</p>
                 ) : (
                     dispute.notes.map((note) => (
-                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white dark:bg-[#1C251F] border border-[var(--border)]"}`}>
+                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white border border-[var(--border)]"}`}>
                             <div className="flex items-start justify-between">
                                 <div>
                                     <p className="font-semibold text-[var(--accent-dark)]">{note.author?.name || note.author?.email || "System"}</p>
@@ -276,7 +276,7 @@ export default function AdminDisputeDetailPage() {
         {/* Right Column: Action Panel */}
         <div className="space-y-6">
             {!isClosed && (
-                <div className="sticky top-6 rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                <div className="sticky top-6 rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Action Panel</h3>
                     
                     {/* Add Note Form */}
@@ -327,7 +327,7 @@ export default function AdminDisputeDetailPage() {
                             <select 
                                 value={statusToResolve}
                                 onChange={(e) => setStatusToResolve(e.target.value)}
-                                className="w-full rounded-xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
+                                className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                             >
                                 <option value="RESOLVED">Resolved (No action)</option>
                                 <option value="REFUNDED">Refunded</option>

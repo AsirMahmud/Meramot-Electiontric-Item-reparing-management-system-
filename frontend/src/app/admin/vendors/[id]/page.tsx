@@ -219,9 +219,9 @@ export default function AdminVendorDetailPage() {
             <div className="mt-6 border-t border-[var(--border)] pt-6">
                 <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Services Offered</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                    {application.inShopRepair && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">In-Shop Repair</span>}
-                    {application.courierPickup && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Courier Pickup</span>}
-                    {application.spareParts && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Spare Parts</span>}
+                    {application.inShopRepair && <span className="rounded-full bg-white px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">In-Shop Repair</span>}
+                    {application.courierPickup && <span className="rounded-full bg-white px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Courier Pickup</span>}
+                    {application.spareParts && <span className="rounded-full bg-white px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Spare Parts</span>}
                 </div>
                 {application.specialties.length > 0 && (
                     <div className="mt-4">
@@ -232,14 +232,14 @@ export default function AdminVendorDetailPage() {
             </div>
 
             {application.notes && (
-                <div className="mt-6 rounded-2xl bg-white dark:bg-[#1C251F] p-5 shadow-sm border border-[var(--border)]">
+                <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm border border-[var(--border)]">
                     <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Applicant Notes</p>
                     <p className="mt-2 text-[var(--foreground)]">{application.notes}</p>
                 </div>
             )}
           </div>
 
-          <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+          <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm">
             <h3 className="text-lg font-bold text-[var(--accent-dark)]">Applicant Account</h3>
             <div className="mt-4">
                 <p className="font-semibold text-[var(--accent-dark)]">{application.applicant.name || application.applicant.username}</p>
@@ -254,7 +254,7 @@ export default function AdminVendorDetailPage() {
             
             {/* If application is pending */}
             {application.status === "PENDING" && (
-                <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Application Actions</h3>
                     <div className="space-y-3">
                         <button
@@ -267,7 +267,7 @@ export default function AdminVendorDetailPage() {
                         <button
                             onClick={() => handleApplicationAction("request-info")}
                             disabled={isProcessing}
-                            className="w-full rounded-xl border border-[var(--accent-dark)] bg-white dark:bg-[#1C251F] px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
+                            className="w-full rounded-xl border border-[var(--accent-dark)] bg-white px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
                         >
                             Request More Info
                         </button>
@@ -287,7 +287,7 @@ export default function AdminVendorDetailPage() {
                 <div className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6 shadow-sm">
                     <h3 className="mb-2 text-lg font-bold text-[var(--accent-dark)]">Shop Status</h3>
                     
-                    <div className="mb-6 rounded-2xl bg-white dark:bg-[#1C251F] p-4 shadow-sm">
+                    <div className="mb-6 rounded-2xl bg-white p-4 shadow-sm">
                         <p className="text-sm text-[var(--muted-foreground)]">Rating: <span className="font-semibold text-[var(--accent-dark)]">{application.shop.ratingAvg}</span> ({application.shop.reviewCount} reviews)</p>
                         <p className="mt-2 text-sm text-[var(--muted-foreground)]">Status: <span className={`font-semibold ${application.shop.isActive ? "text-[var(--accent-dark)]" : "text-[#8A2A2A]"}`}>{application.shop.isActive ? "Active" : "Suspended"}</span></p>
                     </div>
@@ -319,7 +319,7 @@ export default function AdminVendorDetailPage() {
             )}
 
             {application.reviewNotes && (
-                <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-sm">
                     <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Reviewer Notes</p>
                     <p className="mt-2 text-[var(--foreground)] italic">"{application.reviewNotes}"</p>
                     {application.reviewedBy && (
