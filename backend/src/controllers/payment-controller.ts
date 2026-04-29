@@ -428,7 +428,7 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
 
     const callbackPayload = getCallbackPayload(req);
     const tranId = callbackPayload.tran_id || readCallbackField(req, "tran_id");
-    const valId = callbackPayload.val_id || readCallbackField(req, "val_id");
+    const valId = callbackPayload.val_id || readCallbackField(req, "val_id") || (!env.sslCommerzLive ? "demo_val_id" : "");
 
     if (!tranId) {
       if (isGatewayReturn) {
@@ -463,7 +463,7 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
       });
     }
 
-    if (source === "ipn" || callbackPayload.verify_sign) {
+    if (env.sslCommerzLive && (source === "ipn" || callbackPayload.verify_sign)) {
       const signatureResult = verifyCallbackSignature(callbackPayload);
 
       if (!signatureResult.ok) {
@@ -553,48 +553,61 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
       });
     }
 
-    const validationResponse = await sslCommerzService.validate({ val_id: valId });
-    const validation = validationResponse as SslValidationResponse;
+    let validationResponse: unknown;
 
-    const validated = isSslValidationSuccess(validation);
-    const validationTranId = String(validation.tran_id || "").trim();
-    const validationCurrency = String(validation.currency_type || validation.currency || "")
-      .trim()
-      .toUpperCase();
+    if (env.sslCommerzLive) {
+      validationResponse = await sslCommerzService.validate({ val_id: valId });
+      const validation = validationResponse as SslValidationResponse;
 
-    const amountMatches = amountsEqual(validation.amount, payment.amount);
-    const currencyMatches =
-      validationCurrency.length > 0 && validationCurrency === payment.currency.toUpperCase();
-    const tranIdMatches = validationTranId.length > 0 && validationTranId === payment.transactionRef;
+      const validated = isSslValidationSuccess(validation);
+      const validationTranId = String(validation.tran_id || "").trim();
+      const validationCurrency = String(validation.currency_type || validation.currency || "")
+        .trim()
+        .toUpperCase();
 
-    if (!validated || !tranIdMatches || !amountMatches || !currencyMatches) {
-      if (isGatewayReturn) {
-        return res.redirect(
-          frontendPaymentResultUrl({
-            status: "failed",
-            tranId,
-            paymentId: payment.id,
-            message: "Validation cross-check failed",
-          }),
-        );
+      const amountMatches = amountsEqual(validation.amount, payment.amount);
+      const currencyMatches =
+        validationCurrency.length > 0 && validationCurrency === payment.currency.toUpperCase();
+      const tranIdMatches = validationTranId.length > 0 && validationTranId === payment.transactionRef;
+
+      if (!validated || !tranIdMatches || !amountMatches || !currencyMatches) {
+        if (isGatewayReturn) {
+          return res.redirect(
+            frontendPaymentResultUrl({
+              status: "failed",
+              tranId,
+              paymentId: payment.id,
+              message: "Validation cross-check failed",
+            }),
+          );
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: "Payment validation cross-check failed",
+          checks: {
+            validated,
+            tranIdMatches,
+            amountMatches,
+            currencyMatches,
+          },
+          validation: {
+            status: validation.status,
+            tran_id: validation.tran_id,
+            amount: validation.amount,
+            currency_type: validation.currency_type || validation.currency,
+          },
+        });
       }
-
-      return res.status(400).json({
-        success: false,
-        message: "Payment validation cross-check failed",
-        checks: {
-          validated,
-          tranIdMatches,
-          amountMatches,
-          currencyMatches,
-        },
-        validation: {
-          status: validation.status,
-          tran_id: validation.tran_id,
-          amount: validation.amount,
-          currency_type: validation.currency_type || validation.currency,
-        },
-      });
+    } else {
+      validationResponse = {
+        mock: true,
+        status: "VALIDATED",
+        tran_id: tranId,
+        amount: payment.amount,
+        currency: payment.currency,
+        note: "Bypassed validation for demo mode",
+      };
     }
 
     await markPaymentSuccessful(payment.id, validationResponse, source);
