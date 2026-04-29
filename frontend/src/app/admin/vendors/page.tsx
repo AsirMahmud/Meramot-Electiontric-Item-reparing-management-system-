@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
 type VendorApplication = {
   id: string;
@@ -26,6 +27,9 @@ type VendorApplication = {
 };
 
 export default function AdminVendorsPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
+
   const [vendors, setVendors] = useState<VendorApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,7 +39,7 @@ export default function AdminVendorsPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -59,7 +63,7 @@ export default function AdminVendorsPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({
           reviewNotes:
@@ -109,7 +113,7 @@ export default function AdminVendorsPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ isActive }),
       });

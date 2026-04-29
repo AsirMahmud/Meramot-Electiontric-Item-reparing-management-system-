@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { getAdminPayments, type AdminPaymentRecord } from "@/lib/api";
+import { useSession } from "next-auth/react";
 
 const FILTERS = ["ALL", "PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] as const;
 
 export default function AdminPaymentsPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
+
   const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("ALL");
@@ -20,7 +24,7 @@ export default function AdminPaymentsPage() {
         const response = await getAdminPayments({
           status: filter === "ALL" ? undefined : filter,
           take: 50,
-        });
+        }, token);
 
         setPayments(response.data || []);
       } catch (err) {
