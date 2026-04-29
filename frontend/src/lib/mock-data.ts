@@ -1,6 +1,6 @@
-import type { Shop } from "./api";
+import type { ApiShop } from "./api";
 
-export const fallbackShops: Shop[] = [
+export const fallbackShops: ApiShop[] = [
   {
     id: "shop-1",
     name: "ProTech Solutions",

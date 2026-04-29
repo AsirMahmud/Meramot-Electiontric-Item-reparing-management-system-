@@ -1133,3 +1133,657 @@ export async function updateAdminDeliveryRiderStatus(token: string, userId: stri
     method: "POST",
   });
 }
+
+
+export type ShopService = {
+  id: string;
+  slug: string;
+  name: string;
+  shortDescription?: string | null;
+  description?: string | null;
+  deviceType?: string | null;
+  issueCategory?: string | null;
+  pricingType?: string | null;
+  basePrice?: number | null;
+  priceMax?: number | null;
+  estimatedDaysMin?: number | null;
+  estimatedDaysMax?: number | null;
+  includesPickup?: boolean;
+  includesDelivery?: boolean;
+  isFeatured?: boolean;
+};
+
+
+export type ShopDetail = Shop & {
+  services?: ShopService[];
+  openingHoursText?: string | null;
+};
+
+export type SslCommerzInitPayload = {
+  amount: number;
+  currency?: string;
+  repairRequestId?: string;
+  productName?: string;
+};
+
+
+export type SslCommerzInitResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    payment: {
+      id: string;
+      transactionRef: string;
+      status: string;
+      amount: number;
+      currency: string;
+    };
+    gatewayUrl: string;
+    sessionkey?: string;
+    gatewayStatus?: string;
+  };
+};
+
+
+export type AdminPaymentRecord = {
+  id: string;
+  userId: string;
+  repairRequestId: string | null;
+  amount: number | string;
+  currency: string;
+  method: string | null;
+  status: string;
+  escrowStatus: string;
+  transactionRef: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    username: string;
+  };
+};
+
+
+export type AdminPaymentsResponse = {
+  success: boolean;
+  data: AdminPaymentRecord[];
+};
+
+
+export function initSslCommerzPayment(data: SslCommerzInitPayload, token?: string) {
+  return authedRequest<SslCommerzInitResponse>("/payments/sslcommerz/init", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+
+export function getAdminPayments(params: { status?: string } = {}, token?: string) {
+  const q = params.status ? `?status=${params.status}` : "";
+  return authedRequest<AdminPaymentsResponse>(`/payments/admin/list${q}`, token);
+}
+
+/* =========================================================
+   SHOPS
+========================================================= */
+
+
+export function deleteProfile(token: string) {
+  return authedRequest("/profile/me", token, {
+    method: "DELETE",
+  });
+}
+
+/* =========================================================
+   DELIVERY (RIDER)
+========================================================= */
+
+
+export type DeliveryStatusValue =
+  | "PENDING"
+  | "SCHEDULED"
+  | "DISPATCHED"
+  | "PICKED_UP"
+  | "IN_TRANSIT"
+  | "DELIVERED"
+  | "FAILED"
+  | "CANCELLED";
+
+
+export type DeliveryAuthPayload = {
+  token: string;
+  user: {
+    id: string;
+    name?: string | null;
+    username: string;
+    email: string;
+    phone?: string | null;
+    role: string;
+  };
+  riderProfile: {
+    id: string;
+    vehicleType?: string | null;
+    status: string;
+    isActive?: boolean;
+    registrationStatus?: string;
+  };
+};
+
+
+export type DeliveryMeResponse = {
+  riderProfile: {
+    id: string;
+    userId: string;
+    vehicleType?: string | null;
+    status: string;
+    isActive?: boolean;
+    registrationStatus?: string;
+    currentLat?: number | null;
+    currentLng?: number | null;
+    lat?: number | null;
+    lng?: number | null;
+    coverageZones?: string[];
+    user: {
+      id: string;
+      name?: string | null;
+      username: string;
+      email: string;
+      phone?: string | null;
+      role: string;
+      status?: string;
+      avatarUrl?: string | null;
+    };
+  };
+};
+
+
+export type DeliveryWithJob = {
+  id: string;
+  direction: string;
+  status: DeliveryStatusValue;
+  fee?: number | null;
+  pickupAddress: string;
+  dropAddress: string;
+  deliveryAgentId?: string | null;
+  repairJob: {
+    shop: {
+      id?: string;
+      name: string;
+      address?: string;
+      lat?: number | null;
+      lng?: number | null;
+    };
+    repairRequest: {
+      title: string;
+      deviceType: string;
+      contactPhone?: string | null;
+      user?: {
+        name?: string | null;
+        lat?: number | null;
+        lng?: number | null;
+      };
+    };
+  };
+};
+
+
+export type DeliveryChatMessage = {
+  id: string;
+  deliveryId: string;
+  senderUserId: string;
+  senderRole: "DELIVERY" | "DELIVERY_ADMIN" | "ADMIN" | string;
+  recipientUserId: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type PusherConfig = {
+  enabled: boolean;
+  key: string;
+  cluster: string;
+};
+
+
+export type DeliveryPayoutItem = {
+  id: string;
+  amount: number;
+  status: "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELLED";
+  notes?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+};
+
+
+export type DeliveryPayoutSummaryResponse = {
+  summary: {
+    deliveredTrips: number;
+    earned: number;
+    requestedOrPaid: number;
+    available: number;
+    minRequestAmount: number;
+    canRequest: boolean;
+  };
+  payouts: DeliveryPayoutItem[];
+};
+
+
+export function deliveryRegister(data: {
+  name: string;
+  email: string;
+  phone: string;
+  vehicleType?: string;
+  nidDocumentUrl: string;
+  educationDocumentUrl: string;
+  cvDocumentUrl: string;
+}) {
+  return request<DeliveryAuthPayload>("/delivery/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+
+export function patchDeliveryLocation(token: string, lat: number, lng: number) {
+  return authedRequest("/delivery/location", token, {
+    method: "PATCH",
+    body: JSON.stringify({ lat, lng }),
+  });
+}
+
+
+export function fetchDeliveryPayoutSummary(token: string) {
+  return authedRequest<DeliveryPayoutSummaryResponse>("/delivery/payouts", token);
+}
+
+
+export function requestDeliveryPayout(
+  token: string,
+  payload?: {
+    amount?: number;
+    notes?: string;
+  },
+) {
+  return authedRequest<{ message: string; payout: DeliveryPayoutItem }>("/delivery/payouts/request", token, {
+    method: "POST",
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+
+export function fetchDeliveryChatMessages(token: string, deliveryId: string) {
+  return authedRequest<{ messages: DeliveryChatMessage[]; pusher?: PusherConfig }>(
+    `/delivery/deliveries/${encodeURIComponent(deliveryId)}/chat`,
+    token,
+  );
+}
+
+
+export function sendDeliveryChatMessage(token: string, deliveryId: string, message: string) {
+  return authedRequest<{ message: DeliveryChatMessage }>(
+    `/delivery/deliveries/${encodeURIComponent(deliveryId)}/chat`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    },
+  );
+}
+
+/* =========================================================
+   DELIVERY ADMIN
+========================================================= */
+
+
+export type DeliveryAdminMeResponse = {
+  user: {
+    id: string;
+    name?: string | null;
+    username: string;
+    email: string;
+    phone?: string | null;
+    role: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+
+export type DeliveryAdminStats = {
+  pendingRegistrations: number;
+  activeApprovedPartners: number;
+  rejectedPartners: number;
+  totalPartners: number;
+  completedDeliveriesTotal: number;
+  partnersWithCompletedDeliveries: number;
+};
+
+
+export type DeliveryAdminPartnerRow = {
+  id: string;
+  vehicleType?: string | null;
+  nidDocumentUrl?: string | null;
+  educationDocumentUrl?: string | null;
+  cvDocumentUrl?: string | null;
+  agentStatus: string;
+  isActive: boolean;
+  registrationStatus: "APPROVED" | "PENDING" | "REJECTED" | string;
+  currentLat?: number | null;
+  currentLng?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  completedDeliveries: number;
+  activeDelivery?: {
+    id: string;
+    status: DeliveryStatusValue;
+    direction: string;
+    pickupAddress: string;
+    dropAddress: string;
+    updatedAt: string;
+  } | null;
+  user: {
+    id: string;
+    name?: string | null;
+    username: string;
+    email: string;
+    phone?: string | null;
+    role?: string;
+    status?: string;
+    createdAt: string;
+  };
+};
+
+
+export type DeliveryAdminOrder = {
+  id: string;
+  direction: string;
+  status: DeliveryStatusValue;
+  pickupAddress: string;
+  dropAddress: string;
+  fee?: number | null;
+  scheduledAt?: string | null;
+  pickedUpAt?: string | null;
+  deliveredAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deliveryAgent?: {
+    id: string;
+    user: {
+      id: string;
+      name?: string | null;
+      username: string;
+      email: string;
+      phone?: string | null;
+      lat?: number | null;
+      lng?: number | null;
+      status?: string;
+    };
+  } | null;
+  repairJob: {
+    repairRequest: {
+      id: string;
+      title: string;
+      deviceType: string;
+      status: string;
+      contactPhone?: string | null;
+      user: {
+        id: string;
+        name?: string | null;
+        username: string;
+        phone?: string | null;
+      };
+    };
+    shop: {
+      id: string;
+      name: string;
+      phone?: string | null;
+      address: string;
+    };
+  };
+};
+
+
+export type DeliveryAdminPayoutRequest = {
+  id: string;
+  amount: number;
+  status: "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELLED";
+  notes?: string | null;
+  createdAt: string;
+  paidAt?: string | null;
+  riderProfile?: {
+    id: string;
+    user?: {
+      id: string;
+      name?: string | null;
+      username?: string | null;
+      email?: string | null;
+      phone?: string | null;
+    } | null;
+  } | null;
+};
+
+
+export function fetchDeliveryAdminPayoutRequests(token: string, status?: string) {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return authedRequest<{ payouts: DeliveryAdminPayoutRequest[] }>(`/delivery-admin/payout-requests${q}`, token);
+}
+
+
+export function fetchDeliveryAdminOrders(token: string, status?: string) {
+  const q = status ? `?status=${encodeURIComponent(status)}` : "";
+  return authedRequest<{ deliveries: DeliveryAdminOrder[] }>(`/delivery-admin/deliveries${q}`, token);
+}
+
+
+export function assignDeliveryAdminOrder(token: string, deliveryId: string, deliveryUserId: string) {
+  return authedRequest<{ message: string; delivery: DeliveryAdminOrder }>(
+    `/delivery-admin/deliveries/${encodeURIComponent(deliveryId)}/assign`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ deliveryUserId }),
+    },
+  );
+}
+
+
+export function fetchDeliveryAdminOrderTimeline(token: string, deliveryId: string) {
+  return authedRequest<{
+    delivery: DeliveryAdminOrder;
+    timeline: { code: string; title: string; at: string | null }[];
+    pusher?: PusherConfig;
+  }>(`/delivery-admin/deliveries/${encodeURIComponent(deliveryId)}/timeline`, token);
+}
+
+
+export function fetchDeliveryAdminChatMessages(token: string, deliveryId: string) {
+  return authedRequest<{ messages: DeliveryChatMessage[]; pusher?: PusherConfig }>(
+    `/delivery-admin/deliveries/${encodeURIComponent(deliveryId)}/chat`,
+    token,
+  );
+}
+
+
+export function sendDeliveryAdminChatMessage(token: string, deliveryId: string, message: string) {
+  return authedRequest<{ message: DeliveryChatMessage }>(
+    `/delivery-admin/deliveries/${encodeURIComponent(deliveryId)}/chat`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    },
+  );
+}
+
+
+export function approveDeliveryAdminPayoutRequest(token: string, id: string) {
+  return authedRequest<{ message: string; payout: DeliveryAdminPayoutRequest }>(
+    `/delivery-admin/payout-requests/${encodeURIComponent(id)}/approve`,
+    token,
+    {
+      method: "PATCH",
+    },
+  );
+}
+/* =========================================================
+   Cart Management
+========================================================= */
+
+
+export type CartItem = {
+  id: string;
+  cartId: string;
+  serviceName: string;
+  description?: string | null;
+  price: number | string;
+  quantity: number;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+
+export type Cart = {
+  id: string;
+  userId: string;
+  shopId: string;
+  status: "ACTIVE" | "CHECKED_OUT" | "ABANDONED";
+  createdAt: string;
+  updatedAt: string;
+  subtotal: number;
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    address: string;
+    ratingAvg: number;
+    reviewCount: number;
+  };
+  items: CartItem[];
+};
+
+
+export async function addServiceToCart(
+  payload: {
+    shopSlug: string;
+    serviceName: string;
+    description?: string;
+    price: number;
+    quantity?: number;
+    metadata?: Record<string, unknown>;
+  },
+  token: string
+) {
+  return authedRequest<{ message: string; cart: Cart }>("/cart/items", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export async function getMyCarts(token: string) {
+  return authedRequest<Cart[]>("/cart", token);
+}
+
+
+export async function updateCartItem(
+  itemId: string,
+  quantity: number,
+  token: string
+) {
+  return authedRequest(`/cart/items/${itemId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ quantity }),
+  });
+}
+
+
+export async function removeCartItem(itemId: string, token: string) {
+  return authedRequest(`/cart/items/${itemId}`, token, {
+    method: "DELETE",
+  });
+}
+
+
+export async function checkoutCart(
+  cartId: string,
+  payload: {
+    scheduleType: "NOW" | "LATER";
+    scheduledAt?: string;
+    paymentMethod: "CASH" | "SSLCOMMERZ";
+    addressMode: "PROFILE" | "MANUAL" | "MAP";
+    address: string;
+    city?: string;
+    area?: string;
+    lat?: number;
+    lng?: number;
+    deliveryType?: "REGULAR" | "EXPRESS";
+    problemNote?: string;
+  },
+  token: string
+) {
+  return authedRequest(`/cart/${cartId}/checkout`, token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+const GUEST_CART_KEY = "meramot.guestCart";
+
+
+export function getGuestCart(): Cart[] {
+  if (typeof window === "undefined") return [];
+  return JSON.parse(localStorage.getItem(GUEST_CART_KEY) || "[]");
+}
+
+
+export function setGuestCart(cart: Cart[]) {
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+}
+
+/* =========================================================
+   Ai Chat
+========================================================= */
+
+
+export async function chatWithAi(payload: {
+  message: string;
+  history?: { role: "user" | "assistant"; text: string }[];
+}) {
+  return request<{ ok: true; reply: string }>("/ai/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export async function getAiChatSessions(token?: string) {
+  return authedRequest("/ai-chat/sessions", token);
+}
+
+
+export async function createAiChatSession(title = "New Chat", token?: string) {
+  return authedRequest("/ai-chat/sessions", token, {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+}
+
+
+export async function saveAiChatMessage(
+  sessionId: string,
+  role: "user" | "assistant",
+  text: string,
+  token?: string
+) {
+  return authedRequest(`/ai-chat/sessions/${sessionId}/messages`, token, {
+    method: "POST",
+    body: JSON.stringify({ role, text }),
+  });
+}

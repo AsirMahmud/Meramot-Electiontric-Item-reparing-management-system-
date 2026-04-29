@@ -2,24 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
-import { getVendorApplicationStatus } from "@/lib/api";
+import { signOut } from "next-auth/react";
+import ThemeToggle from "@/components/theme/ThemeToggle";
+import NavbarLocationButton from "@/components/location/NavbarLocationButton";
+import LocationPickerModal from "@/components/location/LocationPickerModal";
+import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
-type NavbarProps = {
+ type NavbarProps = {
   isLoggedIn?: boolean;
   firstName?: string;
   language?: "en" | "bn";
   onLanguageChange?: (lang: "en" | "bn") => void;
-};
-
-type VendorNavbarStatus = {
-  application?: {
-    status: "PENDING" | "APPROVED" | "REJECTED";
-    setupComplete?: boolean;
-  };
-  message?: string;
 };
 
 const categoryTabs = [
@@ -28,9 +24,9 @@ const categoryTabs = [
   { label: "Spare Parts", value: "SPARE_PARTS" },
 ] as const;
 
-function NavbarContent({
-  isLoggedIn,
-  firstName,
+export function NavbarInner({
+  isLoggedIn = false,
+  firstName = "User",
   language = "en",
   onLanguageChange,
 }: NavbarProps) {
@@ -38,88 +34,39 @@ function NavbarContent({
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
-  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const {
+    selectedLocation,
+    locationLabel,
+    saveLocation,
+  } = useSelectedLocation(isLoggedIn);
+
   const activeCategory =
     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
-  const resolvedIsLoggedIn = isLoggedIn ?? !!session?.user;
-
-  const resolvedFirstName = useMemo(() => {
-    if (firstName?.trim()) return firstName.trim();
-
-    const sessionName =
-      session?.user?.name?.trim()?.split(" ")[0] ||
-      (session?.user as { username?: string } | undefined)?.username
-        ?.trim()
-        ?.split(" ")[0];
-
-    return sessionName || "User";
-  }, [firstName, session]);
-
-  const displayName = resolvedFirstName;
-
-  const userRole =
-    (session?.user as { role?: string; accessToken?: string } | undefined)?.role ?? null;
-
-  const token =
-    (session?.user as { accessToken?: string } | undefined)?.accessToken;
-
-  useEffect(() => {
-    async function loadVendorStatus() {
-      if (userRole !== "VENDOR" || !token) {
-        setVendorStatus(null);
-        return;
-      }
-
-      try {
-        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
-        setVendorStatus(result);
-      } catch {
-        setVendorStatus(null);
-      }
-    }
-
-    loadVendorStatus();
-  }, [userRole, token]);
+  const displayName = useMemo(() => {
+    return firstName?.trim() || "User";
+  }, [firstName]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
-    setVendorStatus(null);
 
-    try {
-      const result = await signOut({
-        redirect: false,
-        callbackUrl: "/",
-      });
-      router.replace(result?.url || "/");
-    } catch {
-      router.replace("/");
-    } finally {
-      router.refresh();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("meramot.user");
+      localStorage.removeItem("meramot.token");
+      window.dispatchEvent(new Event("meramot-auth-changed"));
     }
+
+    await signOut({ callbackUrl: "/" });
   };
 
-  const vendorApplication = vendorStatus?.application;
-
-  const isVendorSetupComplete =
-    userRole === "VENDOR" &&
-    vendorApplication?.status === "APPROVED" &&
-    vendorApplication?.setupComplete === true;
-
-  const isVendorSetupIncomplete =
-    userRole === "VENDOR" &&
-    vendorApplication?.status === "APPROVED" &&
-    vendorApplication?.setupComplete !== true;
-
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
 
     const trimmed = searchQuery.trim();
@@ -128,29 +75,41 @@ function NavbarContent({
     router.push(`/shops?q=${encodeURIComponent(trimmed)}`);
   };
 
+  function openLocationModal() {
+    setLocationModalOpen(true);
+    setIsUserMenuOpen(false);
+    setIsLangMenuOpen(false);
+  }
+
   return (
     <>
-      <header className="w-full border-b border-[#c7ddc8] bg-[#d5ead8]">
+      <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <Link href="/" className="inline-flex items-center group">
+          <div className="grid gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
+            <Link href="/" className="inline-flex items-center">
               <Image
                 src="/images/meramot.svg"
                 alt="Meramot"
                 width={280}
                 height={100}
-                className="h-16 w-auto object-contain md:h-20 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-105 group-hover:-translate-y-0.5"
+                className="h-16 w-auto object-contain md:h-20"
                 priority
               />
             </Link>
 
+            <div className="flex justify-start md:justify-center">
+              <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
+            </div>
+
             <div className="flex flex-wrap items-center gap-3 md:justify-end">
-              {!resolvedIsLoggedIn ? (
+              <ThemeToggle />
+
+              {!isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#183625]"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
                 >
-                  Sign in / Sign up
+                  Sign in
                 </Link>
               ) : (
                 <div className="relative">
@@ -159,105 +118,68 @@ function NavbarContent({
                       setIsUserMenuOpen((prev) => !prev);
                       setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34]"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
                   >
-                    Hi, {displayName} ▼
+                    {displayName} ▼
                   </button>
 
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-[#d9e5d5] bg-white p-2 shadow-lg">
-                      {userRole === "VENDOR" ? (
-                        <>
-                          {isVendorSetupComplete ? (
-                            <>
-                              <Link
-                                href="/vendor/dashboard"
-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Vendor dashboard
-                              </Link>
+                    <div className="absolute right-0 z-30 mt-2 w-56 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
+                      <Link
+                        href="/profile"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        View profile
+                      </Link>
 
-                              <Link
-                                href="/vendor/analytics"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Shop analytics
-                              </Link>
+                      <Link
+                        href="/orders"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Requests history
+                      </Link>
 
-                              <Link
-                                href="/profile"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                View profile
-                              </Link>
-                            </>
-                          ) : isVendorSetupIncomplete ? (
-                            <>
-                              <Link
-                                href="/vendor/setup-shop"
-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Set up your shop
-                              </Link>
-                            </>
-                          ) : (
-                            <Link
-                              href="/vendor/onboarding"
-                              className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              Vendor onboarding
-                            </Link>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Link
-                            href="/profile"
-                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            View profile
-                          </Link>
+                      <Link
+                        href="/requests/new"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Make request
+                      </Link>
 
-                          <Link
-                            href="/orders"
-                            className="block rounded-2xl px-4 py-3 text-sm text-[#234733] transition hover:bg-[#eef5ea]"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            Requests history
-                          </Link>
+                      <Link
+                        href="/cart"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        View cart
+                      </Link>
 
-
-                          {userRole === "ADMIN" && (
-                            <Link
-                              href="/admin/vendors"
-                              className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[#234733] transition hover:bg-[#eef5ea]"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              Admin dashboard
-                            </Link>
-                          )}
-                        </>
-                      )}
+                      <Link
+                        href="/ai-chat"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        AI help chat
+                      </Link>
 
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
                           setShowLogoutConfirm(true);
                         }}
-                        className="block w-full rounded-2xl px-4 py-3 text-left text-sm text-[#234733] transition hover:bg-[#eef5ea]"
+                        className="block w-full rounded-2xl px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        Sign out
+                        Log out
                       </button>
                     </div>
                   )}
                 </div>
               )}
+
+              <NotificationBell />
 
               <div className="relative">
                 <button
@@ -265,160 +187,121 @@ function NavbarContent({
                     setIsLangMenuOpen((prev) => !prev);
                     setIsUserMenuOpen(false);
                   }}
-                  className="rounded-full bg-[#c8ddb4] px-5 py-2.5 text-sm font-medium text-[#1d3528]"
+                  className="rounded-full bg-[var(--mint-200)] px-5 py-2.5 text-sm font-medium text-[var(--foreground)]"
                 >
                   {language === "bn" ? "বাংলা" : "English"} ▼
                 </button>
 
                 {isLangMenuOpen && (
-                  <div className="absolute right-0 z-30 mt-2 w-40 rounded-2xl border border-[#d9e5d5] bg-white p-2 shadow-lg">
+                  <div className="absolute right-0 z-30 mt-2 w-40 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-lg">
                     <button
                       onClick={() => {
                         onLanguageChange?.("en");
                         setIsLangMenuOpen(false);
                       }}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#234733] hover:bg-[#eef5ea]"
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
                     >
                       English
                     </button>
+
                     <button
                       onClick={() => {
                         onLanguageChange?.("bn");
                         setIsLangMenuOpen(false);
                       }}
-                      className="block w-full rounded-xl px-3 py-2 text-left text-sm text-[#234733] hover:bg-[#eef5ea]"
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
                     >
                       বাংলা
                     </button>
                   </div>
                 )}
               </div>
+              <Link
+                href="/cart"
+                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
+              >
+                <Image
+                  src="/images/cart.svg"
+                  alt="Cart"
+                  width={80}
+                  height={80}
+                  className="h-[45px] w-[45px]"
+                />
+              </Link>
             </div>
           </div>
 
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex flex-col gap-3 md:flex-row md:items-center"
-          >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search shops, devices, or services..."
-              className="w-full rounded-full border border-[#b9ceb7] bg-white px-5 py-3 text-sm outline-none placeholder:text-[#70836d] md:flex-1"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#183625]"
-            >
-              Search
-            </button>
-          </form>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
+              {categoryTabs.map((tab) => {
+                const active = activeCategory === tab.value;
+                return (
+                  <Link
+                    key={tab.value}
+                    href={`/shops?category=${tab.value}`}
+                    className={`inline-flex border-b-[3px] pb-1 transition ${
+                      active
+                        ? "border-[var(--accent-dark)] text-[var(--accent-dark)]"
+                        : "border-transparent text-[var(--foreground)] hover:border-[var(--accent-dark)]/40"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (resolvedIsLoggedIn) {
-                  router.push("/requests/new");
-                } else {
-                  setShowLoginModal(true);
-                }
-              }}
-              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                pathname === "/requests/new"
-                  ? "bg-[#214c34] text-white"
-                  : "border border-[#b9ceb7] bg-white text-[#214c34]"
-              }`}
-            >
-              Repair Request
-            </button>
-            {categoryTabs.map((tab) => {
-              const isActive = activeCategory === tab.value;
-
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString());
-
-                    if (pathname !== "/shops") {
-                      params.set("category", tab.value);
-                      router.push(`/shops?${params.toString()}`);
-                      return;
-                    }
-
-                    if (isActive) {
-                      params.delete("category");
-                    } else {
-                      params.set("category", tab.value);
-                    }
-
-                    router.push(`/shops?${params.toString()}`);
-                  }}
-                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                    isActive
-                      ? "bg-[#214c34] text-white"
-                      : "border border-[#b9ceb7] bg-white text-[#214c34]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+            <form onSubmit={handleSearchSubmit} className="w-full md:w-[520px]">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shops, parts, devices, or repair types"
+                className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--mint-300)] px-5 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
+              />
+            </form>
           </div>
         </div>
       </header>
 
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-[#173726]">Sign out?</h3>
-            <p className="mt-2 text-sm text-[#5b7262]">
-              You will need to sign in again to access your account.
-            </p>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
+      {locationModalOpen && (
+        <LocationPickerModal
+          selectedLocation={selectedLocation}
+          onClose={() => setLocationModalOpen(false)}
+          onConfirm={saveLocation}
+        />
       )}
 
-      {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-            <h3 className="text-xl font-bold text-[#173726]">Sign in required</h3>
-            <p className="mt-2 text-sm text-[#5b7262]">
-              You need to sign in to make a repair request.
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setShowLogoutConfirm(false)}
+          />
+
+          <div className="relative z-[101] w-[90%] max-w-md rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-2xl">
+            <h2 className="text-center text-2xl font-bold text-[var(--accent-dark)]">
+              Are you sure?
+            </h2>
+
+            <p className="mt-3 text-center text-sm text-[var(--muted-foreground)]">
+              You will be logged out of your account.
             </p>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex items-center justify-center gap-4">
               <button
-                onClick={() => setShowLoginModal(false)}
-                className="flex-1 rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="rounded-full border border-[var(--accent-dark)] bg-[var(--card)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
               >
-                Cancel
+                No
               </button>
-              <Link
-                href="/login"
-                className="flex flex-1 items-center justify-center rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white"
-                onClick={() => setShowLoginModal(false)}
+
+              <button
+                onClick={confirmLogout}
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
               >
-                Sign in
-              </Link>
+                Yes
+              </button>
             </div>
           </div>
         </div>
@@ -427,10 +310,12 @@ function NavbarContent({
   );
 }
 
+import { Suspense } from "react";
+
 export default function Navbar(props: NavbarProps) {
   return (
-    <Suspense fallback={<div className="h-20 w-full border-b border-[#c7ddc8] bg-[#d5ead8]" />}>
-      <NavbarContent {...props} />
+    <Suspense fallback={<div style={{ height: "70px" }}></div>}>
+      <NavbarInner {...props} />
     </Suspense>
   );
 }

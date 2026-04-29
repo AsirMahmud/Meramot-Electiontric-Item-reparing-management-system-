@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type Message = {
@@ -45,9 +44,6 @@ type Ticket = {
 };
 
 export default function AdminTicketDetailPage() {
-  const { data: session } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
-
   const { id } = useParams() as { id: string };
   const router = useRouter();
 
@@ -71,7 +67,7 @@ export default function AdminTicketDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
         const data = await res.json();
         if (res.ok) {
@@ -106,7 +102,8 @@ export default function AdminTicketDetailPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(token),
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ message: replyMessage }),
       });
@@ -141,7 +138,8 @@ export default function AdminTicketDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(token),
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
             status: statusInput,
@@ -183,7 +181,7 @@ export default function AdminTicketDetailPage() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}/escalate`, {
           method: "POST",
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
   
         const data = await res.json();

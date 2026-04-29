@@ -9,14 +9,12 @@ type VendorStatusPayload = {
   application?: {
     id: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
-    ownerName?: string;
-    businessEmail?: string;
-    shopName?: string;
+    ownerName: string;
+    businessEmail: string;
+    shopName: string;
     rejectionReason?: string | null;
     rejectionVisibleUntil?: string | null;
-    createdAt?: string;
-    setupComplete?: boolean;
-    isPublic?: boolean;
+    createdAt: string;
   };
   message?: string;
 };
@@ -35,7 +33,7 @@ export default function VendorStatusPage() {
     async function load() {
       try {
         if (!token) {
-          throw new Error("Please sign in first.");
+          throw new Error("Please log in first.");
         }
 
         const result = await getVendorApplicationStatus(token);
@@ -47,7 +45,7 @@ export default function VendorStatusPage() {
       }
     }
 
-    void load();
+    load();
   }, [status, token]);
 
   if (status === "loading" || loading) {
@@ -64,12 +62,15 @@ export default function VendorStatusPage() {
     return (
       <main className="grid min-h-screen place-items-center px-4">
         <div className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-lg">
-          <p className="text-red-600">{error || data?.message || "Could not load status."}</p>
+          <p className="text-red-600">
+            {error || data?.message || "Could not load status."}
+          </p>
+
           <Link
             href="/login"
             className="mt-4 inline-block rounded-2xl bg-accent-dark px-5 py-3 text-sm font-semibold text-white"
           >
-            Back to login
+            Back to Login
           </Link>
         </div>
       </main>
@@ -79,7 +80,9 @@ export default function VendorStatusPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
       <div className="w-full max-w-3xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
-        <h1 className="text-3xl font-bold text-accent-dark">Vendor application status</h1>
+        <h1 className="text-3xl font-bold text-accent-dark">
+          Vendor Application Status
+        </h1>
 
         <div className="mt-6 space-y-4 text-sm text-slate-700">
           <p>
@@ -96,12 +99,6 @@ export default function VendorStatusPage() {
           </p>
           <p>
             <span className="font-semibold">Status:</span> {app.status}
-          </p>
-          <p>
-            <span className="font-semibold">Shop setup:</span> {app.setupComplete ? "Completed" : "Pending"}
-          </p>
-          <p>
-            <span className="font-semibold">Visibility:</span> {app.isPublic ? "Public" : "Hidden"}
           </p>
         </div>
 
@@ -135,6 +132,10 @@ export default function VendorStatusPage() {
                 </span>
               </p>
             ) : null}
+
+            <p className="mt-3">
+              Contact admin: <span className="font-semibold">support@meeramoot.com</span>
+            </p>
           </div>
         ) : null}
 
@@ -142,9 +143,7 @@ export default function VendorStatusPage() {
           <div className="mt-6 rounded-2xl bg-green-50 px-4 py-4 text-sm text-green-800">
             <p className="font-semibold">Your application has been approved.</p>
             <p className="mt-1">
-              {app.setupComplete
-                ? "Your shop is ready. You can now use the vendor dashboard for bidding and final quote handling."
-                : "Complete your shop profile and skill tags before you start receiving relevant jobs."}
+              You can now continue to vendor onboarding.
             </p>
           </div>
         ) : null}
@@ -159,29 +158,20 @@ export default function VendorStatusPage() {
             </Link>
           )}
 
-          {app.status === "APPROVED" && !app.setupComplete ? (
+          {app.status === "APPROVED" && (
             <Link
-              href="/vendor/setup-shop"
+              href="/vendor/onboarding"
               className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
             >
-              Complete shop setup
+              Continue to onboarding
             </Link>
-          ) : null}
-
-          {app.status === "APPROVED" && app.setupComplete ? (
-            <Link
-              href="/vendor/dashboard"
-              className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
-            >
-              Open vendor dashboard
-            </Link>
-          ) : null}
+          )}
 
           <Link
             href="/login"
             className="rounded-2xl bg-accent-dark px-5 py-3 text-center text-sm font-semibold text-white"
           >
-            Back to login
+            Back to Login
           </Link>
         </div>
       </div>

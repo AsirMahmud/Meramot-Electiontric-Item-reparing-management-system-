@@ -1,129 +1,162 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { Bike, ShieldAlert } from "lucide-react";
-import { getDeliveryMe, type RiderProfileStatusResponse } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { fetchDeliveryDeliveries, type DeliveryWithJob } from "@/lib/api";
+import { useDeliveryAuth } from "@/lib/delivery-auth-context";
 
-type SessionUser = {
-  id?: string;
-  name?: string | null;
-  email?: string | null;
-  role?: string | null;
-  accessToken?: string | null;
-};
+const ACTIVE_DELIVERY_STATUSES = ["PENDING", "SCHEDULED", "DISPATCHED", "PICKED_UP", "IN_TRANSIT"];
 
-export default function DeliveryDashboard() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
-  const sessionUser = session?.user as SessionUser | undefined;
-  
-  const [profileData, setProfileData] = useState<RiderProfileStatusResponse | null>(null);
+export default function DeliveryDashboardPage() {
+  const { token, me } = useDeliveryAuth();
+  const [deliveries, setDeliveries] = useState<DeliveryWithJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<"ACTIVE" | "ASSIGNED">("ACTIVE");
+
+  const registrationStatus = me?.registrationStatus ?? "APPROVED";
 
   useEffect(() => {
-    if (status === "loading") return;
-
-    if (status === "unauthenticated" || !sessionUser?.accessToken) {
-      router.replace("/login");
+    if (!token || registrationStatus !== "APPROVED") {
+      setDeliveries([]);
+      setLoading(false);
       return;
     }
 
-    if (sessionUser.role !== "DELIVERY") {
-      router.replace("/");
-      return;
-    }
+    setLoading(true);
+    setError("");
+    fetchDeliveryDeliveries(token)
+      .then((data) => setDeliveries(data.deliveries))
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load deliveries"))
+      .finally(() => setLoading(false));
+  }, [token, registrationStatus]);
 
-    getDeliveryMe(sessionUser.accessToken)
-      .then((data) => {
-        setProfileData(data);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError("Failed to fetch delivery profile status. " + (err instanceof Error ? err.message : ""));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [status, sessionUser, router]);
-
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6">
-        <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-2xl p-6">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
-          <p className="text-red-700">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const registrationStatus = profileData?.riderName?.registrationStatus ?? "PENDING";
-  const firstName = sessionUser?.name?.split(/\s+/)[0] || "Rider";
+  const activeCount = useMemo(
+    () => deliveries.filter((d) => ACTIVE_DELIVERY_STATUSES.includes(d.status)).length,
+    [deliveries],
+  );
+  const completedCount = useMemo(
+    () => deliveries.filter((d) => d.status === "DELIVERED").length,
+    [deliveries],
+  );
+  const completedEarnings = useMemo(
+    () => deliveries.filter((d) => d.status === "DELIVERED").reduce((sum, d) => sum + (d.fee ?? 0), 0),
+    [deliveries],
+  );
+  const activeDeliveries = useMemo(
+    () => deliveries.filter((d) => ACTIVE_DELIVERY_STATUSES.includes(d.status)),
+    [deliveries],
+  );
+  const visibleDeliveries = viewMode === "ACTIVE" ? activeDeliveries : deliveries;
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-extrabold tracking-tight text-accent-dark">
-          Delivery Dashboard
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-[#d9e5d5] bg-white p-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#163625]/65">Delivery Dashboard</p>
+        <h1 className="mt-1 text-2xl font-extrabold text-[#163625]">
+          Welcome, {me?.user?.name ?? me?.user?.username ?? "Partner"}
         </h1>
-        <div className="rounded-full bg-accent/20 p-3 text-accent-dark">
-          <Bike size={24} />
-        </div>
-      </div>
+        <p className="mt-2 text-sm text-[#163625]/70">
+          Track assigned orders, delivery status, and current earnings in one place.
+        </p>
+      </section>
 
-      {registrationStatus === "PENDING" ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="rounded-full bg-amber-100 p-3 text-amber-700">
-              <ShieldAlert size={28} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-amber-900">Pending Admin Approval</h2>
-              <p className="mt-2 text-amber-800">
-                Your delivery partner profile has been registered but is currently waiting for admin approval. 
-                You will not be able to accept or manage orders until an operations administrator activates your account.
-              </p>
-              <div className="mt-6 border-t border-amber-200/60 pt-4">
-                <p className="text-sm font-medium text-amber-700">
-                  Check back later or contact support if you believe this is a mistake.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : registrationStatus === "REJECTED" ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 shadow-sm">
-          <h2 className="text-xl font-bold text-red-900">Application Rejected</h2>
-          <p className="mt-2 text-red-800">
-            Your registration was not approved. Please contact support for more details.
+      {registrationStatus !== "APPROVED" ? (
+        <section className="rounded-3xl border border-[#d9e5d5] bg-white p-6">
+          <h2 className="text-lg font-bold text-[#163625]">Account review in progress</h2>
+          <p className="mt-2 text-sm text-[#163625]/75">
+            Your rider profile is currently <span className="font-semibold">{registrationStatus}</span>. You can access
+            order dashboard features after admin approval.
           </p>
-        </div>
+        </section>
       ) : (
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-border bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-accent-dark">Welcome back, {firstName}</h2>
-            <p className="mt-2 text-muted-foreground">
-              Your profile is active. You can now accept and manage repair deliveries.
-            </p>
-          </div>
-          
-          <div className="rounded-3xl border border-dashed border-border bg-slate-50/50 p-12 text-center">
-            <p className="text-muted-foreground">
-              Delivery management features (orders, earnings, map) will be fully restored in Phase 13.
-            </p>
-          </div>
-        </div>
+        <>
+          <section className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#d9e5d5] bg-white p-5">
+              <p className="text-xs font-semibold text-[#163625]/65">Active deliveries</p>
+              <p className="mt-2 text-3xl font-extrabold text-[#163625]">{activeCount}</p>
+            </div>
+            <div className="rounded-2xl border border-[#d9e5d5] bg-white p-5">
+              <p className="text-xs font-semibold text-[#163625]/65">Completed trips</p>
+              <p className="mt-2 text-3xl font-extrabold text-[#163625]">{completedCount}</p>
+            </div>
+            <div className="rounded-2xl border border-[#d9e5d5] bg-white p-5">
+              <p className="text-xs font-semibold text-[#163625]/65">Completed earnings</p>
+              <p className="mt-2 text-3xl font-extrabold text-[#163625]">BDT {completedEarnings.toFixed(2)}</p>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-[#d9e5d5] bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-[#163625]">Delivery Queue</h2>
+                <p className="text-xs text-[#163625]/70">Switch between active and all assigned deliveries</p>
+              </div>
+              <Link href="/delivery/map" className="text-sm font-semibold text-[#163625] hover:underline">
+                Open live map
+              </Link>
+            </div>
+            <div className="mb-4 inline-flex rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("ACTIVE")}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${
+                  viewMode === "ACTIVE" ? "bg-white text-[#163625] shadow-sm" : "text-[#163625]/70 hover:text-[#163625]"
+                }`}
+              >
+                Active deliveries ({activeDeliveries.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("ASSIGNED")}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${
+                  viewMode === "ASSIGNED"
+                    ? "bg-white text-[#163625] shadow-sm"
+                    : "text-[#163625]/70 hover:text-[#163625]"
+                }`}
+              >
+                Assigned deliveries ({deliveries.length})
+              </button>
+            </div>
+
+            {loading ? <p className="text-sm text-[#163625]/70">Loading deliveries...</p> : null}
+            {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}
+
+            {!loading && !error && visibleDeliveries.length === 0 ? (
+              <p className="text-sm text-[#163625]/70">
+                {viewMode === "ACTIVE" ? "No active deliveries right now." : "No deliveries assigned yet."}
+              </p>
+            ) : null}
+
+            {!loading && visibleDeliveries.length > 0 ? (
+              <div className="space-y-3">
+                {visibleDeliveries.map((d) => (
+                  <Link
+                    key={d.id}
+                    href={`/delivery/order/${d.id}`}
+                    className="block rounded-2xl border border-[#d9e5d5] bg-[#f8fbf6] p-4 transition hover:bg-[#eef4ea]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-[#163625]">{d.repairJob.repairRequest.title}</p>
+                        <p className="mt-1 text-xs text-[#163625]/70">
+                          {d.direction === "TO_SHOP" ? "Customer to shop" : "Shop to customer"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-[#163625] border border-[#d9e5d5]">
+                        {d.status}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-[#163625]/75">
+                      <p>Fee: BDT {(d.fee ?? 0).toFixed(2)}</p>
+                      <p className="font-semibold text-[#163625]">View details</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        </>
       )}
     </div>
   );

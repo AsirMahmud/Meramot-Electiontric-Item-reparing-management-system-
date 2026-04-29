@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiBase}/api/auth/login`, {
+      const response = await fetch(`${apiBase}/api/auth/admin-demo-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier, password }),

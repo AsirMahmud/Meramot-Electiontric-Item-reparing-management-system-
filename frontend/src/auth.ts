@@ -50,7 +50,7 @@ export const authOptions: NextAuthOptions = {
         phone: data.user.phone || null,
         role: data.user.role || null,
         accessToken: data.token,
-      };
+      } as any;
       },
     }),
   ],
@@ -88,11 +88,11 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (user) {
-        token.id = (user as { id?: string; username?: string; phone?: string; role?: string; accessToken?: string; }).id;
-        token.username = (user as { id?: string; username?: string; phone?: string; role?: string; accessToken?: string; }).username ?? null;
-        token.phone = (user as { id?: string; username?: string; phone?: string; role?: string; accessToken?: string; }).phone ?? null;
-        token.role = (user as { id?: string; username?: string; phone?: string; role?: string; accessToken?: string; }).role ?? token.role ?? null;
-        token.accessToken = (user as { id?: string; username?: string; phone?: string; role?: string; accessToken?: string; }).accessToken ?? token.accessToken ?? null;
+        token.id = (user as any).id;
+        token.username = (user as any).username ?? null;
+        token.phone = (user as any).phone ?? null;
+        token.role = (user as any).role ?? token.role ?? null;
+        token.accessToken = (user as any).accessToken ?? token.accessToken ?? null;
       }
 
       return token;
@@ -100,11 +100,11 @@ export const authOptions: NextAuthOptions = {
 
    async session({ session, token }) {
     if (session.user) {
-      (session.user as { id?: string; username?: string | null; phone?: string | null; role?: string | null; accessToken?: string | null; }).id = token.id;
-      (session.user as { id?: string; username?: string | null; phone?: string | null; role?: string | null; accessToken?: string | null; }).username = token.username;
-      (session.user as { id?: string; username?: string | null; phone?: string | null; role?: string | null; accessToken?: string | null; }).phone = token.phone;
-      (session.user as { id?: string; username?: string | null; phone?: string | null; role?: string | null; accessToken?: string | null; }).role = token.role ?? null;
-      (session.user as { id?: string; username?: string | null; phone?: string | null; role?: string | null; accessToken?: string | null; }).accessToken = token.accessToken ?? null;
+      (session.user as any).id = token.id;
+      (session.user as any).username = token.username;
+      (session.user as any).phone = token.phone;
+      (session.user as any).role = token.role ?? null;
+      (session.user as any).accessToken = token.accessToken ?? null;
     }
     return session;
   },
