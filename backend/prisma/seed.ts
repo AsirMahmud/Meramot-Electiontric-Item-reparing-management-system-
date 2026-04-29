@@ -9,17 +9,17 @@ import {
 
 const prisma = new PrismaClient();
 
-const areas = [
-  "Dhanmondi",
-  "Gulshan",
-  "Banani",
-  "Mirpur",
-  "Uttara",
-  "Mohammadpur",
-  "New Market",
-  "Farmgate",
-  "Tejgaon",
-  "Bashundhara",
+const areaCoords: { name: string; lat: number; lng: number }[] = [
+  { name: "Dhanmondi",    lat: 23.7461, lng: 90.3742 },
+  { name: "Gulshan",      lat: 23.7925, lng: 90.4078 },
+  { name: "Banani",       lat: 23.7940, lng: 90.4023 },
+  { name: "Mirpur",       lat: 23.8042, lng: 90.3688 },
+  { name: "Uttara",       lat: 23.8759, lng: 90.3795 },
+  { name: "Mohammadpur",  lat: 23.7662, lng: 90.3587 },
+  { name: "New Market",   lat: 23.7327, lng: 90.3854 },
+  { name: "Farmgate",     lat: 23.7565, lng: 90.3903 },
+  { name: "Tejgaon",      lat: 23.7594, lng: 90.3988 },
+  { name: "Bashundhara",  lat: 23.8130, lng: 90.4250 },
 ];
 
 const specialtiesPool = [
@@ -86,6 +86,12 @@ async function main() {
   
   for (let i = 0; i < shopSeedData.length; i++) {
     const { name, slug } = shopSeedData[i];
+    const areaInfo = areaCoords[i % areaCoords.length];
+    // Add slight jitter so shops in the same area aren't at identical coords
+    const jitterLat = (Math.random() - 0.5) * 0.006;
+    const jitterLng = (Math.random() - 0.5) * 0.006;
+    const shopLat = Number((areaInfo.lat + jitterLat).toFixed(6));
+    const shopLng = Number((areaInfo.lng + jitterLng).toFixed(6));
   
     const shopUserEmail = `vendor${i}@meramot.demo`;
     const shopUser = await prisma.user.upsert({
@@ -112,7 +118,9 @@ async function main() {
         shopName: name,
         address: `${10 + i + 1} Main Road`,
         city: "Dhaka",
-        area: randomFrom(areas),
+        area: areaInfo.name,
+        lat: shopLat,
+        lng: shopLng,
         specialties: randomSubset(specialtiesPool, 3),
         courierPickup: true,
         inShopRepair: true,
@@ -126,6 +134,9 @@ async function main() {
       where: { slug },
       update: {
         vendorApplicationId: vendorApp.id,
+        lat: shopLat,
+        lng: shopLng,
+        area: areaInfo.name,
       },
       create: {
         vendorApplicationId: vendorApp.id,
@@ -134,7 +145,9 @@ async function main() {
         description: "Professional electronics repair service.",
         address: `${10 + i + 1} Main Road`,
         city: "Dhaka",
-        area: randomFrom(areas),
+        area: areaInfo.name,
+        lat: shopLat,
+        lng: shopLng,
         ratingAvg: Number((3.5 + Math.random() * 1.5).toFixed(1)),
         reviewCount: Math.floor(Math.random() * 200),
         priceLevel: Math.floor(Math.random() * 3) + 1,
