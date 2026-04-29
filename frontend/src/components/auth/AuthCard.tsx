@@ -123,10 +123,22 @@ export default function AuthCard({ mode }: { mode: Mode }) {
 
   async function redirectByRole(user?: SessionUser) {
     if (!user) {
+      // Clear custom storage if session is missing
+      localStorage.removeItem("meramot.user");
+      localStorage.removeItem("meramot.token");
+      window.dispatchEvent(new Event("meramot-auth-changed"));
+      
       router.push("/");
       router.refresh();
       return;
     }
+
+    // Sync to custom storage so HomePage and other components are aware of the login
+    localStorage.setItem("meramot.user", JSON.stringify(user));
+    if (user.accessToken) {
+      localStorage.setItem("meramot.token", user.accessToken);
+    }
+    window.dispatchEvent(new Event("meramot-auth-changed"));
 
     if (user.accessToken) {
       try {

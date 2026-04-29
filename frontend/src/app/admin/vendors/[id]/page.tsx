@@ -91,7 +91,6 @@ export default function AdminVendorDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...getAuthHeaders(token),
         },
         body: JSON.stringify({
@@ -134,7 +133,6 @@ export default function AdminVendorDetailPage() {
               method: "PATCH",
               credentials: "include",
               headers: {
-                  "Content-Type": "application/json",
                   ...getAuthHeaders(token),
               },
               body: JSON.stringify({ isActive }),

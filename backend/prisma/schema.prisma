@@ -44,6 +44,7 @@ model User {
   disputeNotes               DisputeNote[]
   vendorApplications         VendorApplication[]  @relation("VendorApplicant")
   supportMessages            SupportMessage[]
+  refundsApproved            Refund[]             @relation("RefundApprover")
 }
 
 model VendorApplication {
@@ -63,6 +64,7 @@ model VendorApplication {
   inShopRepair       Boolean                 @default(true)
   spareParts         Boolean                 @default(false)
   notes              String?
+  reviewNotes        String?
   status             VendorApplicationStatus @default(PENDING)
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
@@ -462,6 +464,7 @@ model Payment {
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   disputeCases    DisputeCase[]
   refunds         Refund[]
+  escrowLedgers   EscrowLedger[]
 
   @@index([userId])
   @@index([repairRequestId])
@@ -685,6 +688,8 @@ enum VendorApplicationStatus {
   APPROVED
   REJECTED
   UNDER_REVIEW
+  MORE_INFO_REQUIRED
+  SUSPENDED
 }
 
 enum ShopCategory {
@@ -937,6 +942,7 @@ model DisputeCase {
   assignedAdmin User?          @relation("DisputeAssignee", fields: [assignedAdminId], references: [id])
   notes         DisputeNote[]
   refunds       Refund[]
+  escrowLedgers EscrowLedger[]
 }
 
 model DisputeNote {
@@ -956,13 +962,29 @@ model Refund {
   id            String   @id @default(cuid())
   paymentId     String
   disputeCaseId String?
+  approvedById  String?
   amount        Decimal  @db.Decimal(10, 2)
   status        String   @default("PENDING")
   reason        String?
+  processedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   payment     Payment      @relation(fields: [paymentId], references: [id])
+  disputeCase DisputeCase? @relation(fields: [disputeCaseId], references: [id])
+  approvedBy  User?        @relation("RefundApprover", fields: [approvedById], references: [id])
+}
+
+model EscrowLedger {
+  id              String   @id @default(cuid())
+  paymentId       String?
+  disputeCaseId   String?
+  amount          Float
+  action          String
+  note            String?
+  createdAt       DateTime @default(now())
+
+  payment     Payment?     @relation(fields: [paymentId], references: [id])
   disputeCase DisputeCase? @relation(fields: [disputeCaseId], references: [id])
 }
 

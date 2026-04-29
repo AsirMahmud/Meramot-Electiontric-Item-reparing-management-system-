@@ -10,6 +10,7 @@ import {
   listPaymentsForAdmin,
   querySslCommerzRefund,
   querySslCommerzTransaction,
+  updatePayment,
 } from "../controllers/payment-controller.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
@@ -49,5 +50,6 @@ router.get(
 );
 
 router.get("/:paymentId", requireAuth, getMyPaymentById);
+router.patch("/:paymentId", requireAuth, updatePayment);
 
 export default router;

@@ -36,8 +36,13 @@ export default function ShopCard({
           )}
         </div>
 
-        <div className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-sm font-semibold text-[var(--foreground)]">
-          {formatPriceLevel(shop.priceLevel)}
+        <div className="text-right">
+          <div className="text-lg font-bold text-[var(--accent-dark)]">
+            {shop.offerSummary || `৳${(700 + (shop.priceLevel || 1) * 250).toLocaleString("en-BD")}`}
+          </div>
+          <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">
+            {formatPriceLevel(shop.priceLevel)}
+          </div>
         </div>
       </div>
 

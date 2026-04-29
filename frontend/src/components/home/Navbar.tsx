@@ -45,6 +45,15 @@ export default function Navbar({
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
+
+    // Clear custom auth storage used by HomePage and other components
+    localStorage.removeItem("meramot.user");
+    localStorage.removeItem("meramot.token");
+    
+    // Notify HomePage and others to update their state
+    window.dispatchEvent(new Event("meramot-auth-changed"));
+
+    // Standard next-auth signout
     await signOut({ callbackUrl: "/" });
   };
 

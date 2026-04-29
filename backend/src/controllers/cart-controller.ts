@@ -4,6 +4,7 @@ import prisma from "../models/prisma.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 
 function normalizePaymentMethod(method?: string): PaymentMethod {
+  if (method === "SSLCOMMERZ") return PaymentMethod.SSLCOMMERZ;
   if (method === "BKASH") return PaymentMethod.BKASH;
   return PaymentMethod.CASH;
 }
@@ -311,7 +312,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
     } = req.body as {
       scheduleType?: "NOW" | "LATER";
       scheduledAt?: string;
-      paymentMethod?: "CASH" | "BKASH";
+      paymentMethod?: "CASH" | "SSLCOMMERZ" | "BKASH";
       addressMode?: "PROFILE" | "MANUAL" | "MAP";
       address?: string;
       city?: string;

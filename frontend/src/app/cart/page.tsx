@@ -24,7 +24,9 @@ export default function CartPage() {
 
   const [scheduleType, setScheduleType] = useState<"NOW" | "LATER">("NOW");
   const [scheduledAt, setScheduledAt] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "BKASH">("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "SSLCOMMERZ">(
+    "CASH"
+  );
   const [addressMode, setAddressMode] = useState<"PROFILE" | "MANUAL" | "MAP">(
     "MANUAL"
   );
@@ -272,18 +274,18 @@ export default function CartPage() {
 
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("BKASH")}
+                    onClick={() => setPaymentMethod("SSLCOMMERZ")}
                     className={`rounded-[1.5rem] border px-4 py-4 text-left ${
-                      paymentMethod === "BKASH"
+                      paymentMethod === "SSLCOMMERZ"
                         ? "border-[var(--accent-dark)] bg-[var(--mint-50)]"
                         : "border-[var(--border)] bg-[var(--card)]"
                     }`}
                   >
                     <div className="font-semibold text-[var(--foreground)]">
-                      bKash
+                      Pay Online
                     </div>
                     <div className="mt-1 text-sm text-[var(--muted-foreground)]">
-                      Save as pending payment method for this order.
+                      Pay securely with SSLCommerz.
                     </div>
                   </button>
                 </div>
@@ -397,7 +399,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Payment</span>
-                    <span>{paymentMethod === "BKASH" ? "bKash" : "Cash"}</span>
+                    <span>{paymentMethod === "SSLCOMMERZ" ? "Online" : "Cash"}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-[var(--border)] pt-3 text-base font-bold text-[var(--foreground)]">
                     <span>Subtotal</span>
@@ -415,7 +417,7 @@ export default function CartPage() {
                       setBusy(true);
                       setMessage("");
 
-                      await checkoutCart(
+                      const result = (await checkoutCart(
                         primaryCart.id,
                         {
                           scheduleType,
@@ -432,7 +434,24 @@ export default function CartPage() {
                           problemNote,
                         },
                         token
-                      );
+                      )) as any;
+
+                      if (paymentMethod === "SSLCOMMERZ") {
+                        const payment = result.order?.payment;
+                        if (payment) {
+                          const sslResponse = await initSslCommerzPayment({
+                            amount: payment.amount,
+                            currency: payment.currency || "BDT",
+                            productName: `Order #${result.order?.request?.id?.slice(-6) || "Service"}`,
+                            repairRequestId: result.order?.request?.id,
+                          }, token);
+
+                          if (sslResponse?.data?.gatewayUrl) {
+                            window.location.href = sslResponse.data.gatewayUrl;
+                            return;
+                          }
+                        }
+                      }
 
                       router.push("/orders");
                     } catch (error) {

@@ -127,6 +127,10 @@ async function settlePaymentWithCommission(
     select: { id: true },
   });
 
+  if (existingPayout) {
+    throw new HttpError(400, "This payment has already been settled");
+  }
+
   const approvedRefunds = await tx.ledgerEntry.aggregate({
     where: {
       paymentId,
@@ -178,19 +182,12 @@ async function settlePaymentWithCommission(
     });
   }
 
-  await tx.payment.update({
-    where: { id: paymentId },
-    data: {
-      escrowStatus: "RELEASED",
-    },
-  });
-
-  await tx.payment.update({
-    where: { id: paymentId },
-    data: {
-      escrowStatus: "RELEASED",
-    },
-  });
+  // Use raw SQL to bypass stale Prisma Client validation for escrowStatus
+  await tx.$executeRawUnsafe(
+    `UPDATE "Payment" SET "escrowStatus" = $1 WHERE id = $2`,
+    "RELEASED",
+    paymentId
+  );
 
   return {
     paymentId,

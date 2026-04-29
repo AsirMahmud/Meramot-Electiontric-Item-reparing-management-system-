@@ -199,7 +199,12 @@ export async function getFeaturedShops(_req: Request, res: Response) {
       },
     });
 
-    return res.json(shops);
+    const enriched = shops.map((shop: any) => ({
+      ...shop,
+      offerSummary: `৳${(700 + (shop.priceLevel || 1) * 250 + Math.max(0, 5 - Math.round(shop.ratingAvg || 0)) * 80).toLocaleString("en-BD")}`,
+    }));
+
+    return res.json(enriched);
   } catch (error) {
     console.error("getFeaturedShops error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -243,7 +248,12 @@ export async function getShopBySlug(req: Request, res: Response) {
       return res.status(404).json({ message: "Shop not found" });
     }
 
-    return res.json(shop);
+    const enriched = {
+      ...shop,
+      offerSummary: `৳${(700 + (shop.priceLevel || 1) * 250 + Math.max(0, 5 - Math.round(shop.ratingAvg || 0)) * 80).toLocaleString("en-BD")}`,
+    };
+
+    return res.json(enriched);
   } catch (error) {
     console.error("getShopBySlug error:", error);
     return res.status(500).json({ message: "Server error" });

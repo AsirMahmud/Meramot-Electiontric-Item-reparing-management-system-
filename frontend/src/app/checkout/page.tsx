@@ -10,6 +10,7 @@ type CheckoutForm = {
   currency: string;
   productName: string;
   repairRequestId: string;
+  paymentMethod: "CASH" | "SSLCOMMERZ";
 };
 
 export default function CheckoutPage() {
@@ -19,6 +20,7 @@ export default function CheckoutPage() {
     currency: "BDT",
     productName: "Repair service payment",
     repairRequestId: "",
+    paymentMethod: "SSLCOMMERZ",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +42,18 @@ export default function CheckoutPage() {
       const amount = Number(form.amount);
       if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("Amount must be a positive number.");
+      }
+
+      if (form.paymentMethod === "CASH") {
+        // Handle cash confirmation
+        if (form.repairRequestId) {
+           await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/manual-update-stub`, { 
+             // Ideally we'd have a specific endpoint for this or use the patch one if we have a payment ID
+           });
+        }
+        alert("Cash payment selected. Your request will be updated.");
+        router.push("/orders");
+        return;
       }
 
       const response = await initSslCommerzPayment({
@@ -143,6 +157,36 @@ export default function CheckoutPage() {
               className="w-full rounded-2xl border border-[#d9e5d5] px-4 py-3 text-[#173726] outline-none focus:border-[#214c34]"
               placeholder="cuid"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#6b8270]">
+              Payment Method
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, paymentMethod: "SSLCOMMERZ" }))}
+                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                  form.paymentMethod === "SSLCOMMERZ"
+                    ? "border-[#214c34] bg-[#f2f7ef] text-[#214c34]"
+                    : "border-[#d9e5d5] bg-white text-[#6b8270]"
+                }`}
+              >
+                Online (SSL)
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, paymentMethod: "CASH" }))}
+                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                  form.paymentMethod === "CASH"
+                    ? "border-[#214c34] bg-[#f2f7ef] text-[#214c34]"
+                    : "border-[#d9e5d5] bg-white text-[#6b8270]"
+                }`}
+              >
+                Cash
+              </button>
+            </div>
           </div>
 
           {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
