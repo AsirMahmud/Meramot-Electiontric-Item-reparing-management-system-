@@ -2,26 +2,29 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
+import { isAdminEmail } from "../config/admin.js";
 function signToken(user) {
     return jwt.sign({
         sub: user.id,
         username: user.username,
         email: user.email,
+        role: user.role ?? undefined,
     }, env.jwtSecret, { expiresIn: "7d" });
 }
 export async function signup(req, res) {
     try {
-        const { name, username, email, phone, password } = req.body;
+        const { name, username, email, phone, password, role } = req.body;
         if (!name || !username || !email || !phone || !password) {
             return res.status(400).json({
                 message: "name, username, email, phone, and password are required",
             });
         }
-        const cleanUsername = username.trim();
-        const cleanEmail = email.trim().toLowerCase();
+        if (role && !["CUSTOMER", "VENDOR", "DELIVERY"].includes(role)) {
+            return res.status(400).json({ message: "Invalid role requested" });
+        }
         const existing = await prisma.user.findFirst({
             where: {
-                OR: [{ username: cleanUsername }, { email: cleanEmail }],
+                OR: [{ username: username.trim() }, { email: email.trim().toLowerCase() }],
             },
             select: { id: true },
         });
@@ -31,13 +34,24 @@ export async function signup(req, res) {
             });
         }
         const passwordHash = await bcrypt.hash(password, 10);
+        const normalizedEmail = email.trim().toLowerCase();
+        let assignedRole = "CUSTOMER";
+        if (isAdminEmail(normalizedEmail)) {
+            assignedRole = "ADMIN";
+        }
+        else if (role === "DELIVERY") {
+            assignedRole = "DELIVERY";
+        }
+        // If role is VENDOR, we still assign CUSTOMER to strictly preserve the existing vendor application/onboarding logic
         const user = await prisma.user.create({
             data: {
                 name: name.trim(),
-                username: cleanUsername,
-                email: cleanEmail,
+                username: username.trim(),
+                email: normalizedEmail,
                 phone: phone.trim(),
                 passwordHash,
+                role: assignedRole,
+                isEmailVerified: true,
             },
             select: {
                 id: true,
@@ -45,6 +59,7 @@ export async function signup(req, res) {
                 username: true,
                 email: true,
                 phone: true,
+                role: true,
             },
         });
         const token = signToken(user);
@@ -67,10 +82,10 @@ export async function login(req, res) {
                 message: "identifier and password are required",
             });
         }
-        const cleanIdentifier = identifier.trim();
+        const normalizedIdentifier = identifier.trim().toLowerCase();
         const user = await prisma.user.findFirst({
             where: {
-                OR: [{ email: cleanIdentifier.toLowerCase() }, { username: cleanIdentifier }],
+                OR: [{ email: normalizedIdentifier }, { username: identifier.trim() }],
             },
         });
         if (!user) {
@@ -113,6 +128,68 @@ export async function checkUsername(req, res) {
     }
     catch (error) {
         console.error("checkUsername error:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
+}
+export async function googleExchange(req, res) {
+    try {
+        const { email, name } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: "email is required" });
+        }
+        const normalizedEmail = email.trim().toLowerCase();
+        let user = await prisma.user.findFirst({
+            where: { email: normalizedEmail },
+        });
+        if (!user) {
+            const baseUsername = normalizedEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "user";
+            let username = baseUsername;
+            let counter = 1;
+            while (await prisma.user.findFirst({
+                where: { username },
+                select: { id: true },
+            })) {
+                username = `${baseUsername}${counter++}`;
+            }
+            user = await prisma.user.create({
+                data: {
+                    name: name?.trim() || baseUsername,
+                    username,
+                    email: normalizedEmail,
+                    phone: null,
+                    passwordHash: await bcrypt.hash(Math.random().toString(36), 10),
+                    role: isAdminEmail(normalizedEmail) ? "ADMIN" : "CUSTOMER",
+                    isEmailVerified: true,
+                },
+            });
+        }
+        else {
+            const shouldBeAdmin = isAdminEmail(normalizedEmail);
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    isEmailVerified: true,
+                    name: user.name || name?.trim() || user.name,
+                    role: shouldBeAdmin ? "ADMIN" : user.role,
+                },
+            });
+        }
+        const token = signToken(user);
+        return res.json({
+            message: "Google exchange successful",
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+            },
+        });
+    }
+    catch (error) {
+        console.error("googleExchange error:", error);
         return res.status(500).json({ message: "Server error" });
     }
 }

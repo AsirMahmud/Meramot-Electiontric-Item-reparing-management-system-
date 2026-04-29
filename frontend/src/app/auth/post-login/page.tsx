@@ -99,6 +99,12 @@ export default function PostLoginPage() {
         }
       }
 
+      if (role === "DELIVERY") {
+        router.replace("/delivery");
+        router.refresh();
+        return;
+      }
+
       router.replace("/");
       router.refresh();
     }

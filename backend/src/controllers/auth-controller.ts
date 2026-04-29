@@ -24,18 +24,23 @@ function signToken(user: {
 
 export async function signup(req: Request, res: Response) {
   try {
-    const { name, username, email, phone, password } = req.body as {
+    const { name, username, email, phone, password, role } = req.body as {
       name?: string;
       username?: string;
       email?: string;
       phone?: string;
       password?: string;
+      role?: string;
     };
 
     if (!name || !username || !email || !phone || !password) {
       return res.status(400).json({
         message: "name, username, email, phone, and password are required",
       });
+    }
+
+    if (role && !["CUSTOMER", "VENDOR", "DELIVERY"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role requested" });
     }
 
     const existing = await prisma.user.findFirst({
@@ -54,6 +59,14 @@ export async function signup(req: Request, res: Response) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const normalizedEmail = email.trim().toLowerCase();
+    
+    let assignedRole: "CUSTOMER" | "ADMIN" | "DELIVERY" = "CUSTOMER";
+    if (isAdminEmail(normalizedEmail)) {
+      assignedRole = "ADMIN";
+    } else if (role === "DELIVERY") {
+      assignedRole = "DELIVERY";
+    }
+    // If role is VENDOR, we still assign CUSTOMER to strictly preserve the existing vendor application/onboarding logic
 
     const user = await prisma.user.create({
       data: {
@@ -62,7 +75,7 @@ export async function signup(req: Request, res: Response) {
         email: normalizedEmail,
         phone: phone.trim(),
         passwordHash,
-        role: isAdminEmail(normalizedEmail) ? "ADMIN" : "CUSTOMER",
+        role: assignedRole,
         isEmailVerified: true,
       },
       select: {

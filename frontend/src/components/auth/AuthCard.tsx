@@ -104,6 +104,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     phone: "",
     password: "",
     confirm: "",
+    role: "CUSTOMER" as "CUSTOMER" | "VENDOR" | "DELIVERY",
   });
 
   const [error, setError] = useState("");
@@ -226,6 +227,12 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       }
     }
 
+    if (user.role === "DELIVERY") {
+      router.replace("/delivery");
+      router.refresh();
+      return;
+    }
+
     router.replace("/");
     router.refresh();
   }
@@ -286,6 +293,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           email: form.email.trim(),
           phone: form.phone.trim(),
           password: form.password,
+          role: form.role,
         });
 
         const user = await authenticateWithCredentials(
@@ -293,6 +301,10 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           form.password,
           "Signup worked, but automatic login failed."
         );
+        if (form.role === "VENDOR") {
+          router.replace("/vendor/apply");
+          return;
+        }
         await redirectByRole(user);
         return;
       }
@@ -378,6 +390,43 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         <form className="space-y-4" onSubmit={handleSubmit}>
           {isSignup ? (
             <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-accent-dark">
+                  I want to...
+                </label>
+                <div className="flex gap-3">
+                  {(["CUSTOMER", "VENDOR", "DELIVERY"] as const).map((r) => (
+                    <label
+                      key={r}
+                      className={`flex-1 cursor-pointer rounded-2xl border px-3 py-2 text-center text-sm transition ${
+                        form.role === r
+                          ? "border-accent bg-accent/10 font-semibold text-accent-dark"
+                          : "border-border bg-white text-muted-foreground hover:bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r}
+                        checked={form.role === r}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            role: e.target.value as any,
+                          }))
+                        }
+                        className="sr-only"
+                      />
+                      {r === "CUSTOMER"
+                        ? "Hire Repair"
+                        : r === "VENDOR"
+                        ? "Be a Vendor"
+                        : "Deliver"}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1 block text-sm font-medium text-accent-dark">
                   Full name
@@ -532,7 +581,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
             {loading
               ? isSignup
                 ? "Creating account..."
-                : "Logging in..."
+                : "Signing in..."
               : isSignup
               ? "Create account"
               : "Sign in"}

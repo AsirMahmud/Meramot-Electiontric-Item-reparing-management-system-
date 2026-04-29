@@ -4,9 +4,10 @@ export declare const env: {
     databaseUrl: string;
     frontendOrigin: string;
     jwtSecret: string;
-    /** Separate signing key for delivery personnel tokens (must not match jwtSecret in production). */
+    enableEmailNotifications: boolean;
+    resendApiKey: string;
+    emailFrom: string;
     jwtSecretDelivery: string;
-    /** Separate signing key for delivery operations admin (must not match other secrets in production). */
     jwtSecretDeliveryAdmin: string;
     smtpHost: string | undefined;
     smtpPort: number | undefined;
@@ -14,5 +15,14 @@ export declare const env: {
     smtpUser: string | undefined;
     smtpPass: string | undefined;
     smtpFrom: string | undefined;
+    enableAiChat: boolean;
+    groqApiKey: string;
+    pusherAppId: string;
+    pusherKey: string;
+    pusherSecret: string;
+    pusherCluster: string;
+    sslCommerzStoreId: string;
+    sslCommerzStorePassword: string;
+    sslCommerzLive: boolean;
 };
 //# sourceMappingURL=env.d.ts.map

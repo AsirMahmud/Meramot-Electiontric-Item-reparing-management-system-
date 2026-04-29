@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
 import { env } from "../config/env.js";
 function hasSmtpConfig() {
     return Boolean(env.smtpHost && env.smtpPort && env.smtpUser && env.smtpPass && env.smtpFrom);

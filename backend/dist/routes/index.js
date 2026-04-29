@@ -1,11 +1,16 @@
 import { Router } from "express";
-import authRoutes from "./auth-routes.js";
-import deliveryAdminAuthRoutes from "./delivery-admin-auth-routes.js";
-import deliveryAdminRoutes from "./delivery-admin-routes.js";
-import deliveryAuthRoutes from "./delivery-auth-routes.js";
-import deliveryRoutes from "./delivery-routes.js";
-import shopRoutes from "./shop-routes.js";
 import { APP_DISPLAY_NAME, APP_SLUG } from "../config/app.js";
+import authRoutes from "./auth-routes.js";
+import notificationRoutes from "./notification-routes.js";
+import profileRoutes from "./profile-routes.js";
+import requestRoutes from "./request-routes.js";
+import shopRoutes from "./shop-routes.js";
+import vendorApplicationRoutes from "./vendor-application-routes.js";
+import vendorRequestRoutes from "./vendor-request-routes.js";
+import vendorStatusRoutes from "./vendor-status-routes.js";
+import uploadRoutes from "./upload-routes.js";
+import paymentRoutes from "./payment-routes.js";
+import invoiceRoutes from "./invoice-routes.js";
 const router = Router();
 router.get("/health", (_req, res) => {
     res.json({
@@ -15,10 +20,15 @@ router.get("/health", (_req, res) => {
     });
 });
 router.use("/auth", authRoutes);
-router.use("/delivery/auth", deliveryAuthRoutes);
-router.use("/delivery", deliveryRoutes);
-router.use("/delivery-admin/auth", deliveryAdminAuthRoutes);
-router.use("/delivery-admin", deliveryAdminRoutes);
 router.use("/shops", shopRoutes);
+router.use("/profile", profileRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/requests", requestRoutes);
+router.use("/vendor/applications", vendorApplicationRoutes);
+router.use("/vendor/application-status", vendorStatusRoutes);
+router.use("/vendor/requests", vendorRequestRoutes);
+router.use("/uploads", uploadRoutes);
+router.use("/payments", paymentRoutes);
+router.use("/invoices", invoiceRoutes);
 export default router;
 //# sourceMappingURL=index.js.map
