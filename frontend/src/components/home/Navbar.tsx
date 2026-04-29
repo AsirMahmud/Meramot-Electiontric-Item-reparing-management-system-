@@ -109,7 +109,7 @@ export function NavbarInner({
                   href="/login"
                   className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
                 >
-                  Sign in
+                  Sign in/Sign up
                 </Link>
               ) : (
                 <div className="relative">
@@ -146,7 +146,7 @@ export function NavbarInner({
                         className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Make request
+                        Make Repair Request
                       </Link>
 
                       <Link
