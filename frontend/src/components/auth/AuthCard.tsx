@@ -394,11 +394,11 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       </div>
       <div className="rounded-[2rem] border border-white/60 bg-white/90 px-8 py-6 shadow-2xl backdrop-blur">
         <div className="mb-4 text-center">
-          <h1 className="text-3xl font-bold leading-tight text-accent-dark">
+          <h1 className="text-3xl font-bold leading-tight text-[#214c34]">
             {isSignup ? "Create your account" : "Welcome back"}
           </h1>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-[#5e6d64]">
             {isSignup
               ? "Sign up to request repairs, compare shops, and save viewed items."
               : "Sign in to continue to your dashboard."}
@@ -408,7 +408,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          className="mb-4 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-secondary"
+          className="mb-4 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-white px-4 py-3 text-sm font-semibold text-[#203126] transition hover:bg-secondary"
         >
           <span className="text-base">G</span>
           Continue with Google
@@ -416,7 +416,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
 
         <div className="mb-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <span className="text-xs uppercase tracking-[0.2em] text-[#5e6d64]">
             or
           </span>
           <div className="h-px flex-1 bg-border" />
@@ -426,7 +426,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           {isSignup ? (
             <>
               <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
+                <label className="mb-1 block text-sm font-medium text-[#214c34]">
                   Full name
                 </label>
                 <input
@@ -444,7 +444,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
+                <label className="mb-1 block text-sm font-medium text-[#214c34]">
                   Username
                 </label>
                 <input
@@ -460,7 +460,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   placeholder="Choose a username"
                 />
                 {form.username.trim() ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-xs text-[#5e6d64]">
                     {usernameStatus === "checking" && "Checking username..."}
                     {usernameStatus === "available" && "Username is available."}
                     {usernameStatus === "taken" && "Username is already taken."}
@@ -476,7 +476,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   onChange={(e) => setIsDelivery(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300 text-[#4C9E36] focus:ring-[#4C9E36]"
                 />
-                <label htmlFor="deliveryCheckbox" className="text-sm font-semibold text-accent-dark">
+                <label htmlFor="deliveryCheckbox" className="text-sm font-semibold text-[#214c34]">
                   Register as a Delivery Partner
                 </label>
               </div>
@@ -484,7 +484,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
               {isDelivery ? (
                 <div className="space-y-4 rounded-xl border border-border bg-gray-50 p-4">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-accent-dark">Vehicle (optional)</label>
+                    <label className="mb-1 block text-sm font-medium text-[#214c34]">Vehicle (optional)</label>
                     <select
                       value={vehicleType}
                       onChange={(e) => setVehicleType(e.target.value)}
@@ -499,7 +499,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-accent-dark">NID Document Upload</label>
+                    <label className="mb-1 block text-sm font-medium text-[#214c34]">NID Document Upload</label>
                     {!nidDocumentUrl ? (
                       <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
                         <UploadDropzone
@@ -529,7 +529,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-accent-dark">Educational Document Upload</label>
+                    <label className="mb-1 block text-sm font-medium text-[#214c34]">Educational Document Upload</label>
                     {!educationDocumentUrl ? (
                       <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
                         <UploadDropzone
@@ -559,7 +559,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-accent-dark">CV Upload (PDF)</label>
+                    <label className="mb-1 block text-sm font-medium text-[#214c34]">CV Upload (PDF)</label>
                     {!cvDocumentUrl ? (
                       <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
                         <UploadDropzone
@@ -593,7 +593,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           ) : null}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-accent-dark">
+            <label className="mb-1 block text-sm font-medium text-[#214c34]">
               {isSignup ? "Email" : "Username or Email"}
             </label>
             <input
@@ -612,7 +612,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
 
           {isSignup ? (
             <div>
-              <label className="mb-1 block text-sm font-medium text-accent-dark">
+              <label className="mb-1 block text-sm font-medium text-[#214c34]">
                 Phone number
               </label>
               <input
@@ -633,7 +633,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           {(!isSignup || !isDelivery) ? (
             <>
               <div>
-                <label className="mb-1 block text-sm font-medium text-accent-dark">
+                <label className="mb-1 block text-sm font-medium text-[#214c34]">
                   Password
                 </label>
                 <PasswordInput
@@ -655,7 +655,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
               {isSignup ? (
                 <>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-accent-dark">
+                    <label className="mb-1 block text-sm font-medium text-[#214c34]">
                       Confirm password
                     </label>
                     <PasswordInput
@@ -723,7 +723,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           Register as a vendor
         </Link>
       </div>
-        <p className="mt-5 text-center text-sm text-muted-foreground">
+        <p className="mt-5 text-center text-sm text-[#5e6d64]">
           {isSignup ? "Already have an account?" : "Don’t have an account?"}{" "}
           <Link
             href={isSignup ? "/login" : "/signup"}
