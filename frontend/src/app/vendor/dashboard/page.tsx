@@ -1177,7 +1177,6 @@ export default function VendorDashboardPage() {
               </div>
             ) : null}
           </div>
-          </div>
         </section>
       </div>
       {/* ── Bid Confirmation Modal ─────────────────────────────── */}
@@ -1225,9 +1224,6 @@ export default function VendorDashboardPage() {
               </button>
             </div>
           </div>
-        </div>
-      ) : null}
-
         </div>
       ) : null}
     </main>
