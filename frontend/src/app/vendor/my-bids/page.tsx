@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import { submitVendorBid } from "@/lib/api";
 
 /* ─── types ─────────────────────────────────────────────────────────── */
 
@@ -36,6 +37,14 @@ type BidRequest = {
   totalBids: number;
   myRank: number | null;
   bids: BidEntry[];
+};
+
+type PartRow = { name: string; cost: string };
+type EditDraft = {
+  parts: PartRow[];
+  laborCost: string;
+  estimatedDays: string;
+  notes: string;
 };
 
 /* ─── helpers ───────────────────────────────────────────────────────── */
@@ -87,6 +96,11 @@ export default function VendorMyBidsPage() {
   const [requests, setRequests] = useState<BidRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  
+  const [flash, setFlash] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [editingRequestId, setEditingRequestId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadBids = useCallback(async () => {
     if (!token) return;
@@ -120,6 +134,58 @@ export default function VendorMyBidsPage() {
       else next.add(id);
       return next;
     });
+  }
+
+  function openEditModal(reqId: string, myBid: BidEntry) {
+    setEditingRequestId(reqId);
+    setEditDraft({
+      parts: [{ name: "Parts", cost: myBid.partsCost > 0 ? String(myBid.partsCost) : "" }],
+      laborCost: myBid.laborCost > 0 ? String(myBid.laborCost) : "",
+      estimatedDays: myBid.estimatedDays ? String(myBid.estimatedDays) : "",
+      notes: myBid.notes || "",
+    });
+  }
+
+  async function submitEdit() {
+    if (!editingRequestId || !editDraft || !token) return;
+    
+    const partsCost = editDraft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
+    const laborCost = Number(editDraft.laborCost);
+    
+    if (partsCost < 0 || editDraft.parts.some((p) => Number(p.cost) < 0)) {
+      setFlash({ type: "error", text: "Part costs cannot be negative." });
+      return;
+    }
+
+    if (!Number.isFinite(laborCost) || laborCost < 0) {
+      setFlash({ type: "error", text: "Enter a valid labor cost." });
+      return;
+    }
+
+    const estimatedDays = editDraft.estimatedDays.trim() ? Number(editDraft.estimatedDays) : undefined;
+    
+    if (editDraft.estimatedDays.trim() && (!Number.isInteger(estimatedDays) || Number(estimatedDays) < 0)) {
+      setFlash({ type: "error", text: "Estimated days must be a non-negative whole number." });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await submitVendorBid(token, editingRequestId, {
+        partsCost,
+        laborCost,
+        estimatedDays,
+        notes: editDraft.notes.trim() || undefined,
+      });
+      setFlash({ type: "success", text: "Offer updated successfully." });
+      setEditingRequestId(null);
+      setEditDraft(null);
+      await loadBids();
+    } catch (err) {
+      setFlash({ type: "error", text: err instanceof Error ? err.message : "Failed to update offer." });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (status === "loading" || loading) {
@@ -166,6 +232,13 @@ export default function VendorMyBidsPage() {
           </button>
         </div>
 
+        {flash ? (
+          <div className={`mt-4 rounded-2xl p-4 text-sm ${flash.type === "success" ? "border border-green-200 bg-green-50 text-green-800" : "border border-red-200 bg-red-50 text-red-800"}`}>
+            {flash.text}
+            <button onClick={() => setFlash(null)} className="float-right font-bold">×</button>
+          </div>
+        ) : null}
+
         {/* No bids */}
         {!requests.length ? (
           <div className="mt-8 rounded-3xl bg-white p-10 text-center shadow-sm">
@@ -188,10 +261,9 @@ export default function VendorMyBidsPage() {
             return (
               <article key={req.id} className="rounded-3xl bg-white shadow-sm overflow-hidden">
                 {/* Collapsed tile — always visible */}
-                <button
-                  type="button"
+                <div
                   onClick={() => toggleExpand(req.id)}
-                  className="w-full px-6 py-5 text-left transition-colors hover:bg-[#f6faf4]"
+                  className="w-full px-6 py-5 text-left transition-colors hover:bg-[#f6faf4] cursor-pointer"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -211,6 +283,21 @@ export default function VendorMyBidsPage() {
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
+                      {/* Edit offer button on tile */}
+                      {req.status === "BIDDING" && req.bids.some(b => b.isOwn) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const myBid = req.bids.find(b => b.isOwn);
+                            if (myBid) openEditModal(req.id, myBid);
+                          }}
+                          className="hidden sm:inline-flex items-center rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#214c34] hover:bg-[#f6faf4] transition-colors shadow-sm"
+                        >
+                          Edit offer
+                        </button>
+                      )}
+
                       {/* Total bids badge */}
                       <div className="text-center">
                         <p className="text-2xl font-bold text-[#173726]">{req.totalBids}</p>
@@ -229,7 +316,7 @@ export default function VendorMyBidsPage() {
                       </span>
                     </div>
                   </div>
-                </button>
+                </div>
 
                 {/* Expanded — all bids */}
                 {isOpen ? (
@@ -259,9 +346,20 @@ export default function VendorMyBidsPage() {
                               <p className="font-semibold text-[#173726] truncate">
                                 {bid.shopName}
                                 {bid.isOwn ? (
-                                  <span className="ml-2 inline-block rounded-full bg-[#214c34] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                    You
-                                  </span>
+                                  <>
+                                    <span className="ml-2 inline-block rounded-full bg-[#214c34] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                                      You
+                                    </span>
+                                    {req.status === "BIDDING" && (
+                                      <button 
+                                        type="button" 
+                                        onClick={() => openEditModal(req.id, bid)}
+                                        className="ml-3 inline-flex items-center rounded-full border border-[#cfe0c6] bg-white px-3 py-1 text-xs font-semibold text-[#214c34] hover:bg-[#f6faf4] transition-colors shadow-sm"
+                                      >
+                                        Edit offer
+                                      </button>
+                                    )}
+                                  </>
                                 ) : null}
                               </p>
                             </div>
@@ -304,6 +402,110 @@ export default function VendorMyBidsPage() {
           })}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingRequestId && editDraft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[2rem] bg-white p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-[#173726]">Edit your offer</h2>
+            <p className="mt-2 text-sm text-[#5b7262]">Update your parts, labor, and ETA for this request.</p>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-[#173726]">Parts & Components</p>
+                <div className="mt-2 space-y-2">
+                  {editDraft.parts.map((part, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const p = [...editDraft.parts];
+                          p.splice(idx + 1, 0, { name: "", cost: "" });
+                          setEditDraft({ ...editDraft, parts: p });
+                        }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#214c34] text-lg text-white hover:bg-[#173726]"
+                      >+</button>
+                      <input
+                        type="text" value={part.name}
+                        onChange={(e) => {
+                          const p = [...editDraft.parts]; p[idx].name = e.target.value;
+                          setEditDraft({ ...editDraft, parts: p });
+                        }}
+                        className="flex-1 rounded-2xl border border-[#cfe0c6] px-4 py-2 text-sm"
+                        placeholder="Part name"
+                      />
+                      <input
+                        type="number" value={part.cost}
+                        onChange={(e) => {
+                          const p = [...editDraft.parts]; p[idx].cost = e.target.value;
+                          setEditDraft({ ...editDraft, parts: p });
+                        }}
+                        className="w-24 rounded-2xl border border-[#cfe0c6] px-4 py-2 text-sm"
+                        placeholder="Cost"
+                      />
+                      {editDraft.parts.length > 1 ? (
+                        <button
+                          onClick={() => {
+                            const p = editDraft.parts.filter((_, i) => i !== idx);
+                            setEditDraft({ ...editDraft, parts: p });
+                          }}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#5b7262] hover:bg-red-50 hover:text-red-500"
+                        >×</button>
+                      ) : <div className="w-8 shrink-0" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-[#173726]">Labor Cost</p>
+                <input
+                  type="number" value={editDraft.laborCost}
+                  onChange={(e) => setEditDraft({ ...editDraft, laborCost: e.target.value })}
+                  className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm"
+                  placeholder="Labor charges"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm font-semibold text-[#173726]">Estimated Days</p>
+                  <input
+                    type="number" value={editDraft.estimatedDays}
+                    onChange={(e) => setEditDraft({ ...editDraft, estimatedDays: e.target.value })}
+                    className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm"
+                    placeholder="e.g. 2"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#173726]">Notes</p>
+                  <input
+                    type="text" value={editDraft.notes}
+                    onChange={(e) => setEditDraft({ ...editDraft, notes: e.target.value })}
+                    className="mt-2 w-full rounded-2xl border border-[#cfe0c6] px-4 py-2.5 text-sm"
+                    placeholder="Any extra info"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingRequestId(null)}
+                className="rounded-full px-6 py-2.5 text-sm font-semibold text-[#5b7262] hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void submitEdit()}
+                disabled={isSubmitting}
+                className="rounded-full bg-[#214c34] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#173726] disabled:opacity-50"
+              >
+                {isSubmitting ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
