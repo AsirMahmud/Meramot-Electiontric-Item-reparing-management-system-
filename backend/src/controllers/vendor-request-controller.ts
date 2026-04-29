@@ -204,8 +204,14 @@ async function getVendorContext(userId: string) {
     throw new HttpError(403, "Your vendor application is not approved yet");
   }
 
+  // Look up by vendorApplicationId (direct FK) first, fall back to email
   const shop = await prisma.shop.findFirst({
-    where: { email: application.businessEmail },
+    where: {
+      OR: [
+        { vendorApplicationId: application.id },
+        ...(application.businessEmail ? [{ email: application.businessEmail }] : []),
+      ],
+    },
     select: {
       id: true,
       name: true,
