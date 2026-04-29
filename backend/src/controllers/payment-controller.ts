@@ -374,6 +374,19 @@ async function markPaymentSuccessful(
         description: `Payment marked as paid via SSLCommerz ${source} callback`,
       },
     });
+
+    // Create EscrowLedger entry to track the escrow hold
+    await tx.escrowLedger.create({
+      data: {
+        paymentId: payment.id,
+        repairRequestId: payment.repairRequestId,
+        customerUserId: payment.userId,
+        amount: payment.amount,
+        grossAmount: payment.amount,
+        action: "PAYMENT_HELD",
+        note: `Payment held in escrow via SSLCommerz ${source} callback`,
+      },
+    });
   });
 
   // Fetch the full payment with user details to send the email
