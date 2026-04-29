@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
-import { useSession } from "next-auth/react";
 
 type Message = {
   id: string;
@@ -48,9 +47,6 @@ export default function AdminTicketDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
 
-  const { data: session } = useSession();
-  const token = (session?.user as any)?.accessToken;
-
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +67,7 @@ export default function AdminTicketDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
         const data = await res.json();
         if (res.ok) {
@@ -106,7 +102,8 @@ export default function AdminTicketDetailPage() {
         method: "POST",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(token),
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ message: replyMessage }),
       });
@@ -141,7 +138,8 @@ export default function AdminTicketDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(token),
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
             status: statusInput,
@@ -161,7 +159,7 @@ export default function AdminTicketDetailPage() {
             adminNotes: adminNoteInput,
           };
         });
-        alert("Properties updated successfully!");
+        alert("Ticket properties updated.");
       } else {
         alert(data.message || "Failed to update ticket");
       }
@@ -183,7 +181,7 @@ export default function AdminTicketDetailPage() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets/${id}/escalate`, {
           method: "POST",
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
   
         const data = await res.json();

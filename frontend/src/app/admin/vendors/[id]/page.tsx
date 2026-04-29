@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
-import { useSession } from "next-auth/react";
 
 type VendorApplication = {
   id: string;
@@ -52,9 +51,6 @@ export default function AdminVendorDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
 
-  const { data: session } = useSession();
-  const token = (session?.user as any)?.accessToken;
-
   const [application, setApplication] = useState<VendorApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,7 +62,7 @@ export default function AdminVendorDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
         const data = await res.json();
         if (res.ok) {
@@ -91,7 +87,8 @@ export default function AdminVendorDetailPage() {
         method: "PATCH",
         credentials: "include",
         headers: {
-          ...getAuthHeaders(token),
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           reviewNotes:
@@ -170,7 +167,8 @@ export default function AdminVendorDetailPage() {
               method: "PATCH",
               credentials: "include",
               headers: {
-                  ...getAuthHeaders(token),
+                  "Content-Type": "application/json",
+                  ...getAuthHeaders(),
               },
               body: JSON.stringify({ isActive }),
           });

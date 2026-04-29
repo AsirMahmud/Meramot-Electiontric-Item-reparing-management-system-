@@ -623,15 +623,6 @@ export default function CartPage() {
 
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("SSLCOMMERZ")}
-                    className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${cardClass(paymentMethod === "SSLCOMMERZ")}`}
-                  >
-                    <div className="font-bold text-[var(--foreground)]">Pay Online</div>
-                    <div className="mt-1 text-sm text-[var(--muted-foreground)]">Pay securely with SSLCommerz.</div>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setAddressMode("MANUAL")}
                     className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(addressMode === "MANUAL")}`}
                   >

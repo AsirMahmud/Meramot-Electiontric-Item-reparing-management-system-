@@ -41,11 +41,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function authedRequest<T>(path: string, token?: string, init?: RequestInit): Promise<T> {
-  const headers = getAuthHeaders(token);
   return request<T>(path, {
     ...init,
     headers: {
-      ...headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
   });

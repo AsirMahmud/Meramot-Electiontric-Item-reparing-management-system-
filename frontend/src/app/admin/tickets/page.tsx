@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
-import { useSession } from "next-auth/react";
 
 type Ticket = {
   id: string;
@@ -20,9 +19,6 @@ type Ticket = {
 };
 
 export default function AdminTicketsPage() {
-  const { data: session } = useSession();
-  const token = (session?.user as any)?.accessToken;
-
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +27,7 @@ export default function AdminTicketsPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/tickets`, {
           credentials: "include",
-          headers: getAuthHeaders(token),
+          headers: getAuthHeaders(),
         });
         const data = await res.json();
         if (res.ok) {

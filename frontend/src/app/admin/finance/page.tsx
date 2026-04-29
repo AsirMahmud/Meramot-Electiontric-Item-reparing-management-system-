@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+
+import { getAuthHeaders } from "@/lib/api";
 import {
   LineChart,
   Line,
@@ -65,7 +66,6 @@ function formatMoney(value: number | string | null | undefined) {
 }
 
 export default function AdminFinancePage() {
-  const { data: session } = useSession();
   const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -78,20 +78,12 @@ export default function AdminFinancePage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const getHeaders = () => {
-    const token = (session?.user as any)?.accessToken;
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
-
   const loadSummary = async () => {
     setLoadingSummary(true);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/summary`, {
         credentials: "include",
-        headers: getHeaders(),
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (res.ok) {
@@ -112,7 +104,7 @@ export default function AdminFinancePage() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/chart-data`, {
         credentials: "include",
-        headers: getHeaders(),
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
       if (res.ok) {
@@ -132,7 +124,7 @@ export default function AdminFinancePage() {
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/entries?take=20`,
         {
           credentials: "include",
-          headers: getHeaders(),
+          headers: getAuthHeaders(),
         },
       );
       const data = await res.json();
@@ -150,9 +142,8 @@ export default function AdminFinancePage() {
   };
 
   useEffect(() => {
-    if (!session?.user) return;
     void Promise.all([loadSummary(), loadChartData(), loadEntries()]);
-  }, [session]);
+  }, []);
 
   const handleSettleSingle = async (event: FormEvent) => {
     event.preventDefault();
@@ -172,7 +163,10 @@ export default function AdminFinancePage() {
         {
           method: "POST",
           credentials: "include",
-          headers: getHeaders(),
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
           body: JSON.stringify({ note: settlementNote.trim() || undefined }),
         },
       );
@@ -203,7 +197,10 @@ export default function AdminFinancePage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/financial-ledger/auto-settle`, {
         method: "POST",
         credentials: "include",
-        headers: getHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({ limit }),
       });
 

@@ -114,69 +114,6 @@ export default function InvoicePage() {
 
   const handlePrint = () => window.print();
 
-  const handlePayOnline = async () => {
-    if (!invoice) return;
-    try {
-      setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/sslcommerz/init`, {
-        method: "POST",
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: invoice.payment.amount,
-          currency: invoice.payment.currency,
-          repairRequestId: invoice.repairRequest?.id,
-          productName: `Invoice ${invoice.invoiceNumber}`,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.data?.gatewayUrl) {
-        window.location.href = data.data.gatewayUrl;
-      } else {
-        setError(data.message || "Failed to initialize online payment");
-        setLoading(false);
-      }
-    } catch {
-      setError("Failed to connect to payment gateway");
-      setLoading(false);
-    }
-  };
-
-  const handlePayCash = async () => {
-    if (!invoice) return;
-    try {
-      setLoading(true);
-      // We can update the payment method via a patch if we had one, 
-      // but for now we'll just simulate the selection or use a generic update.
-      // For this task, I'll assume we can notify the system.
-      // Let's assume a generic payment update endpoint exists or we just show a confirmation.
-      
-      // Realistically, we should call a backend endpoint to set method to CASH
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/${invoice.payment.id}`, {
-        method: "PATCH",
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ method: "CASH" }),
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setInvoice(prev => prev ? { ...prev, payment: { ...prev.payment, method: "CASH" } } : null);
-        alert("Cash payment selected. Please pay at the shop or to the delivery agent.");
-      } else {
-        setError("Failed to update payment method");
-      }
-    } catch {
-      setError("Failed to update payment method");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F7F4]">
@@ -338,27 +275,6 @@ export default function InvoicePage() {
               <span>Net Total</span>
               <span>{formatMoney(invoice.netTotal, currency)}</span>
             </div>
-
-            {/* Payment Options for unpaid invoices */}
-            {invoice.payment.status !== "PAID" && (
-              <div className="mt-6 flex w-full max-w-xs flex-col gap-3 print:hidden">
-                <button
-                  onClick={handlePayOnline}
-                  className="w-full rounded-full bg-[#1F4D2E] py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#183D24]"
-                >
-                  Pay Online (SSLCommerz)
-                </button>
-                <button
-                  onClick={handlePayCash}
-                  className="w-full rounded-full border border-[#1F4D2E] bg-white py-3 text-sm font-bold text-[#1F4D2E] transition hover:bg-[#F8FAF7]"
-                >
-                  Pay with Cash
-                </button>
-                <p className="text-center text-[10px] text-[#6B7C72]">
-                  Secure payments via SSLCommerz or Cash on Delivery/Pickup.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Refunds detail */}
