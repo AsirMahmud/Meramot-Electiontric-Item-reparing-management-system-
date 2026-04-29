@@ -47,10 +47,15 @@ export async function signup(req: Request, res: Response) {
       where: {
         OR: [{ username: username.trim() }, { email: email.trim().toLowerCase() }],
       },
-      select: { id: true },
+      select: { id: true, role: true },
     });
 
     if (existing) {
+      if (existing.role === "DELIVERY") {
+        return res.status(409).json({
+          message: "Cannot register as customer/vendor with a Delivery Partner email. Please use a separate email.",
+        });
+      }
       return res.status(409).json({
         message: "Username or email already exists",
       });

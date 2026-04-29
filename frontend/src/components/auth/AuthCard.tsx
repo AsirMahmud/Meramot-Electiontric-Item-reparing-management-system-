@@ -9,8 +9,10 @@ import {
   checkUsername,
   signup,
   getVendorApplicationStatus,
+  deliveryRegister,
 } from "@/lib/api";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { UploadDropzone } from "@/lib/uploadthing";
 
 type Mode = "login" | "signup";
 type UsernameStatus = "idle" | "checking" | "available" | "taken";
@@ -110,6 +112,24 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   const [loading, setLoading] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
   const [passwordFocused, setPasswordFocused] = useState(false);
+  
+  const [isDelivery, setIsDelivery] = useState(false);
+  const [vehicleType, setVehicleType] = useState("");
+  const [nidDocumentUrl, setNidDocumentUrl] = useState("");
+  const [educationDocumentUrl, setEducationDocumentUrl] = useState("");
+  const [cvDocumentUrl, setCvDocumentUrl] = useState("");
+  const [nidUploadError, setNidUploadError] = useState("");
+  const [educationUploadError, setEducationUploadError] = useState("");
+  const [cvUploadError, setCvUploadError] = useState("");
+
+  function resolveUploadedUrl(file: {
+    ufsUrl?: string;
+    url?: string;
+    appUrl?: string;
+    serverData?: { fileUrl?: string };
+  }) {
+    return file.serverData?.fileUrl ?? file.ufsUrl ?? file.url ?? file.appUrl ?? "";
+  }
 
   const passwordChecks = useMemo(
     () => getPasswordChecks(form.password),
@@ -263,6 +283,33 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     try {
       if (isSignup) {
         if (!form.name.trim()) throw new Error("Full name is required.");
+        if (!form.email.trim()) throw new Error("Email is required.");
+        if (!form.phone.trim()) throw new Error("Phone number is required.");
+        
+        if (isDelivery) {
+          if (!nidDocumentUrl || !educationDocumentUrl || !cvDocumentUrl) {
+            const missing: string[] = [];
+            if (!nidDocumentUrl) missing.push("NID document");
+            if (!educationDocumentUrl) missing.push("Education document");
+            if (!cvDocumentUrl) missing.push("CV document");
+            throw new Error(`Please upload: ${missing.join(", ")}.`);
+          }
+          
+          await deliveryRegister({
+            name: form.name.trim(),
+            email: form.email.trim(),
+            phone: form.phone.trim(),
+            vehicleType: vehicleType.trim() || undefined,
+            nidDocumentUrl: nidDocumentUrl.trim(),
+            educationDocumentUrl: educationDocumentUrl.trim(),
+            cvDocumentUrl: cvDocumentUrl.trim(),
+          });
+          
+          router.replace("/delivery");
+          router.refresh();
+          return;
+        }
+
         if (!form.username.trim()) throw new Error("Username is required.");
         if (!form.email.trim()) throw new Error("Email is required.");
         if (!form.phone.trim()) throw new Error("Phone number is required.");
@@ -420,6 +467,128 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                   </p>
                 ) : null}
               </div>
+
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  type="checkbox"
+                  id="deliveryCheckbox"
+                  checked={isDelivery}
+                  onChange={(e) => setIsDelivery(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#4C9E36] focus:ring-[#4C9E36]"
+                />
+                <label htmlFor="deliveryCheckbox" className="text-sm font-semibold text-accent-dark">
+                  Register as a Delivery Partner
+                </label>
+              </div>
+
+              {isDelivery ? (
+                <div className="space-y-4 rounded-xl border border-border bg-gray-50 p-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-accent-dark">Vehicle (optional)</label>
+                    <select
+                      value={vehicleType}
+                      onChange={(e) => setVehicleType(e.target.value)}
+                      className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    >
+                      <option value="">Select a vehicle</option>
+                      <option value="motorcycle">Motorcycle</option>
+                      <option value="bicycle">Bicycle</option>
+                      <option value="car">Car</option>
+                      <option value="van">Van</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-accent-dark">NID Document Upload</label>
+                    {!nidDocumentUrl ? (
+                      <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
+                        <UploadDropzone
+                          endpoint="deliveryNidUploader"
+                          onUploadError={(uploadError: Error) => setNidUploadError(uploadError.message)}
+                          onClientUploadComplete={(res: any) => {
+                            const url = res?.[0] ? resolveUploadedUrl(res[0]) : "";
+                            if (url) {
+                              setNidDocumentUrl(url);
+                              setNidUploadError("");
+                            } else {
+                              setNidUploadError("Upload finished but URL was not returned.");
+                            }
+                          }}
+                          appearance={{
+                            button: "ut-ready:bg-[#214c34] ut-uploading:bg-[#214c34]/70 ut-label:text-white text-sm h-8",
+                            container: "border-0 p-2",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        NID document uploaded.
+                      </div>
+                    )}
+                    {nidUploadError ? <p className="mt-1 pl-1 text-xs font-medium text-red-500">{nidUploadError}</p> : null}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-accent-dark">Educational Document Upload</label>
+                    {!educationDocumentUrl ? (
+                      <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
+                        <UploadDropzone
+                          endpoint="deliveryEducationUploader"
+                          onUploadError={(uploadError: Error) => setEducationUploadError(uploadError.message)}
+                          onClientUploadComplete={(res: any) => {
+                            const url = res?.[0] ? resolveUploadedUrl(res[0]) : "";
+                            if (url) {
+                              setEducationDocumentUrl(url);
+                              setEducationUploadError("");
+                            } else {
+                              setEducationUploadError("Upload finished but URL was not returned.");
+                            }
+                          }}
+                          appearance={{
+                            button: "ut-ready:bg-[#214c34] ut-uploading:bg-[#214c34]/70 ut-label:text-white text-sm h-8",
+                            container: "border-0 p-2",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        Educational document uploaded.
+                      </div>
+                    )}
+                    {educationUploadError ? <p className="mt-1 pl-1 text-xs font-medium text-red-500">{educationUploadError}</p> : null}
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-accent-dark">CV Upload (PDF)</label>
+                    {!cvDocumentUrl ? (
+                      <div className="rounded-xl border border-[#d9e5d5] bg-white p-3">
+                        <UploadDropzone
+                          endpoint="deliveryCvUploader"
+                          onUploadError={(uploadError: Error) => setCvUploadError(uploadError.message)}
+                          onClientUploadComplete={(res: any) => {
+                            const url = res?.[0] ? resolveUploadedUrl(res[0]) : "";
+                            if (url) {
+                              setCvDocumentUrl(url);
+                              setCvUploadError("");
+                            } else {
+                              setCvUploadError("Upload finished but URL was not returned.");
+                            }
+                          }}
+                          appearance={{
+                            button: "ut-ready:bg-[#214c34] ut-uploading:bg-[#214c34]/70 ut-label:text-white text-sm h-8",
+                            container: "border-0 p-2",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        CV uploaded.
+                      </div>
+                    )}
+                    {cvUploadError ? <p className="mt-1 pl-1 text-xs font-medium text-red-500">{cvUploadError}</p> : null}
+                  </div>
+                </div>
+              ) : null}
             </>
           ) : null}
 
@@ -461,62 +630,70 @@ export default function AuthCard({ mode }: { mode: Mode }) {
             </div>
           ) : null}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-accent-dark">
-              Password
-            </label>
-            <PasswordInput
-              showStrength={isSignup}
-              value={form.password}
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-              onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  password: event.target.value,
-                }))
-              }
-              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder="Enter your password"
-            />
-          </div>
-
-          {isSignup ? (
+          {(!isSignup || !isDelivery) ? (
             <>
               <div>
                 <label className="mb-1 block text-sm font-medium text-accent-dark">
-                  Confirm password
+                  Password
                 </label>
                 <PasswordInput
-                  value={form.confirm}
+                  showStrength={isSignup}
+                  value={form.password}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
                   onChange={(event) =>
                     setForm((previous) => ({
                       ...previous,
-                      confirm: event.target.value,
+                      password: event.target.value,
                     }))
                   }
                   className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
-                  placeholder="Re-enter your password"
+                  placeholder="Enter your password"
                 />
-                {form.confirm.length > 0 && form.password !== form.confirm ? (
-                  <p className="mt-1 text-xs font-medium text-red-500 pl-1">Passwords do not match.</p>
-                ) : null}
               </div>
 
-              {showPasswordBar ? (
-                <div className="rounded-2xl bg-[#f6faf4] px-4 py-3 text-xs text-[#58725f]">
-                  <p>Password must include:</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>{passwordChecks.length ? "✓" : "•"} At least 8 characters</li>
-                    <li>{passwordChecks.upper ? "✓" : "•"} An uppercase letter</li>
-                    <li>{passwordChecks.lower ? "✓" : "•"} A lowercase letter</li>
-                    <li>{passwordChecks.number ? "✓" : "•"} A number</li>
-                    <li>{passwordChecks.special ? "✓" : "•"} A special character</li>
-                  </ul>
-                </div>
+              {isSignup ? (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-accent-dark">
+                      Confirm password
+                    </label>
+                    <PasswordInput
+                      value={form.confirm}
+                      onChange={(event) =>
+                        setForm((previous) => ({
+                          ...previous,
+                          confirm: event.target.value,
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                      placeholder="Re-enter your password"
+                    />
+                    {form.confirm.length > 0 && form.password !== form.confirm ? (
+                      <p className="mt-1 text-xs font-medium text-red-500 pl-1">Passwords do not match.</p>
+                    ) : null}
+                  </div>
+
+                  {showPasswordBar ? (
+                    <div className="rounded-2xl bg-[#f6faf4] px-4 py-3 text-xs text-[#58725f]">
+                      <p>Password must include:</p>
+                      <ul className="mt-2 space-y-1">
+                        <li>{passwordChecks.length ? "✓" : "•"} At least 8 characters</li>
+                        <li>{passwordChecks.upper ? "✓" : "•"} An uppercase letter</li>
+                        <li>{passwordChecks.lower ? "✓" : "•"} A lowercase letter</li>
+                        <li>{passwordChecks.number ? "✓" : "•"} A number</li>
+                        <li>{passwordChecks.special ? "✓" : "•"} A special character</li>
+                      </ul>
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </>
-          ) : null}
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Your password will be auto-generated and emailed to you upon admin approval.
+            </div>
+          )}
 
           {error ? (
             <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
