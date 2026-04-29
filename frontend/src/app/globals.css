@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
   --background: #E4FCD5;
   --foreground: #203126;
@@ -38,6 +36,7 @@
 }
 
 @theme inline {
+  --variant-dark: (&:where(.dark, .dark *));
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
