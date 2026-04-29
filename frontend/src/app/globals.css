@@ -23,19 +23,19 @@
 
 .dark {
   --background: #0f1512;
-  --foreground: #e4fcd5;
-  --card: #111913;
-  --card-foreground: #98b498;
+  --foreground: #f0fde8;
+  --card: #141c16;
+  --card-foreground: #c8e0c2;
   --muted: #2b342f;
-  --muted-foreground: #9caf9e;
-  --border: #243128;
-  --mint-50: #0f1512;
-  --mint-100: #17201b;
-  --mint-200: #243128;
-  --mint-300: #2c4433;
-  --mint-500: #7eae77;
-  --mint-700: #b3caad;
-  --accent-dark: #a6cd9c;
+  --muted-foreground: #b4c9b0;
+  --border: #2a3d2f;
+  --mint-50: #111814;
+  --mint-100: #1a241e;
+  --mint-200: #263830;
+  --mint-300: #2f4e3a;
+  --mint-500: #8ebe86;
+  --mint-700: #c4dabb;
+  --accent-dark: #b5e4a8;
   --accent-foreground: #0f1c12;
 }
 
