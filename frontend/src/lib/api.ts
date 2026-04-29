@@ -388,6 +388,7 @@ export function signup(data: {
   email: string;
   phone: string;
   password: string;
+  role?: "CUSTOMER" | "VENDOR" | "DELIVERY";
 }) {
   return request<AuthPayload>("/auth/signup", {
     method: "POST",
@@ -1078,20 +1079,45 @@ export async function loginDeliveryAdmin(credentials: unknown): Promise<{success
   return res.json();
 }
 
-export async function deliveryRegister(data: unknown): Promise<{success: boolean, data?: unknown}> {
-  const res = await fetch(`${API}/api/delivery-auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+export type RiderProfileStatusResponse = {
+  riderName: {
+    id: string;
+    userId: string;
+    registrationStatus: "PENDING" | "APPROVED" | "REJECTED";
+    user?: {
+      name: string;
+      username: string;
+    };
+  };
+};
+
+export async function getDeliveryMe(token: string) {
+  return authedRequest<RiderProfileStatusResponse>("/delivery/me", token);
+}
+
+/* =========================================================
+   ADMIN DELIVERY MANAGEMENT ENDPOINTS
+========================================================= */
+
+export type AdminDeliveryRider = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  createdAt: string;
+  registrationStatus: "PENDING" | "APPROVED" | "REJECTED";
+  riderProfileId: string | null;
+};
+
+export async function fetchAdminDeliveryRiders(token: string): Promise<AdminDeliveryRider[]> {
+  const data = await authedRequest<{ success: boolean; data: AdminDeliveryRider[] }>("/admin/delivery-riders", token);
+  return data.data;
+}
+
+export async function updateAdminDeliveryRiderStatus(token: string, userId: string, status: "PENDING" | "APPROVED" | "REJECTED") {
+  return authedRequest<{ success: boolean; data: any }>(`/admin/delivery-riders/${userId}/status`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
   });
-  return res.json();
 }
-
-export async function logoutDelivery(token: string): Promise<void> {
-  // Client-side logout usually just clears token, but hit endpoint if needed
-}
-
-
-
-
-// VendorAnalyticsData was already defined around line 650, so I will remove the duplicate.

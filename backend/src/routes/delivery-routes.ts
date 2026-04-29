@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Router } from "express";
 import {
   acceptMyDelivery,
@@ -7,22 +6,23 @@ import {
   updateMyDeliveryStatus,
   updateLocation,
 } from "../controllers/delivery-controller.js";
-import {
-  requireApprovedDeliveryPartner,
-  requireDeliveryAuth,
-} from "../middleware/auth.js";
+import { requireAuth, AuthedRequest } from "../middleware/auth.js";
+import { Response, NextFunction } from "express";
 
 const router = Router();
 
-router.get("/me", requireDeliveryAuth, getDeliveryMe);
-router.get("/deliveries", requireDeliveryAuth, requireApprovedDeliveryPartner, listMyDeliveries);
-router.patch("/deliveries/:id/accept", requireDeliveryAuth, requireApprovedDeliveryPartner, acceptMyDelivery);
-router.patch(
-  "/deliveries/:id/status",
-  requireDeliveryAuth,
-  requireApprovedDeliveryPartner,
-  updateMyDeliveryStatus,
-);
-router.patch("/location", requireDeliveryAuth, requireApprovedDeliveryPartner, updateLocation);
+// Middleware to ensure the user is specifically a DELIVERY role
+function requireDeliveryRole(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (req.user?.role !== "DELIVERY") {
+    return res.status(403).json({ message: "Only delivery partners can access this" });
+  }
+  return next();
+}
+
+router.get("/me", requireAuth, requireDeliveryRole, getDeliveryMe);
+router.get("/deliveries", requireAuth, requireDeliveryRole, listMyDeliveries);
+router.patch("/deliveries/:id/accept", requireAuth, requireDeliveryRole, acceptMyDelivery);
+router.patch("/deliveries/:id/status", requireAuth, requireDeliveryRole, updateMyDeliveryStatus);
+router.patch("/location", requireAuth, requireDeliveryRole, updateLocation);
 
 export default router;
