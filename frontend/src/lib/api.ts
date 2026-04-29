@@ -1110,14 +1110,26 @@ export type AdminDeliveryRider = {
   riderProfileId: string | null;
 };
 
+export type AdminDeliveryStats = {
+  totalRiders: number;
+  pendingRiders: number;
+  approvedRiders: number;
+  rejectedRiders: number;
+};
+
+export async function fetchAdminDeliveryStats(token: string): Promise<AdminDeliveryStats> {
+  const data = await authedRequest<{ success: boolean; stats: AdminDeliveryStats }>("/admin/delivery/stats", token);
+  return data.stats;
+}
+
 export async function fetchAdminDeliveryRiders(token: string): Promise<AdminDeliveryRider[]> {
-  const data = await authedRequest<{ success: boolean; data: AdminDeliveryRider[] }>("/admin/delivery-riders", token);
+  const data = await authedRequest<{ success: boolean; data: AdminDeliveryRider[] }>("/admin/delivery/riders", token);
   return data.data;
 }
 
 export async function updateAdminDeliveryRiderStatus(token: string, userId: string, status: "PENDING" | "APPROVED" | "REJECTED") {
-  return authedRequest<{ success: boolean; data: any }>(`/admin/delivery-riders/${userId}/status`, token, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
+  const action = status === "APPROVED" ? "approve" : "reject";
+  return authedRequest<{ success: boolean; data: any }>(`/admin/delivery/riders/${userId}/${action}`, token, {
+    method: "POST",
   });
 }

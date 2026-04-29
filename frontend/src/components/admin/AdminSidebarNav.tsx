@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/vendors", label: "Vendor Review" },
   { href: "/admin/tickets", label: "Support Tickets" },
   { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/delivery", label: "Delivery Riders" },
 ];
 
 export default function AdminSidebarNav() {
