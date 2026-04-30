@@ -13,21 +13,21 @@ export default function PopularCategories() {
         </h2>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 xl:grid-cols-4">
         {popularCategories.map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center gap-3 rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:gap-4 md:rounded-[1.75rem] md:p-4"
+            className="flex aspect-square flex-col items-center justify-center gap-2 rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:gap-3 md:rounded-[1.75rem] md:p-4"
           >
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--mint-200)] text-2xl shadow-inner md:h-16 md:w-16 md:rounded-2xl md:text-3xl">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--mint-200)] text-2xl shadow-inner md:h-16 md:w-16 md:rounded-2xl md:text-3xl">
               {item.sprite}
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-[var(--foreground)]">
+              <h3 className="text-sm font-bold leading-tight text-[var(--foreground)] md:text-base">
                 {item.label}
               </h3>
-              <p className="text-sm text-[var(--muted-foreground)]">
+              <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-[var(--muted-foreground)] md:text-xs">
                 {item.trend}
               </p>
             </div>
