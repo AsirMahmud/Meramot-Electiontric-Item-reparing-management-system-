@@ -137,10 +137,10 @@ export function NavbarInner({
           {/* ── Row 1: Logo + hamburger (mobile) / Logo + location + actions (desktop) ── */}
           <div className="flex items-center justify-between gap-3 md:grid md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center md:gap-4">
             {/* Hamburger — mobile only */}
-            <button
+              <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--card)] text-xl text-[var(--foreground)] shadow-sm md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--card)] text-xl text-[var(--foreground)] shadow-sm md:hidden"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? "✕" : "☰"}
@@ -153,7 +153,7 @@ export function NavbarInner({
                   alt="Meramot"
                   width={280}
                   height={100}
-                  className="h-12 w-auto object-contain md:h-16 lg:h-20"
+                  className="h-16 w-auto object-contain md:h-20 lg:h-24"
                   priority
                 />
               </Link>
