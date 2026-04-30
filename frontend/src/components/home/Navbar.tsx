@@ -339,10 +339,13 @@ export function NavbarInner({
             <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
+                const params = new URLSearchParams(searchParams.toString());
+                params.set("category", tab.value);
+                
                 return (
                   <Link
                     key={tab.value}
-                    href={`/shops?category=${tab.value}`}
+                    href={`/shops?${params.toString()}`}
                     className={`inline-flex border-b-[3px] pb-1 transition ${
                       active
                         ? "border-[var(--accent-dark)] text-[var(--accent-dark)]"

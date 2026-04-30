@@ -196,35 +196,6 @@ function ShopsResultsClientInner() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  if (categoryBrowseMode) {
-    return (
-      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
-
-        <section className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-          {apiFailed ? (
-            <p className="mb-5 text-sm text-[var(--muted-foreground)]">
-              Showing local fallback results because the backend shop API is not
-              responding yet.
-            </p>
-          ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visibleShops.map((shop) => (
-              <ShopResultCard key={shop.id} shop={shop} />
-            ))}
-          </div>
-
-          {!loading && visibleShops.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-[var(--muted-foreground)]">
-              No shops are currently listed under{" "}
-              {categoryLabels[searchState.category] ?? "this category"}.
-            </div>
-          ) : null}
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -237,7 +208,7 @@ function ShopsResultsClientInner() {
           </h1>
 
           <p className="mt-2 text-[1.7rem] text-[var(--muted-foreground)]">
-            {searchState.q || "Repair results"}
+            {searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Repair results")}
           </p>
 
           {apiFailed ? (
