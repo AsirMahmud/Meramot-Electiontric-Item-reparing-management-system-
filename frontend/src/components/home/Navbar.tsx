@@ -101,6 +101,15 @@ export function NavbarInner({
     return firstName?.trim() || session?.user?.name?.split(" ")[0] || "User";
   }, [firstName, session]);
 
+  const mobileDisplayName = useMemo(() => {
+    const rawName = session?.user?.name?.trim() || "User";
+    const parts = rawName.split(/\s+/);
+    if (parts.length >= 3) {
+      return parts.slice(0, 2).join(" ");
+    }
+    return rawName;
+  }, [session]);
+
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
@@ -494,9 +503,9 @@ export function NavbarInner({
                   >
                     <span className="flex items-center gap-2">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-dark)] text-xs text-[var(--accent-foreground)]">
-                        {displayName.charAt(0).toUpperCase()}
+                        {mobileDisplayName.charAt(0).toUpperCase()}
                       </span>
-                      {displayName}
+                      {mobileDisplayName.toUpperCase()}
                     </span>
                     <span className={`text-xs transition-transform ${mobileUserMenuOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
@@ -506,26 +515,26 @@ export function NavbarInner({
                       <Link
                         href="/profile"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        👤 Profile
+                        View profile
                       </Link>
 
                       <Link
                         href="/orders"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        📋 My Orders
+                        Requests history
                       </Link>
 
                       {userRole === "ADMIN" && (
                         <Link
                           href="/admin"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         >
-                          ⚙️ Admin Dashboard
+                          Admin dashboard
                         </Link>
                       )}
 
@@ -534,16 +543,16 @@ export function NavbarInner({
                           <Link
                             href="/vendor/dashboard"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                            className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                           >
-                            🏪 Vendor Dashboard
+                            Vendor dashboard
                           </Link>
                           <Link
                             href="/vendor/analytics"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                            className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                           >
-                            📊 Shop Analytics
+                            Shop analytics
                           </Link>
                         </>
                       )}
@@ -552,9 +561,9 @@ export function NavbarInner({
                         <Link
                           href="/vendor/setup-shop"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         >
-                          🛠️ Set Up Shop
+                          Set up your shop
                         </Link>
                       )}
 
@@ -562,39 +571,48 @@ export function NavbarInner({
                         <Link
                           href="/vendor/my-bids"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         >
-                          💰 My Offers
+                          My Offers
                         </Link>
                       ) : (
                         <Link
                           href="/requests/new"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                         >
-                          🔧 Make Repair Request
+                          Make Repair Request
                         </Link>
                       )}
+
+                      <Link
+                        href="/cart"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                      >
+                        View cart
+                      </Link>
+
+                      <Link
+                        href="/ai-chat"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                      >
+                        AI help chat
+                      </Link>
                       
                       <button
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setShowLogoutConfirm(true);
                         }}
-                        className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                        className="block w-full rounded-xl px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        🚪 Log out
+                        Log out
                       </button>
                     </div>
                   )}
 
-                  <Link
-                    href="/ai-chat"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                  >
-                    🤖 AI Help
-                  </Link>
                 </>
               )}
             </nav>
