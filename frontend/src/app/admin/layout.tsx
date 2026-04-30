@@ -54,8 +54,8 @@ export default async function AdminLayout({
             </div>
 
             <AdminSidebarNav />
-        </aside>
-      </div>
+          </aside>
+        </div>
 
         <main className="rounded-[32px] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm md:p-8">
           {children}
