@@ -153,7 +153,7 @@ export function NavbarInner({
                   alt="Meramot"
                   width={280}
                   height={100}
-                  className="h-32 w-auto scale-150 object-contain md:h-[6rem] md:scale-100 lg:h-32"
+                  className="h-32 w-auto scale-[1.75] object-contain md:h-[6rem] md:scale-100 lg:h-32"
                   priority
                 />
               </Link>
