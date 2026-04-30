@@ -276,6 +276,20 @@ export async function listVendorApplications(req: Request, res: Response) {
           status: true,
           rejectionReason: true,
           createdAt: true,
+          user: {
+            select: {
+              name: true,
+              username: true,
+              email: true,
+              phone: true,
+            }
+          },
+          shop: {
+            select: {
+              id: true,
+              isActive: true,
+            }
+          }
         },
       }),
       prisma.vendorApplication.count(),
