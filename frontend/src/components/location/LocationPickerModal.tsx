@@ -4,12 +4,12 @@ import { Check, LocateFixed, X } from "lucide-react";
 import { useState } from "react";
 import MapPicker from "./MapPicker";
 import type { StoredLocation } from "./types";
-import { reverseGeocode } from "./location-utils";
+import { forwardGeocode, reverseGeocode } from "./location-utils";
 
 type LocationPickerModalProps = {
   selectedLocation: StoredLocation | null;
   onClose: () => void;
-  onConfirm: (location: StoredLocation) => Promise<void>;
+  onConfirm: (location: StoredLocation) => Promise<unknown>;
 };
 
 export default function LocationPickerModal({
@@ -21,6 +21,28 @@ export default function LocationPickerModal({
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationSaving, setLocationSaving] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  async function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setLocationLoading(true);
+    setLocationError("");
+
+    try {
+      const resolved = await forwardGeocode(searchQuery.trim());
+      if (resolved) {
+        setDraftLocation({ ...resolved, source: "map" });
+      } else {
+        setLocationError("Could not find that location. Try a different search term.");
+      }
+    } catch {
+      setLocationError("Search failed. Try again.");
+    } finally {
+      setLocationLoading(false);
+    }
+  }
 
   async function useGpsLocation() {
     if (!navigator.geolocation) {
@@ -105,11 +127,34 @@ export default function LocationPickerModal({
           />
 
           <div className="flex flex-col gap-3">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search location (e.g. Dhaka)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-accent-dark dark:bg-[#1f2923]"
+              />
+              <button
+                type="submit"
+                disabled={locationLoading || !searchQuery.trim()}
+                className="rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
+              >
+                Search
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-[var(--border)]" />
+              <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">or</span>
+              <div className="h-px flex-1 bg-[var(--border)]" />
+            </div>
+
             <button
               type="button"
               onClick={useGpsLocation}
               disabled={locationLoading || locationSaving}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
             >
               <LocateFixed size={18} className={locationLoading ? "animate-spin" : ""} />
               {locationLoading ? "Detecting..." : "Use GPS location"}
@@ -139,7 +184,7 @@ export default function LocationPickerModal({
               type="button"
               onClick={confirmLocation}
               disabled={locationSaving || !draftLocation}
-              className="mt-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+              className="mt-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
             >
               <Check size={18} />
               {locationSaving ? "Saving..." : "Confirm location"}

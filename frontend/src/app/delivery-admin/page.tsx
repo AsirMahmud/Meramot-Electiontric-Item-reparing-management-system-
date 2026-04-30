@@ -181,7 +181,7 @@ export default function DeliveryAdminDashboard() {
       const leafletModule = await import("leaflet");
       if (isDisposed || !mapContainerRef.current) return;
 
-      const L = leafletModule.default;
+      const L = ((leafletModule as any).default || leafletModule) as typeof import("leaflet");
       leafletModuleRef.current = leafletModule;
 
       const map = L.map(mapContainerRef.current, {
@@ -222,7 +222,7 @@ export default function DeliveryAdminDashboard() {
     if (mappablePartners.length === 0) return;
 
     const map = mapRef.current;
-    const L = leafletModuleRef.current.default;
+    const L = ((leafletModuleRef.current as any).default || leafletModuleRef.current) as typeof import("leaflet");
     const bounds = L.latLngBounds([]);
 
     mappablePartners.forEach((partner) => {

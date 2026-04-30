@@ -12,6 +12,7 @@ import {
   listDeliveryPayoutRequests,
   listDeliveryPartners,
   rejectDeliveryPartner,
+  deleteDeliveryPartner,
   sendAdminDeliveryChatMessage,
 } from "../controllers/delivery-admin-controller.js";
 import { getDeliveryAdminMe } from "../controllers/delivery-admin-auth-controller.js";

@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, FormEvent } from "react";
+import { useMemo, useState, FormEvent, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import { getVendorApplicationStatus } from "@/lib/api";
 
  type NavbarProps = {
   isLoggedIn?: boolean;
@@ -17,13 +19,21 @@ import { useSelectedLocation } from "@/components/location/useSelectedLocation";
   onLanguageChange?: (lang: "en" | "bn") => void;
 };
 
+type VendorNavbarStatus = {
+  application?: {
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    setupComplete?: boolean;
+  };
+  message?: string;
+};
+
 const categoryTabs = [
   { label: "Courier Pickup", value: "COURIER_PICKUP" },
   { label: "In-shop Repair", value: "IN_SHOP_REPAIR" },
   { label: "Spare Parts", value: "SPARE_PARTS" },
 ] as const;
 
-export default function Navbar({
+export function NavbarInner({
   isLoggedIn = false,
   firstName = "User",
   language = "en",
@@ -48,9 +58,45 @@ export default function Navbar({
   const activeCategory =
     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
+  const { data: session, status } = useSession();
+
+  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
+
+  useEffect(() => {
+    async function loadVendorStatus() {
+      if (userRole !== "VENDOR" || !token) {
+        setVendorStatus(null);
+        return;
+      }
+
+      try {
+        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
+        setVendorStatus(result);
+      } catch {
+        setVendorStatus(null);
+      }
+    }
+
+    loadVendorStatus();
+  }, [userRole, token]);
+
+  const vendorApplication = vendorStatus?.application;
+  const isVendorSetupComplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete === true;
+
+  const isVendorSetupIncomplete =
+    userRole === "VENDOR" &&
+    vendorApplication?.status === "APPROVED" &&
+    vendorApplication?.setupComplete !== true;
+
   const displayName = useMemo(() => {
-    return firstName?.trim() || "User";
-  }, [firstName]);
+    return firstName?.trim() || session?.user?.name?.split(" ")[0] || "User";
+  }, [firstName, session]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
@@ -106,9 +152,9 @@ export default function Navbar({
               {!isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
                 >
-                  Sign in
+                  Sign in/Sign up
                 </Link>
               ) : (
                 <div className="relative">
@@ -117,7 +163,7 @@ export default function Navbar({
                       setIsUserMenuOpen((prev) => !prev);
                       setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
                   >
                     {displayName} ▼
                   </button>
@@ -140,13 +186,72 @@ export default function Navbar({
                         Requests history
                       </Link>
 
-                      <Link
-                        href="/requests/new"
-                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        Make request
-                      </Link>
+                      {userRole === "ADMIN" && (
+                        <Link
+                          href="/admin"
+                          className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Admin dashboard
+                        </Link>
+                      )}
+
+                      {userRole === "VENDOR" ? (
+                        <>
+                          {isVendorSetupComplete ? (
+                            <>
+                              <Link
+                                href="/vendor/dashboard"
+                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Vendor dashboard
+                              </Link>
+                              <Link
+                                href="/vendor/analytics"
+                                className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Shop analytics
+                              </Link>
+                            </>
+                          ) : isVendorSetupIncomplete ? (
+                            <Link
+                              href="/vendor/setup-shop"
+                              className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Set up your shop
+                            </Link>
+                          ) : (
+                            <Link
+                              href="/vendor/onboarding"
+                              className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              Vendor onboarding
+                            </Link>
+                          )}
+                        </>
+                      ) : null}
+
+                      {userRole === "VENDOR" ? (
+                        <Link
+                          href="/vendor/my-bids"
+                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          My Offers
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/requests/new"
+                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Make Repair Request
+                        </Link>
+                      )}
 
                       <Link
                         href="/cart"
@@ -177,6 +282,8 @@ export default function Navbar({
                   )}
                 </div>
               )}
+
+              <NotificationBell />
 
               <div className="relative">
                 <button
@@ -295,7 +402,7 @@ export default function Navbar({
 
               <button
                 onClick={confirmLogout}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
               >
                 Yes
               </button>
@@ -304,5 +411,15 @@ export default function Navbar({
         </div>
       )}
     </>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function Navbar(props: NavbarProps) {
+  return (
+    <Suspense fallback={<div style={{ height: "70px" }}></div>}>
+      <NavbarInner {...props} />
+    </Suspense>
   );
 }

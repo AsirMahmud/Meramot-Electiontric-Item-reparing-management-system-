@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getAdminPayments, type AdminPaymentRecord } from "@/lib/api";
 
 const FILTERS = ["ALL", "PENDING", "PAID", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] as const;
 
 export default function AdminPaymentsPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("ALL");
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!token) return;
+
     const fetchPayments = async () => {
       setLoading(true);
       setError("");
@@ -19,8 +24,7 @@ export default function AdminPaymentsPage() {
       try {
         const response = await getAdminPayments({
           status: filter === "ALL" ? undefined : filter,
-          take: 50,
-        });
+        }, token);
 
         setPayments(response.data || []);
       } catch (err) {
@@ -31,14 +35,14 @@ export default function AdminPaymentsPage() {
     };
 
     fetchPayments();
-  }, [filter]);
+  }, [filter, token]);
 
   return (
     <section>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Payments</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">Payment monitor</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Payments</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Payment monitor</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Inspect transactions, payment states, and customer references.
         </p>
       </div>
@@ -51,8 +55,8 @@ export default function AdminPaymentsPage() {
             onClick={() => setFilter(item)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               filter === item
-                ? "bg-[#1F4D2E] text-white"
-                : "border border-[#BFD0BA] bg-white text-[#1F4D2E]"
+                ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
+                : "border border-[#BFD0BA] bg-white dark:bg-[#1C251F] text-[var(--accent-dark)]"
             }`}
           >
             {item}
@@ -61,15 +65,15 @@ export default function AdminPaymentsPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading payments...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading payments...</div>
       ) : error ? (
         <div className="rounded-[24px] bg-[#FDEAEA] p-6 text-[#7A2F1D]">{error}</div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF]">
+        <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="border-b border-[#D7E2D2] bg-[#E6F0E2]">
-                <tr className="text-left text-xs uppercase tracking-[0.18em] text-[#5E7366]">
+              <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
+                <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                   <th className="px-5 py-4">Transaction</th>
                   <th className="px-5 py-4">Customer</th>
                   <th className="px-5 py-4">Amount</th>
@@ -80,27 +84,27 @@ export default function AdminPaymentsPage() {
               </thead>
               <tbody>
                 {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-[#D7E2D2] last:border-b-0">
-                    <td className="px-5 py-4 text-sm text-[#244233]">
-                      <p className="font-semibold text-[#1F4D2E]">
+                  <tr key={payment.id} className="border-b border-[var(--border)] last:border-b-0">
+                    <td className="px-5 py-4 text-sm text-[var(--foreground)]">
+                      <p className="font-semibold text-[var(--accent-dark)]">
                         {payment.transactionRef || "N/A"}
                       </p>
-                      <p className="mt-1 text-xs text-[#6B7C72]">{payment.id}</p>
+                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">{payment.id}</p>
                     </td>
-                    <td className="px-5 py-4 text-sm text-[#244233]">
+                    <td className="px-5 py-4 text-sm text-[var(--foreground)]">
                       <p>{payment.user.name || payment.user.username}</p>
-                      <p className="text-xs text-[#6B7C72]">{payment.user.email}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{payment.user.email}</p>
                     </td>
-                    <td className="px-5 py-4 text-sm font-semibold text-[#1F4D2E]">
+                    <td className="px-5 py-4 text-sm font-semibold text-[var(--accent-dark)]">
                       {String(payment.amount)} {payment.currency}
                     </td>
-                    <td className="px-5 py-4 text-sm text-[#244233]">{payment.method || "N/A"}</td>
+                    <td className="px-5 py-4 text-sm text-[var(--foreground)]">{payment.method || "N/A"}</td>
                     <td className="px-5 py-4">
-                      <span className="rounded-full bg-[#E6F0E2] px-3 py-1 text-xs font-semibold text-[#1F4D2E]">
+                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
                         {payment.status}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-xs text-[#6B7C72]">
+                    <td className="px-5 py-4 text-xs text-[var(--muted-foreground)]">
                       {new Date(payment.createdAt).toLocaleString()}
                     </td>
                   </tr>
@@ -109,7 +113,7 @@ export default function AdminPaymentsPage() {
             </table>
           </div>
 
-          {!payments.length && <div className="p-6 text-[#6B7C72]">No payments found.</div>}
+          {!payments.length && <div className="p-6 text-[var(--muted-foreground)]">No payments found.</div>}
         </div>
       )}
     </section>

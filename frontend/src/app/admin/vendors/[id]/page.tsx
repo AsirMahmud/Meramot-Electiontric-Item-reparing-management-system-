@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type VendorApplication = {
@@ -50,6 +51,8 @@ type VendorApplication = {
 export default function AdminVendorDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [application, setApplication] = useState<VendorApplication | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +65,7 @@ export default function AdminVendorDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -77,8 +80,8 @@ export default function AdminVendorDetailPage() {
       }
     };
 
-    if (id) fetchVendor();
-  }, [id]);
+    if (id && token) fetchVendor();
+  }, [id, token]);
 
   const handleApplicationAction = async (action: "approve" | "reject" | "request-info") => {
     try {
@@ -88,7 +91,7 @@ export default function AdminVendorDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({
           reviewNotes:
@@ -118,6 +121,43 @@ export default function AdminVendorDetailPage() {
     }
   };
 
+  const handleDeleteApplication = async () => {
+    if (!window.confirm("Are you sure you want to permanently delete this application? The vendor will have to apply again from scratch.")) {
+      return;
+    }
+
+    const passkey = window.prompt("SECURITY CHECK:\nPlease enter your 10-minute Admin Passkey (sent to your email) to confirm this deletion:");
+    if (!passkey) {
+      alert("Deletion cancelled. Passkey is required.");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          ...getAuthHeaders(token),
+          "x-admin-passkey": passkey
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Application deleted successfully.");
+        router.push("/admin/vendors");
+      } else {
+        alert(data.message || "Failed to delete application");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting application.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleShopSuspendToggle = async (isActive: boolean) => {
       if (!application?.shop) return;
       if (!window.confirm(`Are you sure you want to ${isActive ? 'reinstate' : 'suspend'} this shop?`)) {
@@ -131,7 +171,7 @@ export default function AdminVendorDetailPage() {
               credentials: "include",
               headers: {
                   "Content-Type": "application/json",
-                  ...getAuthHeaders(),
+                  ...getAuthHeaders(token),
               },
               body: JSON.stringify({ isActive }),
           });
@@ -161,12 +201,12 @@ export default function AdminVendorDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-[#6B7C72]">Loading vendor details...</div>;
+    return <div className="p-8 text-[var(--muted-foreground)]">Loading vendor details...</div>;
   }
 
   if (!application) {
     return (
-      <div className="p-8 text-[#6B7C72]">
+      <div className="p-8 text-[var(--muted-foreground)]">
         Vendor application not found. <Link href="/admin/vendors" className="underline">Go back</Link>
       </div>
     );
@@ -176,13 +216,13 @@ export default function AdminVendorDetailPage() {
     <section>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/admin/vendors" className="mb-2 inline-block text-sm font-semibold text-[#5E7366] hover:underline">
+          <Link href="/admin/vendors" className="mb-2 inline-block text-sm font-semibold text-[var(--muted-foreground)] hover:underline">
             &larr; Back to Vendors
           </Link>
-          <h2 className="text-3xl font-bold text-[#1F4D2E]">{application.shopName}</h2>
-          <p className="mt-1 text-[#6B7C72]">Application ID: {application.id}</p>
+          <h2 className="text-3xl font-bold text-[var(--accent-dark)]">{application.shopName}</h2>
+          <p className="mt-1 text-[var(--muted-foreground)]">Application ID: {application.id}</p>
         </div>
-        <div className="rounded-full bg-[#E6F0E2] px-4 py-2 font-semibold tracking-wide text-[#1F4D2E]">
+        <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 font-semibold tracking-wide text-[var(--accent-dark)]">
           {application.status}
         </div>
       </div>
@@ -191,59 +231,59 @@ export default function AdminVendorDetailPage() {
         {/* Left Column: Details */}
         <div className="lg:col-span-2 space-y-6">
           
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF] p-6 md:p-8">
-            <h3 className="text-xl font-bold text-[#1F4D2E]">Business Information</h3>
+          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6 md:p-8">
+            <h3 className="text-xl font-bold text-[var(--accent-dark)]">Business Information</h3>
             
             <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Owner Name</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">{application.ownerName}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Owner Name</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">{application.ownerName}</p>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Contact</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">{application.businessEmail}</p>
-                    <p className="text-sm text-[#6B7C72]">{application.phone}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Contact</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">{application.businessEmail}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">{application.phone}</p>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Address</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">{application.address}</p>
-                    <p className="text-sm text-[#6B7C72]">{application.city}{application.area ? `, ${application.area}` : ""}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Address</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">{application.address}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">{application.city}{application.area ? `, ${application.area}` : ""}</p>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Documents</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">Trade License: {application.tradeLicenseNo || "N/A"}</p>
-                    <p className="text-sm text-[#6B7C72]">National ID: {application.nationalIdNo || "N/A"}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Documents</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">Trade License: {application.tradeLicenseNo || "N/A"}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">National ID: {application.nationalIdNo || "N/A"}</p>
                 </div>
             </div>
 
-            <div className="mt-6 border-t border-[#D7E2D2] pt-6">
-                <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Services Offered</p>
+            <div className="mt-6 border-t border-[var(--border)] pt-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Services Offered</p>
                 <div className="mt-3 flex flex-wrap gap-3">
-                    {application.inShopRepair && <span className="rounded-full bg-white px-4 py-2 text-sm text-[#244233] shadow-sm">In-Shop Repair</span>}
-                    {application.courierPickup && <span className="rounded-full bg-white px-4 py-2 text-sm text-[#244233] shadow-sm">Courier Pickup</span>}
-                    {application.spareParts && <span className="rounded-full bg-white px-4 py-2 text-sm text-[#244233] shadow-sm">Spare Parts</span>}
+                    {application.inShopRepair && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">In-Shop Repair</span>}
+                    {application.courierPickup && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Courier Pickup</span>}
+                    {application.spareParts && <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">Spare Parts</span>}
                 </div>
                 {application.specialties.length > 0 && (
                     <div className="mt-4">
-                        <p className="text-sm font-semibold text-[#5E7366]">Specialties:</p>
-                        <p className="mt-1 text-[#244233]">{application.specialties.join(", ")}</p>
+                        <p className="text-sm font-semibold text-[var(--muted-foreground)]">Specialties:</p>
+                        <p className="mt-1 text-[var(--foreground)]">{application.specialties.join(", ")}</p>
                     </div>
                 )}
             </div>
 
             {application.notes && (
-                <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm border border-[#D7E2D2]">
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Applicant Notes</p>
-                    <p className="mt-2 text-[#244233]">{application.notes}</p>
+                <div className="mt-6 rounded-2xl bg-white dark:bg-[#1C251F] p-5 shadow-sm border border-[var(--border)]">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Applicant Notes</p>
+                    <p className="mt-2 text-[var(--foreground)]">{application.notes}</p>
                 </div>
             )}
           </div>
 
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-[#1F4D2E]">Applicant Account</h3>
+          <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-[var(--accent-dark)]">Applicant Account</h3>
             <div className="mt-4">
-                <p className="font-semibold text-[#1F4D2E]">{application.applicant.name || application.applicant.username}</p>
-                <p className="text-[#6B7C72]">{application.applicant.email}</p>
+                <p className="font-semibold text-[var(--accent-dark)]">{application.applicant?.name || application.applicant?.username}</p>
+                <p className="text-[var(--muted-foreground)]">{application.applicant.email}</p>
             </div>
           </div>
 
@@ -254,20 +294,20 @@ export default function AdminVendorDetailPage() {
             
             {/* If application is pending */}
             {application.status === "PENDING" && (
-                <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-[#1F4D2E]">Application Actions</h3>
+                <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Application Actions</h3>
                     <div className="space-y-3">
                         <button
                             onClick={() => handleApplicationAction("approve")}
                             disabled={isProcessing}
-                            className="w-full rounded-xl bg-[#1F4D2E] px-4 py-3 font-semibold text-white transition hover:bg-[#183D24] disabled:opacity-50"
+                            className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                         >
                             Approve Application
                         </button>
                         <button
                             onClick={() => handleApplicationAction("request-info")}
                             disabled={isProcessing}
-                            className="w-full rounded-xl border border-[#1F4D2E] bg-white px-4 py-3 font-semibold text-[#1F4D2E] transition hover:bg-[#E6F0E2] disabled:opacity-50"
+                            className="w-full rounded-xl border border-[var(--accent-dark)] bg-white dark:bg-[#1C251F] px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] disabled:opacity-50"
                         >
                             Request More Info
                         </button>
@@ -282,14 +322,29 @@ export default function AdminVendorDetailPage() {
                 </div>
             )}
 
+            {/* If application is REJECTED, show delete option */}
+            {application.status === "REJECTED" && (
+                <div className="rounded-[28px] border border-[#8A2A2A]/20 bg-[#FDEAEA] p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-bold text-[#8A2A2A]">Danger Zone</h3>
+                    <p className="mb-4 text-sm text-[#8A2A2A]">The vendor can update their information and resubmit this rejected application. If you delete it completely, they will have to apply again from scratch.</p>
+                    <button
+                        onClick={handleDeleteApplication}
+                        disabled={isProcessing}
+                        className="w-full rounded-xl bg-[#8A2A2A] px-4 py-3 font-semibold text-white transition hover:bg-[#6b2020] disabled:opacity-50"
+                    >
+                        Delete Request Entirely
+                    </button>
+                </div>
+            )}
+
             {/* If shop exists (approved) */}
             {application.shop && (
-                <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF] p-6 shadow-sm">
-                    <h3 className="mb-2 text-lg font-bold text-[#1F4D2E]">Shop Status</h3>
+                <div className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6 shadow-sm">
+                    <h3 className="mb-2 text-lg font-bold text-[var(--accent-dark)]">Shop Status</h3>
                     
-                    <div className="mb-6 rounded-2xl bg-white p-4 shadow-sm">
-                        <p className="text-sm text-[#6B7C72]">Rating: <span className="font-semibold text-[#1F4D2E]">{application.shop.ratingAvg}</span> ({application.shop.reviewCount} reviews)</p>
-                        <p className="mt-2 text-sm text-[#6B7C72]">Status: <span className={`font-semibold ${application.shop.isActive ? "text-[#1F4D2E]" : "text-[#8A2A2A]"}`}>{application.shop.isActive ? "Active" : "Suspended"}</span></p>
+                    <div className="mb-6 rounded-2xl bg-white dark:bg-[#1C251F] p-4 shadow-sm">
+                        <p className="text-sm text-[var(--muted-foreground)]">Rating: <span className="font-semibold text-[var(--accent-dark)]">{application.shop.ratingAvg}</span> ({application.shop.reviewCount} reviews)</p>
+                        <p className="mt-2 text-sm text-[var(--muted-foreground)]">Status: <span className={`font-semibold ${application.shop.isActive ? "text-[var(--accent-dark)]" : "text-[#8A2A2A]"}`}>{application.shop.isActive ? "Active" : "Suspended"}</span></p>
                     </div>
 
                     {application.shop.isActive ? (
@@ -301,29 +356,29 @@ export default function AdminVendorDetailPage() {
                             >
                                 Suspend Shop
                             </button>
-                            <p className="mt-2 text-xs text-[#6B7C72]">Suspending the shop will hide it from customers and prevent new repair requests.</p>
+                            <p className="mt-2 text-xs text-[var(--muted-foreground)]">Suspending the shop will hide it from customers and prevent new repair requests.</p>
                         </div>
                     ) : (
                         <div>
                             <button
                                 onClick={() => handleShopSuspendToggle(true)}
                                 disabled={isProcessing}
-                                className="w-full rounded-xl bg-[#1F4D2E] px-4 py-3 font-semibold text-white transition hover:bg-[#183D24] disabled:opacity-50"
+                                className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                             >
                                 Reinstate Shop
                             </button>
-                            <p className="mt-2 text-xs text-[#6B7C72]">Reinstating the shop makes it active for customers again.</p>
+                            <p className="mt-2 text-xs text-[var(--muted-foreground)]">Reinstating the shop makes it active for customers again.</p>
                         </div>
                     )}
                 </div>
             )}
 
             {application.reviewNotes && (
-                <div className="rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm">
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Reviewer Notes</p>
-                    <p className="mt-2 text-[#244233] italic">"{application.reviewNotes}"</p>
+                <div className="rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Reviewer Notes</p>
+                    <p className="mt-2 text-[var(--foreground)] italic">"{application.reviewNotes}"</p>
                     {application.reviewedBy && (
-                        <p className="mt-2 text-xs text-[#6B7C72]">- {application.reviewedBy.name || application.reviewedBy.email}</p>
+                        <p className="mt-2 text-xs text-[var(--muted-foreground)]">- {application.reviewedBy.name || application.reviewedBy.email}</p>
                     )}
                 </div>
             )}

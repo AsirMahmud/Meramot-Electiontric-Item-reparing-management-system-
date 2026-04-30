@@ -21,7 +21,7 @@ const offerOptions = [
   { label: "Deals", value: "deals" },
 ] as const;
 
-export default function SidebarFilters({
+function SidebarFiltersInner({
   compact = false,
   targetPath,
 }: SidebarFiltersProps) {
@@ -138,5 +138,15 @@ export default function SidebarFilters({
         </div>
       </div>
     </aside>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function SidebarFilters(props: SidebarFiltersProps) {
+  return (
+    <Suspense fallback={<div>Loading filters...</div>}>
+      <SidebarFiltersInner {...props} />
+    </Suspense>
   );
 }

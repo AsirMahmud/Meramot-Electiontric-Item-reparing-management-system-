@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type Note = {
@@ -55,6 +56,8 @@ type Dispute = {
 export default function AdminDisputeDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
 
   const [dispute, setDispute] = useState<Dispute | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +74,7 @@ export default function AdminDisputeDetailPage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes/${id}`, {
           credentials: "include",
-          headers: getAuthHeaders(),
+          headers: getAuthHeaders(token),
         });
         const data = await res.json();
         if (res.ok) {
@@ -86,8 +89,8 @@ export default function AdminDisputeDetailPage() {
       }
     };
 
-    if (id) fetchDispute();
-  }, [id]);
+    if (id && token) fetchDispute();
+  }, [id, token]);
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +102,7 @@ export default function AdminDisputeDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ note: newNote, isInternal }),
       });
@@ -137,7 +140,7 @@ export default function AdminDisputeDetailPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ resolution: resolutionText, status: statusToResolve }),
       });
@@ -165,12 +168,12 @@ export default function AdminDisputeDetailPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-[#6B7C72]">Loading dispute details...</div>;
+    return <div className="p-8 text-[var(--muted-foreground)]">Loading dispute details...</div>;
   }
 
   if (!dispute) {
     return (
-      <div className="p-8 text-[#6B7C72]">
+      <div className="p-8 text-[var(--muted-foreground)]">
         Dispute not found. <Link href="/admin/disputes" className="underline">Go back</Link>
       </div>
     );
@@ -182,13 +185,13 @@ export default function AdminDisputeDetailPage() {
     <section>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/admin/disputes" className="mb-2 inline-block text-sm font-semibold text-[#5E7366] hover:underline">
+          <Link href="/admin/disputes" className="mb-2 inline-block text-sm font-semibold text-[var(--muted-foreground)] hover:underline">
             &larr; Back to Disputes
           </Link>
-          <h2 className="text-3xl font-bold text-[#1F4D2E]">Dispute Case</h2>
-          <p className="mt-1 text-[#6B7C72]">ID: {dispute.id}</p>
+          <h2 className="text-3xl font-bold text-[var(--accent-dark)]">Dispute Case</h2>
+          <p className="mt-1 text-[var(--muted-foreground)]">ID: {dispute.id}</p>
         </div>
-        <div className="rounded-full bg-[#E6F0E2] px-4 py-2 font-semibold tracking-wide text-[#1F4D2E]">
+        <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 font-semibold tracking-wide text-[var(--accent-dark)]">
           {dispute.status}
         </div>
       </div>
@@ -198,41 +201,41 @@ export default function AdminDisputeDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Main Info Card */}
-          <div className="rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF] p-6 md:p-8">
-            <h3 className="text-xl font-bold text-[#1F4D2E]">{dispute.reason}</h3>
+          <div className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6 md:p-8">
+            <h3 className="text-xl font-bold text-[var(--accent-dark)]">{dispute.reason}</h3>
             {dispute.description && (
-                <p className="mt-4 rounded-xl bg-white p-4 text-[#244233] shadow-sm">
+                <p className="mt-4 rounded-xl bg-white dark:bg-[#1C251F] p-4 text-[var(--foreground)] shadow-sm">
                     {dispute.description}
                 </p>
             )}
 
             <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Opened By</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">
-                        {dispute.openedBy?.name || "Unknown"} <span className="text-sm text-[#6B7C72]">({dispute.filedByType})</span>
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Opened By</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">
+                        {dispute.openedBy?.name || "Unknown"} <span className="text-sm text-[var(--muted-foreground)]">({dispute.filedByType})</span>
                     </p>
-                    <p className="text-sm text-[#6B7C72]">{dispute.openedBy?.email}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">{dispute.openedBy?.email}</p>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Against</p>
-                    <p className="mt-1 font-medium text-[#1F4D2E]">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Against</p>
+                    <p className="mt-1 font-medium text-[var(--accent-dark)]">
                         {dispute.against?.name || "Unknown"}
                     </p>
-                    <p className="text-sm text-[#6B7C72]">{dispute.against?.email || "No email"}</p>
+                    <p className="text-sm text-[var(--muted-foreground)]">{dispute.against?.email || "No email"}</p>
                 </div>
             </div>
 
-            <div className="mt-6 border-t border-[#D7E2D2] pt-6">
-                <p className="text-sm font-semibold uppercase tracking-wider text-[#5E7366]">Related Items</p>
+            <div className="mt-6 border-t border-[var(--border)] pt-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Related Items</p>
                 <div className="mt-3 flex flex-wrap gap-3">
                     {dispute.repairRequest && (
-                        <span className="rounded-full bg-white px-4 py-2 text-sm text-[#244233] shadow-sm">
+                        <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
                             Repair: {dispute.repairRequest.title}
                         </span>
                     )}
                     {dispute.payment && (
-                        <span className="rounded-full bg-white px-4 py-2 text-sm text-[#244233] shadow-sm">
+                        <span className="rounded-full bg-white dark:bg-[#1C251F] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm">
                             Payment: {dispute.payment.amount} {dispute.payment.currency} ({dispute.payment.status})
                         </span>
                     )}
@@ -240,32 +243,32 @@ export default function AdminDisputeDetailPage() {
             </div>
 
             {dispute.resolution && (
-                <div className="mt-6 rounded-2xl bg-[#E6F0E2] p-5">
-                    <p className="text-sm font-semibold uppercase tracking-wider text-[#1F4D2E]">Final Resolution</p>
-                    <p className="mt-2 text-[#244233] italic">"{dispute.resolution}"</p>
+                <div className="mt-6 rounded-2xl bg-[var(--mint-100)] p-5">
+                    <p className="text-sm font-semibold uppercase tracking-wider text-[var(--accent-dark)]">Final Resolution</p>
+                    <p className="mt-2 text-[var(--foreground)] italic">"{dispute.resolution}"</p>
                 </div>
             )}
           </div>
 
           {/* Timeline */}
           <div>
-            <h3 className="mb-4 text-xl font-bold text-[#1F4D2E]">Notes & Timeline</h3>
+            <h3 className="mb-4 text-xl font-bold text-[var(--accent-dark)]">Notes & Timeline</h3>
             <div className="space-y-4">
                 {dispute.notes.length === 0 ? (
-                    <p className="text-[#6B7C72]">No notes added yet.</p>
+                    <p className="text-[var(--muted-foreground)]">No notes added yet.</p>
                 ) : (
                     dispute.notes.map((note) => (
-                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white border border-[#D7E2D2]"}`}>
+                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white dark:bg-[#1C251F] border border-[var(--border)]"}`}>
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="font-semibold text-[#1F4D2E]">{note.author?.name || note.author?.email || "System"}</p>
-                                    <p className="text-xs text-[#6B7C72]">{new Date(note.createdAt).toLocaleString()}</p>
+                                    <p className="font-semibold text-[var(--accent-dark)]">{note.author?.name || note.author?.email || "System"}</p>
+                                    <p className="text-xs text-[var(--muted-foreground)]">{new Date(note.createdAt).toLocaleString()}</p>
                                 </div>
                                 {note.isInternal && (
                                     <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-semibold text-[#92400E]">Internal Note</span>
                                 )}
                             </div>
-                            <p className="mt-3 text-[#244233]">{note.note}</p>
+                            <p className="mt-3 text-[var(--foreground)]">{note.note}</p>
                         </div>
                     ))
                 )}
@@ -276,18 +279,18 @@ export default function AdminDisputeDetailPage() {
         {/* Right Column: Action Panel */}
         <div className="space-y-6">
             {!isClosed && (
-                <div className="sticky top-6 rounded-[28px] border border-[#D7E2D2] bg-white p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-bold text-[#1F4D2E]">Action Panel</h3>
+                <div className="sticky top-6 rounded-[28px] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-6 shadow-sm">
+                    <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Action Panel</h3>
                     
                     {/* Add Note Form */}
                     <form onSubmit={handleAddNote} className="mb-6 space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-[#5E7366]">Add Note</label>
+                            <label className="block text-sm font-semibold text-[var(--muted-foreground)]">Add Note</label>
                             <textarea
                                 value={newNote}
                                 onChange={(e) => setNewNote(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full rounded-2xl border border-[#D7E2D2] bg-[#F9FBF8] px-4 py-3 text-sm text-[#244233] focus:border-[#1F4D2E] focus:outline-none"
+                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[#F9FBF8] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                                 placeholder="Write your findings..."
                             />
                         </div>
@@ -297,29 +300,29 @@ export default function AdminDisputeDetailPage() {
                                 id="internal" 
                                 checked={isInternal} 
                                 onChange={(e) => setIsInternal(e.target.checked)}
-                                className="h-4 w-4 rounded border-[#D7E2D2] text-[#1F4D2E] focus:ring-[#1F4D2E]"
+                                className="h-4 w-4 rounded border-[var(--border)] text-[var(--accent-dark)] focus:ring-[#1F4D2E]"
                             />
-                            <label htmlFor="internal" className="text-sm text-[#6B7C72]">Visible to admins only</label>
+                            <label htmlFor="internal" className="text-sm text-[var(--muted-foreground)]">Visible to admins only</label>
                         </div>
                         <button
                             type="submit"
-                            className="w-full rounded-xl bg-[#F2F5EF] px-4 py-3 font-semibold text-[#1F4D2E] transition hover:bg-[#E6F0E2]"
+                            className="w-full rounded-xl bg-[var(--mint-50)] px-4 py-3 font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)]"
                         >
                             Add Note
                         </button>
                     </form>
 
-                    <div className="my-6 border-t border-[#D7E2D2]"></div>
+                    <div className="my-6 border-t border-[var(--border)]"></div>
 
                     {/* Resolve Form */}
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-[#5E7366]">Final Resolution</label>
+                            <label className="block text-sm font-semibold text-[var(--muted-foreground)]">Final Resolution</label>
                             <textarea
                                 value={resolutionText}
                                 onChange={(e) => setResolutionText(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full rounded-2xl border border-[#D7E2D2] bg-[#F9FBF8] px-4 py-3 text-sm text-[#244233] focus:border-[#1F4D2E] focus:outline-none"
+                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[#F9FBF8] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                                 placeholder="Explain how this was resolved..."
                             />
                         </div>
@@ -327,7 +330,7 @@ export default function AdminDisputeDetailPage() {
                             <select 
                                 value={statusToResolve}
                                 onChange={(e) => setStatusToResolve(e.target.value)}
-                                className="w-full rounded-xl border border-[#D7E2D2] bg-white px-4 py-3 text-sm text-[#244233] focus:border-[#1F4D2E] focus:outline-none"
+                                className="w-full rounded-xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                             >
                                 <option value="RESOLVED">Resolved (No action)</option>
                                 <option value="REFUNDED">Refunded</option>
@@ -338,7 +341,7 @@ export default function AdminDisputeDetailPage() {
                         <button
                             onClick={handleResolve}
                             disabled={isResolving}
-                            className="w-full rounded-xl bg-[#1F4D2E] px-4 py-3 font-semibold text-white transition hover:bg-[#183D24] disabled:opacity-50"
+                            className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                         >
                             {isResolving ? "Resolving..." : "Close Dispute"}
                         </button>

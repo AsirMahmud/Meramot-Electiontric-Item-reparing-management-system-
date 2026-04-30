@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { LogOut } from "lucide-react";
@@ -65,3 +65,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

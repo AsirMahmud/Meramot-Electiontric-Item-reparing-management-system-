@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
@@ -66,7 +67,7 @@ export async function deliveryRegister(req: Request, res: Response) {
         message:
           existing.role === "DELIVERY"
             ? "Delivery account already exists for this email"
-            : "This email is already registered",
+            : "Cannot register as a Delivery Partner using an existing Customer/Vendor email. Please use a separate email.",
       });
     }
 

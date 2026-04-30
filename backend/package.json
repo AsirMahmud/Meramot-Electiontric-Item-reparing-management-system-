@@ -11,9 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "ts-node prisma/seed.ts",
-    "seed:shops": "ts-node prisma/seed.shops.ts",
-    "seed:customers": "ts-node prisma/seed.customers.ts"
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
@@ -21,16 +19,19 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "express-rate-limit": "^8.3.2",
+    "express-rate-limit": "^8.4.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
-    "pusher": "^5.2.0",
+    "pusher": "^5.3.3",
+    "resend": "^6.12.2",
     "sslcommerz-lts": "^1.2.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.14.0",
     "@types/nodemailer": "^8.0.0",
     "prisma": "^6.6.0",

@@ -167,7 +167,7 @@ export default function ShopDetailsPage({
 
       {cartToast && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
             {cartToast}
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function ShopDetailsPage({
             <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
               <Link
                 href="/cart"
-                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white"
+                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]"
               >
                 Go to cart
               </Link>
@@ -320,7 +320,7 @@ export default function ShopDetailsPage({
                           setAddingService(null);
                         }
                       }}
-                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-white"
+                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-[var(--accent-foreground)]"
                     >
                       {addingService === item.name ? "Adding..." : "Add to cart"}
                     </button>
@@ -434,7 +434,7 @@ export default function ShopDetailsPage({
                   placeholder="Tell others about your experience"
                 />
 
-                <button className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white">
+                <button className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)]">
                   Submit review
                 </button>
               </form>

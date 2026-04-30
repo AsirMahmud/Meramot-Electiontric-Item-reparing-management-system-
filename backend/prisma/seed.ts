@@ -12,17 +12,17 @@ import {
 
 const prisma = new PrismaClient();
 
-const areas = [
-  "Dhanmondi",
-  "Gulshan",
-  "Banani",
-  "Mirpur",
-  "Uttara",
-  "Mohammadpur",
-  "New Market",
-  "Farmgate",
-  "Tejgaon",
-  "Bashundhara",
+const areaCoords: { name: string; lat: number; lng: number }[] = [
+  { name: "Dhanmondi",    lat: 23.7461, lng: 90.3742 },
+  { name: "Gulshan",      lat: 23.7925, lng: 90.4078 },
+  { name: "Banani",       lat: 23.7940, lng: 90.4023 },
+  { name: "Mirpur",       lat: 23.8042, lng: 90.3688 },
+  { name: "Uttara",       lat: 23.8759, lng: 90.3795 },
+  { name: "Mohammadpur",  lat: 23.7662, lng: 90.3587 },
+  { name: "New Market",   lat: 23.7327, lng: 90.3854 },
+  { name: "Farmgate",     lat: 23.7565, lng: 90.3903 },
+  { name: "Tejgaon",      lat: 23.7594, lng: 90.3988 },
+  { name: "Bashundhara",  lat: 23.8130, lng: 90.4250 },
 ];
 
 const specialtiesPool = [
@@ -36,6 +36,76 @@ const specialtiesPool = [
   "SSD upgrade",
 ];
 
+const reviewTexts = [
+  "Fast service and clear communication throughout the repair.",
+  "Good pricing and the technician explained the issue properly.",
+  "The repair was completed on time and the device works well now.",
+  "Friendly staff and professional handling.",
+  "Pickup and drop-off were smooth. Would use again.",
+  "The diagnosis was accurate and the final cost was fair.",
+  "Solid service overall. The shop kept me updated.",
+  "Quick turnaround and good quality parts.",
+];
+
+async function seedShopReviews(shops: Shop[], users: User[]) {
+  for (let shopIndex = 0; shopIndex < shops.length; shopIndex++) {
+    const shop = shops[shopIndex];
+
+    const reviewCount = 8 + (shopIndex % 8); 
+    const selectedUsers = users.slice(0, reviewCount);
+
+    for (let reviewIndex = 0; reviewIndex < selectedUsers.length; reviewIndex++) {
+      const user = selectedUsers[reviewIndex];
+
+      const scorePattern = [5, 5, 4, 5, 4, 3, 5, 4, 5, 4, 3, 5, 4, 5, 5];
+      const score = scorePattern[(shopIndex + reviewIndex) % scorePattern.length];
+
+      await prisma.rating.upsert({
+        where: {
+          userId_shopId: {
+            userId: user.id,
+            shopId: shop.id,
+          },
+        },
+        update: {
+          score,
+          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
+        },
+        create: {
+          userId: user.id,
+          shopId: shop.id,
+          score,
+          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
+          createdAt: new Date(Date.now() - (reviewIndex + 10) * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    const aggregate = await prisma.rating.aggregate({
+      where: {
+        shopId: shop.id,
+        isHidden: false,
+      },
+      _avg: {
+        score: true,
+      },
+      _count: {
+        score: true,
+      },
+    });
+
+    await prisma.shop.update({
+      where: {
+        id: shop.id,
+      },
+      data: {
+        ratingAvg: Number((aggregate._avg.score ?? 0).toFixed(1)),
+        reviewCount: aggregate._count.score,
+      },
+    });
+  }
+}
+
 function randomFrom<T>(arr: T[]) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -45,6 +115,40 @@ function randomSubset<T>(arr: T[], count: number) {
 }
 
 async function main() {
+  // Create hardwired admin account
+  // Credentials are NOT stored in this file - they come from environment variables
+  // Password hash is computed securely without storing plaintext anywhere in codebase
+  
+  // Admin password should be set in .env or environment
+  // If not set, the seed will fail with clear error message
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  if (!adminPassword) {
+    console.error("❌ ERROR: ADMIN_PASSWORD environment variable is required");
+    console.error("   Please set ADMIN_PASSWORD in your .env file");
+    process.exit(1);
+  }
+
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: "mustahid000@gmail.com" },
+    update: { passwordHash: adminPasswordHash, role: "ADMIN" },
+    create: {
+      email: "mustahid000@gmail.com",
+      username: "mustahid_admin",
+      name: "Mustahid",
+      phone: "+8801700000001",
+      passwordHash: adminPasswordHash,
+      role: "ADMIN",
+      status: "ACTIVE",
+      isEmailVerified: true,
+    },
+  });
+
+  console.log("✓ Admin account ready:", admin.email);
+
+  // Create demo customer account
   const passwordHash = await bcrypt.hash("password123", 10);
 
   const user = await prisma.user.upsert({
@@ -85,32 +189,105 @@ async function main() {
     { name: "Laptop Harbor", slug: "laptop-harbor" },
   ];
   
-  const shops = [];
+  const shops: Shop[] = [];
   
   for (let i = 0; i < shopSeedData.length; i++) {
     const { name, slug } = shopSeedData[i];
+    const areaInfo = areaCoords[i % areaCoords.length];
+    // Add slight jitter so shops in the same area aren't at identical coords
+    const jitterLat = (Math.random() - 0.5) * 0.006;
+    const jitterLng = (Math.random() - 0.5) * 0.006;
+    const shopLat = Number((areaInfo.lat + jitterLat).toFixed(6));
+    const shopLng = Number((areaInfo.lng + jitterLng).toFixed(6));
   
-    const shop = await prisma.shop.upsert({
-      where: { slug },
+    const shopUserEmail = `vendor${i}@meramot.demo`;
+    const shopUser = await prisma.user.upsert({
+      where: { email: shopUserEmail },
       update: {},
       create: {
+        username: `vendor_${slug}`,
+        email: shopUserEmail,
+        passwordHash,
+        name: `${name} Owner`,
+        phone: `+88018000000${i.toString().padStart(2, '0')}`,
+        role: "VENDOR",
+      },
+    });
+
+    const vendorApp = await prisma.vendorApplication.upsert({
+      where: { businessEmail: shopUserEmail },
+      update: {},
+      create: {
+        userId: shopUser.id,
+        ownerName: `${name} Owner`,
+        businessEmail: shopUserEmail,
+        phone: shopUser.phone!,
+        shopName: name,
+        address: `${10 + i + 1} Main Road`,
+        city: "Dhaka",
+        area: areaInfo.name,
+        lat: shopLat,
+        lng: shopLng,
+        specialties: randomSubset(specialtiesPool, 3),
+        courierPickup: true,
+        inShopRepair: true,
+        spareParts: false,
+        status: "APPROVED",
+        reviewedAt: new Date(),
+      },
+    });
+
+    const shop = await prisma.shop.upsert({
+      where: { slug },
+      update: {
+        vendorApplicationId: vendorApp.id,
+        lat: shopLat,
+        lng: shopLng,
+        area: areaInfo.name,
+      },
+      create: {
+        vendorApplicationId: vendorApp.id,
         name,
         slug,
         description: "Professional electronics repair service.",
         address: `${10 + i + 1} Main Road`,
         city: "Dhaka",
-        area: randomFrom(areas),
+        area: areaInfo.name,
+        lat: shopLat,
+        lng: shopLng,
         ratingAvg: Number((3.5 + Math.random() * 1.5).toFixed(1)),
         reviewCount: Math.floor(Math.random() * 200),
         priceLevel: Math.floor(Math.random() * 3) + 1,
         hasVoucher: (i + 1) % 2 === 0,
         freeDelivery: (i + 1) % 4 === 0,
         hasDeals: (i + 1) % 5 === 0,
+        inspectionFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
+        baseLaborFee: Math.floor(Math.random() * 6 + 5) * 100, // 500 to 1000
+        pickupFee: Math.floor(Math.random() * 2 + 1) * 100, // 100 to 200
+        expressFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
+        setupComplete: true,
+        isPublic: true,
         categories: [
           ShopCategory.COURIER_PICKUP,
           ShopCategory.IN_SHOP_REPAIR,
         ],
         specialties: randomSubset(specialtiesPool, 3),
+      },
+    });
+
+    await prisma.shopStaff.upsert({
+      where: {
+        shopId_userId: {
+          shopId: shop.id,
+          userId: shopUser.id,
+        },
+      },
+      update: {},
+      create: {
+        shopId: shop.id,
+        userId: shopUser.id,
+        role: "OWNER",
+        isActive: true,
       },
     });
   
@@ -139,7 +316,7 @@ async function main() {
       shopId: shops[0].id,
       status: RepairJobStatus.COMPLETED,
       diagnosisNotes: "Battery replaced with original cell.",
-      finalQuotedAmount: 145,
+      finalQuotedAmount: 12500, // Realistic BDT for MacBook Air M2 Battery
       customerApproved: true,
       startedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
       completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -168,7 +345,7 @@ async function main() {
       shopId: shops[1].id,
       status: RepairJobStatus.REPAIRING,
       diagnosisNotes: "Keyboard assembly needs replacement.",
-      finalQuotedAmount: 95,
+      finalQuotedAmount: 4500, // Realistic BDT for ThinkPad keyboard
       customerApproved: true,
       startedAt: new Date(),
     },

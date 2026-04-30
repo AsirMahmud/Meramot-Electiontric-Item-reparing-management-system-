@@ -11,7 +11,7 @@ export function DeliveryLayoutChrome({ children }: { children: ReactNode }) {
 
   if (isPublic) {
     return (
-      <div className="min-h-screen bg-[#E4FCD5] text-foreground font-sans flex flex-col">
+      <div className="min-h-screen bg-[var(--background)] text-foreground font-sans flex flex-col">
         {children}
       </div>
     );

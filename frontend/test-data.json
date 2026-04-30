@@ -1,0 +1,134 @@
+{
+  "users": [
+    {
+      "id": "user-admin-1",
+      "username": "admin_user",
+      "email": "admin@example.com",
+      "name": "Admin User",
+      "phone": "+8801800000000",
+      "role": "ADMIN",
+      "accessToken": "PLACEHOLDER_ADMIN_TOKEN"
+    },
+    {
+      "id": "user-vendor-1",
+      "username": "vendor_one",
+      "email": "vendor1@example.com",
+      "name": "Vendor One",
+      "phone": "+8801800000001",
+      "role": "VENDOR",
+      "accessToken": "PLACEHOLDER_VENDOR_TOKEN"
+    },
+    {
+      "id": "user-customer-1",
+      "username": "customer_one",
+      "email": "customer1@example.com",
+      "name": "Customer One",
+      "phone": "+8801800000002",
+      "role": "CUSTOMER",
+      "accessToken": "PLACEHOLDER_CUSTOMER_TOKEN"
+    },
+    {
+      "id": "user-delivery-1",
+      "username": "delivery_one",
+      "email": "delivery1@example.com",
+      "name": "Delivery Partner",
+      "phone": "+8801800000003",
+      "role": "DELIVERY",
+      "accessToken": "PLACEHOLDER_DELIVERY_TOKEN"
+    }
+  ],
+  "shops": [
+    {
+      "id": "shop-1",
+      "name": "TechFix Hub",
+      "slug": "techfix-hub",
+      "ownerId": "user-vendor-1",
+      "isPublic": true,
+      "setupComplete": true,
+      "address": "123 Main St, Dhaka",
+      "city": "Dhaka",
+      "area": "Gulshan",
+      "lat": 23.777176,
+      "lng": 90.399452,
+      "courierPickup": true,
+      "inShopRepair": true,
+      "spareParts": true,
+      "skillTags": ["Apple products", "Laptop motherboard", "Phone screen"]
+    }
+  ],
+  "repairRequests": [
+    {
+      "id": "req-1",
+      "userId": "user-customer-1",
+      "shopId": "shop-1",
+      "description": "Screen cracked on iPhone 13",
+      "status": "OPEN",
+      "createdAt": "2026-04-30T00:00:00Z",
+      "updatedAt": "2026-04-30T00:00:00Z"
+    }
+  ],
+  "supportTickets": [
+    {
+      "id": "ticket-1",
+      "userId": "user-customer-1",
+      "shopId": "shop-1",
+      "repairRequestId": "req-1",
+      "subject": "Issue with repair estimate",
+      "message": "The estimate seems too high for the screen replacement.",
+      "status": "OPEN",
+      "priority": "HIGH",
+      "createdAt": "2026-04-30T01:00:00Z",
+      "updatedAt": "2026-04-30T01:00:00Z"
+    }
+  ],
+  "disputeCases": [
+    {
+      "id": "dispute-1",
+      "supportTicketId": "ticket-1",
+      "repairRequestId": "req-1",
+      "openedById": "user-customer-1",
+      "againstId": "user-vendor-1",
+      "assignedAdminId": "user-admin-1",
+      "status": "INVESTIGATING",
+      "createdAt": "2026-04-30T02:00:00Z",
+      "updatedAt": "2026-04-30T02:30:00Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay-1",
+      "orderId": "req-1",
+      "amount": 5000,
+      "currency": "BDT",
+      "status": "PAID",
+      "method": "SSLCommerz",
+      "createdAt": "2026-04-30T02:45:00Z"
+    }
+  ],
+  "vendorApplications": [
+    {
+      "id": "app-1",
+      "ownerName": "Vendor One",
+      "businessEmail": "vendor1@example.com",
+      "phone": "+8801800000001",
+      "shopName": "TechFix Hub",
+      "address": "123 Main St, Dhaka",
+      "city": "Dhaka",
+      "area": "Gulshan",
+      "specialties": ["Apple products", "Phone screen"],
+      "courierPickup": true,
+      "inShopRepair": true,
+      "spareParts": true,
+      "status": "PENDING",
+      "createdAt": "2026-04-29T23:00:00Z",
+      "setupComplete": false,
+      "isPublic": false,
+      "inspectionFee": 300,
+      "baseLaborFee": 500,
+      "pickupFee": 120,
+      "expressFee": 250,
+      "lat": 23.777176,
+      "lng": 90.399452
+    }
+  ]
+}

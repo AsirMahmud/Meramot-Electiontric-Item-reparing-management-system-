@@ -4,7 +4,6 @@ import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sslCommerzService } from "../services/sslcommerz.js";
 import { sendInvoiceLinkEmail } from "../services/email-service.js";
-
 type AuthenticatedRequest = Request & {
   user?: {
     id: string;
@@ -34,11 +33,12 @@ type SslInitResponse = {
 };
 
 function callbackBaseUrl() {
-  return `${env.backendBaseUrl.replace(/\/$/, "")}/api/payments/sslcommerz`;
+  const base = process.env.BACKEND_BASE_URL || "http://localhost:4000";
+  return `${base.replace(/\/$/, "")}/api/payments/sslcommerz`;
 }
 
 function frontendPaymentResultUrl(params: Record<string, string | undefined>) {
-  const target = new URL(env.frontendPaymentResultPath, env.frontendOrigin);
+  const target = new URL("/payment/result", env.frontendOrigin);
 
   for (const [key, value] of Object.entries(params)) {
     if (!value) {
@@ -175,10 +175,9 @@ function createTransactionRef() {
 
 function ensureSslCommerzConfigured(res: Response) {
   if (!env.sslCommerzStoreId || !env.sslCommerzStorePassword) {
-    res.status(500).json({
+    res.status(503).json({
       success: false,
-      message:
-        "SSLCommerz is not configured. Set SSLCOMMERZ_STORE_ID and SSLCOMMERZ_STORE_PASSWORD.",
+      message: "Payment gateway is not configured",
     });
     return false;
   }
@@ -188,10 +187,6 @@ function ensureSslCommerzConfigured(res: Response) {
 
 export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!ensureSslCommerzConfigured(res)) {
-      return;
-    }
-
     const amount = Number(req.body?.amount);
     const currency = String(req.body?.currency || "BDT").trim().toUpperCase();
     const repairRequestId = req.body?.repairRequestId ? String(req.body.repairRequestId) : null;
@@ -209,6 +204,10 @@ export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: 
         success: false,
         message: "Authentication required",
       });
+    }
+
+    if (!ensureSslCommerzConfigured(res)) {
+      return;
     }
 
     const user = await prisma.user.findUnique({
@@ -366,14 +365,26 @@ async function markPaymentSuccessful(
       },
     });
 
+    await tx.ledgerEntry.create({
+      data: {
+        paymentId: payment.id,
+        amount: payment.amount,
+        type: "CUSTOMER_PAYMENT",
+        direction: "CREDIT",
+        description: `Payment marked as paid via SSLCommerz ${source} callback`,
+      },
+    });
+
+    // Create EscrowLedger entry to track the escrow hold
     await tx.escrowLedger.create({
       data: {
         paymentId: payment.id,
         repairRequestId: payment.repairRequestId,
         customerUserId: payment.userId,
         amount: payment.amount,
+        grossAmount: payment.amount,
         action: "PAYMENT_HELD",
-        note: `Payment marked as paid via SSLCommerz ${source} callback`,
+        note: `Payment held in escrow via SSLCommerz ${source} callback`,
       },
     });
   });
@@ -386,6 +397,7 @@ async function markPaymentSuccessful(
 
   if (fullPayment && fullPayment.user) {
     const invoiceUrl = new URL(`/payment/invoice/${fullPayment.id}`, env.frontendOrigin).toString();
+    console.log(`[Invoice] Generated invoice for payment ${paymentId}: ${invoiceUrl}`);
     
     sendInvoiceLinkEmail({
       to: fullPayment.user.email,
@@ -429,7 +441,7 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
 
     const callbackPayload = getCallbackPayload(req);
     const tranId = callbackPayload.tran_id || readCallbackField(req, "tran_id");
-    const valId = callbackPayload.val_id || readCallbackField(req, "val_id");
+    const valId = callbackPayload.val_id || readCallbackField(req, "val_id") || (!env.sslCommerzLive ? "demo_val_id" : "");
 
     if (!tranId) {
       if (isGatewayReturn) {
@@ -464,7 +476,7 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
       });
     }
 
-    if (source === "ipn" || callbackPayload.verify_sign) {
+    if (env.sslCommerzLive && (source === "ipn" || callbackPayload.verify_sign)) {
       const signatureResult = verifyCallbackSignature(callbackPayload);
 
       if (!signatureResult.ok) {
@@ -554,48 +566,61 @@ async function processSuccessLikeCallback(req: Request, res: Response, source: "
       });
     }
 
-    const validationResponse = await sslCommerzService.validate({ val_id: valId });
-    const validation = validationResponse as SslValidationResponse;
+    let validationResponse: unknown;
 
-    const validated = isSslValidationSuccess(validation);
-    const validationTranId = String(validation.tran_id || "").trim();
-    const validationCurrency = String(validation.currency_type || validation.currency || "")
-      .trim()
-      .toUpperCase();
+    if (env.sslCommerzLive) {
+      validationResponse = await sslCommerzService.validate({ val_id: valId });
+      const validation = validationResponse as SslValidationResponse;
 
-    const amountMatches = amountsEqual(validation.amount, payment.amount);
-    const currencyMatches =
-      validationCurrency.length > 0 && validationCurrency === payment.currency.toUpperCase();
-    const tranIdMatches = validationTranId.length > 0 && validationTranId === payment.transactionRef;
+      const validated = isSslValidationSuccess(validation);
+      const validationTranId = String(validation.tran_id || "").trim();
+      const validationCurrency = String(validation.currency_type || validation.currency || "")
+        .trim()
+        .toUpperCase();
 
-    if (!validated || !tranIdMatches || !amountMatches || !currencyMatches) {
-      if (isGatewayReturn) {
-        return res.redirect(
-          frontendPaymentResultUrl({
-            status: "failed",
-            tranId,
-            paymentId: payment.id,
-            message: "Validation cross-check failed",
-          }),
-        );
+      const amountMatches = amountsEqual(validation.amount, payment.amount);
+      const currencyMatches =
+        validationCurrency.length > 0 && validationCurrency === payment.currency.toUpperCase();
+      const tranIdMatches = validationTranId.length > 0 && validationTranId === payment.transactionRef;
+
+      if (!validated || !tranIdMatches || !amountMatches || !currencyMatches) {
+        if (isGatewayReturn) {
+          return res.redirect(
+            frontendPaymentResultUrl({
+              status: "failed",
+              tranId,
+              paymentId: payment.id,
+              message: "Validation cross-check failed",
+            }),
+          );
+        }
+
+        return res.status(400).json({
+          success: false,
+          message: "Payment validation cross-check failed",
+          checks: {
+            validated,
+            tranIdMatches,
+            amountMatches,
+            currencyMatches,
+          },
+          validation: {
+            status: validation.status,
+            tran_id: validation.tran_id,
+            amount: validation.amount,
+            currency_type: validation.currency_type || validation.currency,
+          },
+        });
       }
-
-      return res.status(400).json({
-        success: false,
-        message: "Payment validation cross-check failed",
-        checks: {
-          validated,
-          tranIdMatches,
-          amountMatches,
-          currencyMatches,
-        },
-        validation: {
-          status: validation.status,
-          tran_id: validation.tran_id,
-          amount: validation.amount,
-          currency_type: validation.currency_type || validation.currency,
-        },
-      });
+    } else {
+      validationResponse = {
+        mock: true,
+        status: "VALIDATED",
+        tran_id: tranId,
+        amount: payment.amount,
+        currency: payment.currency,
+        note: "Bypassed validation for demo mode",
+      };
     }
 
     await markPaymentSuccessful(payment.id, validationResponse, source);
@@ -744,8 +769,7 @@ export async function getMyPaymentById(req: AuthenticatedRequest, res: Response)
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
       include: {
-        refunds: true,
-        disputeCases: true,
+        ledgerEntries: true,
       },
     });
 
@@ -773,6 +797,48 @@ export async function getMyPaymentById(req: AuthenticatedRequest, res: Response)
       success: false,
       message: "Failed to fetch payment",
     });
+  }
+}
+
+export async function updatePayment(req: AuthenticatedRequest, res: Response) {
+  try {
+    const paymentId = String(req.params.paymentId || "").trim();
+    const { method } = req.body;
+
+    if (!paymentId) {
+      return res.status(400).json({ success: false, message: "paymentId is required" });
+    }
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+
+    if (!payment) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
+
+    if (payment.userId !== req.user?.id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
+
+    if (payment.status === "PAID") {
+      return res.status(400).json({ success: false, message: "Cannot update a paid payment" });
+    }
+
+    const updated = await prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        method: method || payment.method,
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("PATCH /payments/:paymentId error:", error);
+    return res.status(500).json({ success: false, message: "Failed to update payment" });
   }
 }
 

@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { Home, Map, Wallet, User, Menu, X, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 import { useState } from "react";
 import { useDeliveryAuth } from "@/lib/delivery-auth-context";
 
@@ -69,8 +70,8 @@ export function Sidebar() {
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition",
                   isDisabled && "cursor-not-allowed opacity-45 hover:bg-transparent hover:text-[#163625]/70",
                   isActive
-                    ? "border border-[#d9e5d5] bg-[#eef4ea] text-[#163625]"
-                    : "text-[#163625]/70 hover:bg-[#f5f9f2] hover:text-[#163625]",
+                    ? "border border-[var(--border)] bg-[var(--mint-100)] text-[var(--accent-dark)]"
+                    : "text-[var(--accent-dark)]/70 hover:bg-[var(--mint-50)] hover:text-[var(--accent-dark)]",
                 )}
               >
                 <item.icon size={18} strokeWidth={isActive ? 2.4 : 2} />
@@ -85,24 +86,27 @@ export function Sidebar() {
           ) : null}
         </nav>
 
-        <div className="border-t border-[#d9e5d5] p-4">
+        <div className="border-t border-[var(--border)] p-4">
           <Link
             href="/delivery/register"
-            className="mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#163625]/70 transition hover:bg-[#f5f9f2] hover:text-[#163625]"
+            className="mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[var(--accent-dark)]/70 transition hover:bg-[var(--mint-50)] hover:text-[var(--accent-dark)]"
           >
             Extended onboarding
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              router.push("/delivery/login");
-            }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-700/80 transition hover:bg-red-50 hover:text-red-700"
-          >
-            <LogOut size={18} />
-            Sign Out
-          </button>
+          <div className="flex w-full items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                router.push("/delivery/login");
+              }}
+              className="flex flex-1 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-red-700/80 transition hover:bg-red-50 hover:text-red-700"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
@@ -117,3 +121,4 @@ export function Sidebar() {
     </>
   );
 }
+

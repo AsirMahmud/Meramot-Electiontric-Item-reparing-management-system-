@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { DollarSign } from "lucide-react";
@@ -161,7 +161,7 @@ export default function EarningsPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-transparent px-5 pt-8 max-w-5xl mx-auto w-full">
-      <h1 className="text-2xl font-extrabold text-[#163625] mb-6">Earnings & Stats</h1>
+      <h1 className="text-2xl font-extrabold text-[var(--foreground)] mb-6">Earnings & Stats</h1>
 
       <div className="bg-gradient-to-br from-[#163625] to-[#0d2217] text-[#E4FCD5] rounded-[1.5rem] p-6 shadow-xl mb-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full"></div>
@@ -173,32 +173,32 @@ export default function EarningsPage() {
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-white p-4 rounded-[1.25rem] border border-[#d9e5d5] shadow-sm">
           <p className="text-xs text-neutral-500 font-medium">Completed trips</p>
-          <h3 className="text-lg font-bold text-[#163625]">{totalTrips}</h3>
+          <h3 className="text-lg font-bold text-[var(--foreground)]">{totalTrips}</h3>
         </div>
         <div className="bg-white p-4 rounded-[1.25rem] border border-[#d9e5d5] shadow-sm">
           <p className="text-xs text-neutral-500 font-medium">Active trips</p>
-          <h3 className="text-lg font-bold text-[#163625]">{activeTrips}</h3>
+          <h3 className="text-lg font-bold text-[var(--foreground)]">{activeTrips}</h3>
         </div>
       </div>
 
       <section className="mb-8 grid gap-4 md:grid-cols-2">
         <div className="rounded-[1.25rem] border border-[#d9e5d5] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#163625]/60">Wallet available</p>
-          <p className="mt-1 text-2xl font-extrabold text-[#163625]">BDT {wallet.available.toFixed(2)}</p>
-          <p className="mt-2 text-xs text-[#163625]/70">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">Wallet available</p>
+          <p className="mt-1 text-2xl font-extrabold text-[var(--foreground)]">BDT {wallet.available.toFixed(2)}</p>
+          <p className="mt-2 text-xs text-[var(--foreground)]/70">
             Minimum payout request is BDT {wallet.minRequestAmount}. Request allowed only after 500+ taka earnings.
           </p>
         </div>
         <div className="rounded-[1.25rem] border border-[#d9e5d5] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#163625]/60">Requested or paid</p>
-          <p className="mt-1 text-2xl font-extrabold text-[#163625]">BDT {wallet.requestedOrPaid.toFixed(2)}</p>
-          <p className="mt-2 text-xs text-[#163625]/70">Admin can directly approve payout requests.</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--foreground)]/60">Requested or paid</p>
+          <p className="mt-1 text-2xl font-extrabold text-[var(--foreground)]">BDT {wallet.requestedOrPaid.toFixed(2)}</p>
+          <p className="mt-2 text-xs text-[var(--foreground)]/70">Admin can directly approve payout requests.</p>
         </div>
       </section>
 
       <form onSubmit={handlePayoutRequest} className="mb-8 rounded-[1.25rem] border border-[#d9e5d5] bg-white p-5">
-        <h3 className="text-lg font-bold text-[#163625]">Request payout</h3>
-        <p className="mt-1 text-sm text-[#163625]/70">
+        <h3 className="text-lg font-bold text-[var(--foreground)]">Request payout</h3>
+        <p className="mt-1 text-sm text-[var(--foreground)]/70">
           Enter amount (or leave empty for full available balance) and send to admin for approval.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -207,19 +207,19 @@ export default function EarningsPage() {
             onChange={(event) => setRequestAmount(event.target.value)}
             inputMode="decimal"
             placeholder="Amount (BDT)"
-            className="rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] px-3 py-2 text-sm outline-none focus:border-[#163625]"
+            className="rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] px-3 py-2 text-sm outline-none focus:border-[var(--foreground)]"
           />
           <input
             value={requestNote}
             onChange={(event) => setRequestNote(event.target.value)}
             placeholder="Note (optional)"
-            className="rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] px-3 py-2 text-sm outline-none focus:border-[#163625]"
+            className="rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] px-3 py-2 text-sm outline-none focus:border-[var(--foreground)]"
           />
         </div>
         <button
           type="submit"
           disabled={requestLoading || !wallet.canRequest}
-          className="mt-4 rounded-full bg-[#163625] px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 rounded-full bg-[var(--foreground)] px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {requestLoading ? "Sending request..." : "Send payout request"}
         </button>
@@ -289,7 +289,7 @@ export default function EarningsPage() {
       </section>
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-[#163625]">Recent Deliveries & Payouts</h3>
+        <h3 className="text-lg font-bold text-[var(--foreground)]">Recent Deliveries & Payouts</h3>
       </div>
       {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}
 
@@ -301,7 +301,7 @@ export default function EarningsPage() {
                 <DollarSign size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[#163625]">{d.repairJob.repairRequest.title}</h4>
+                <h4 className="text-sm font-bold text-[var(--foreground)]">{d.repairJob.repairRequest.title}</h4>
                 <p className="text-xs text-neutral-500">{d.direction}</p>
               </div>
             </div>
@@ -316,11 +316,11 @@ export default function EarningsPage() {
         {payouts.slice(0, 3).map((payout) => (
           <div key={payout.id} className="bg-white p-4 rounded-xl border border-[#d9e5d5] flex justify-between items-center">
             <div>
-              <h4 className="text-sm font-bold text-[#163625]">Payout request</h4>
+              <h4 className="text-sm font-bold text-[var(--foreground)]">Payout request</h4>
               <p className="text-xs text-neutral-500">{new Date(payout.createdAt).toLocaleString()}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold text-[#163625]">BDT {payout.amount.toFixed(2)}</p>
+              <p className="text-sm font-bold text-[var(--foreground)]">BDT {payout.amount.toFixed(2)}</p>
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#eef4ea] text-green-700">
                 {payout.status}
               </span>
@@ -335,8 +335,9 @@ export default function EarningsPage() {
 function ChartCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-[1.25rem] border border-[#d9e5d5] bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-bold text-[#163625]">{title}</h3>
+      <h3 className="mb-3 text-sm font-bold text-[var(--foreground)]">{title}</h3>
       {children}
     </div>
   );
 }
+

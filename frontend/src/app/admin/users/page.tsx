@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
 
 type User = {
@@ -15,6 +16,8 @@ type User = {
 };
 
 export default function AdminUsersPage() {
+  const { data: session } = useSession();
+  const token = (session?.user as any)?.accessToken;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +36,7 @@ export default function AdminUsersPage() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?${queryParams.toString()}`, {
         credentials: "include",
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
       const data = await res.json();
       if (res.ok) {
@@ -47,8 +50,10 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [role, status]); // Re-fetch on filter change
+    if (token) {
+      fetchUsers();
+    }
+  }, [role, status, token]); // Re-fetch on filter change or token load
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +67,7 @@ export default function AdminUsersPage() {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...getAuthHeaders(token),
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -84,9 +89,9 @@ export default function AdminUsersPage() {
   return (
     <section>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#5E7366]">Moderation</p>
-        <h2 className="mt-3 text-4xl font-bold text-[#1F4D2E]">User Management</h2>
-        <p className="mt-3 text-lg text-[#6B7C72]">
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Moderation</p>
+        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">User Management</h2>
+        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Manage platform users, update roles, and suspend accounts.
         </p>
       </div>
@@ -98,9 +103,9 @@ export default function AdminUsersPage() {
                 placeholder="Search by name, email, phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl border border-[#D7E2D2] px-4 py-3 text-[#244233] focus:border-[#1F4D2E] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E]"
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E]"
             />
-            <button type="submit" className="rounded-2xl bg-[#1F4D2E] px-6 py-3 font-semibold text-white transition hover:bg-[#183D24]">
+            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90">
                 Search
             </button>
         </form>
@@ -109,7 +114,7 @@ export default function AdminUsersPage() {
             <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="rounded-2xl border border-[#D7E2D2] bg-white px-4 py-3 text-[#244233] focus:border-[#1F4D2E] focus:outline-none"
+                className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
             >
                 <option value="">All Roles</option>
                 <option value="CUSTOMER">Customer</option>
@@ -121,7 +126,7 @@ export default function AdminUsersPage() {
             <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="rounded-2xl border border-[#D7E2D2] bg-white px-4 py-3 text-[#244233] focus:border-[#1F4D2E] focus:outline-none"
+                className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
             >
                 <option value="">All Statuses</option>
                 <option value="ACTIVE">Active</option>
@@ -132,13 +137,13 @@ export default function AdminUsersPage() {
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[#F2F5EF] p-6 text-[#6B7C72]">Loading users...</div>
+        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading users...</div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-[#D7E2D2] bg-[#F2F5EF]">
+        <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="border-b border-[#D7E2D2] bg-[#E6F0E2]">
-                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[#5E7366]">
+              <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
+                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4">Role</th>
                   <th className="px-6 py-4">Status</th>
@@ -147,18 +152,18 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-[#D7E2D2] last:border-b-0">
+                  <tr key={user.id} className="border-b border-[var(--border)] last:border-b-0">
                     <td className="px-6 py-5">
-                      <p className="font-semibold text-[#1F4D2E]">{user.name || user.username}</p>
-                      <p className="mt-1 text-sm text-[#6B7C72]">{user.email}</p>
-                      <p className="text-sm text-[#6B7C72]">{user.phone || "No phone"}</p>
+                      <p className="font-semibold text-[var(--accent-dark)]">{user.name || user.username}</p>
+                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">{user.email}</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">{user.phone || "No phone"}</p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[#244233]">{user.role}</td>
+                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{user.role}</td>
                     <td className="px-6 py-5 text-sm">
                       <span
                         className={`rounded-full px-3 py-1 font-semibold ${
                           user.status === "ACTIVE"
-                            ? "bg-[#E6F0E2] text-[#1F4D2E]"
+                            ? "bg-[var(--mint-100)] text-[var(--accent-dark)]"
                             : user.status === "SUSPENDED"
                               ? "bg-[#FEF3C7] text-[#92400E]"
                               : "bg-[#FDEAEA] text-[#8A2A2A]"
@@ -178,7 +183,7 @@ export default function AdminUsersPage() {
                       ) : (
                         <button
                           onClick={() => handleStatusUpdate(user.id, "ACTIVE")}
-                          className="rounded-full bg-[#1F4D2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#183D24]"
+                          className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
                         >
                           Restore
                         </button>
@@ -190,7 +195,7 @@ export default function AdminUsersPage() {
             </table>
           </div>
 
-          {!users.length && <div className="p-6 text-[#6B7C72]">No users found matching criteria.</div>}
+          {!users.length && <div className="p-6 text-[var(--muted-foreground)]">No users found matching criteria.</div>}
         </div>
       )}
     </section>

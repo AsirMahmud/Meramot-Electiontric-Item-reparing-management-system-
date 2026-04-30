@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -29,7 +29,7 @@ export default function DeliveryLoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
         <div className="mb-8 text-center">
           <Image
             src="/images/meramot.svg"
@@ -56,7 +56,7 @@ export default function DeliveryLoginForm() {
           ) : null}
 
           <div className="space-y-2">
-            <label htmlFor="dl-identifier" className="text-sm font-semibold text-[#163625]">
+            <label htmlFor="dl-identifier" className="text-sm font-semibold text-[var(--accent-dark)]">
               Email or username
             </label>
             <input
@@ -64,13 +64,13 @@ export default function DeliveryLoginForm() {
               autoComplete="username"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none transition focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+              className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none transition focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="dl-password" className="text-sm font-semibold text-[#163625]">
+            <label htmlFor="dl-password" className="text-sm font-semibold text-[var(--accent-dark)]">
               Password
             </label>
             <input
@@ -79,7 +79,7 @@ export default function DeliveryLoginForm() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-[#d9e5d5] px-4 py-3 text-[#163625] outline-none transition focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
+              className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-[var(--accent-dark)] outline-none transition focus:border-[#4C9E36] focus:ring-2 focus:ring-[#E4FCD5]"
               required
             />
           </div>
@@ -87,24 +87,25 @@ export default function DeliveryLoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-[#163625] py-3.5 text-base font-bold text-[#E4FCD5] transition hover:bg-[#0d2217] disabled:opacity-60"
+            className="w-full rounded-xl bg-[var(--foreground)] py-3.5 text-base font-bold text-[var(--background)] transition hover:bg-[#0d2217] disabled:opacity-60"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Signing inâ€¦" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-8 text-center text-sm text-[#163625]/70">
+        <p className="mt-8 text-center text-sm text-[var(--accent-dark)]/70">
           New partner?{" "}
-          <Link href="/delivery/signup" className="font-bold text-[#163625] underline-offset-2 hover:underline">
+          <Link href="/delivery/signup" className="font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline">
             Create a delivery account
           </Link>
         </p>
-        <p className="mt-3 text-center text-sm text-[#163625]/50">
-          <Link href="/" className="font-medium hover:text-[#163625]">
-            ← Back to marketplace
+        <p className="mt-3 text-center text-sm text-[var(--accent-dark)]/50">
+          <Link href="/" className="font-medium hover:text-[var(--accent-dark)]">
+            â† Back to marketplace
           </Link>
         </p>
       </div>
     </div>
   );
 }
+

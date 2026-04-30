@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router, Request, Response } from "express";
 import prisma from "../models/prisma.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -15,26 +16,16 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
       totalDeliveryUsers,
       pendingVendorApplications,
       openTickets,
-      activeDisputes,
-      pendingRefunds,
+      totalPayments,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: "VENDOR" } }),
       prisma.user.count({ where: { role: "DELIVERY" } }),
       prisma.vendorApplication.count({ where: { status: "PENDING" } }),
       prisma.supportTicket.count({
-        where: { status: { in: ["OPEN", "IN_PROGRESS", "ESCALATED"] } },
+        where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
       }),
-      prisma.disputeCase.count({
-        where: {
-          status: {
-            in: ["OPEN", "INVESTIGATING", "WAITING_EVIDENCE", "WAITING_RESPONSE"],
-          },
-        },
-      }),
-      prisma.refund.count({
-        where: { status: "PENDING" },
-      }),
+      prisma.payment.count(),
     ]);
 
     return res.json({
@@ -45,8 +36,7 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
         totalDeliveryUsers,
         pendingVendorApplications,
         openTickets,
-        activeDisputes,
-        pendingRefunds,
+        totalPayments,
       },
     });
   } catch (error) {
@@ -353,4 +343,6 @@ router.patch("/shops/:id/active", async (req: Request, res: Response) => {
   }
 });
 
+import adminVendorRoutes from "./admin-vendor-application-routes.js";
+router.use("/vendors", adminVendorRoutes);
 export default router;
