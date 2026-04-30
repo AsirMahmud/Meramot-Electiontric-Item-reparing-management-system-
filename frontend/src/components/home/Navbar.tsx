@@ -177,17 +177,6 @@ export function NavbarInner({
             {/* Right side icons — always visible */}
             <div className="flex shrink-0 items-center gap-2 md:gap-3">
               <NotificationBell />
-              {isLoggedIn ? (
-                <button
-                  onClick={() => {
-                    setIsUserMenuOpen((prev) => !prev);
-                    setIsLangMenuOpen(false);
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-dark)] text-sm font-bold text-[var(--accent-foreground)] shadow-sm md:hidden"
-                >
-                  {displayName.charAt(0).toUpperCase()}
-                </button>
-              ) : null}
               {/* Desktop: full action bar */}
               <div className="hidden md:flex md:items-center md:gap-3">
                 <ThemeToggle />
