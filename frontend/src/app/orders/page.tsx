@@ -215,12 +215,12 @@ function OrdersPageInner() {
   return (
     <main className="min-h-screen bg-[#E4FCD5]">
       <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-6xl px-3 py-4 md:px-4 md:py-8">
+        <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#58725f]">Orders</p>
-            <h1 className="text-3xl font-bold text-[#173726]">Track your repair requests</h1>
-            <p className="mt-2 text-sm text-[#5b7262]">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#58725f]">Orders</p>
+            <h1 className="text-xl font-bold text-[#173726] md:text-3xl">Track your repair requests</h1>
+            <p className="mt-1 text-xs text-[#5b7262] md:mt-2 md:text-sm">
               Review vendor bids, accept or decline them, and respond to final diagnosis and quote once the device is inspected.
             </p>
           </div>
@@ -251,11 +251,11 @@ function OrdersPageInner() {
             const showFinalQuoteActions = canRespondToFinalQuote(order);
 
             return (
-              <article key={order.id} className="rounded-[2rem] bg-white p-6 shadow-sm">
+              <article key={order.id} className="rounded-[1.25rem] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="max-w-3xl">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-2xl font-bold text-[#173726]">{order.title}</h2>
+                      <h2 className="text-lg font-bold text-[#173726] md:text-2xl">{order.title}</h2>
                       <span className="rounded-full bg-[#dff0dc] px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#214c34]">
                         {formatStatus(order.status)}
                       </span>
@@ -292,7 +292,7 @@ function OrdersPageInner() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 md:mt-5 md:grid-cols-3">
                   <div className="rounded-3xl bg-[#f6faf4] p-5 text-sm text-[#355541]">
                     <p className="font-semibold text-[#173726]">Bids received</p>
                     <p className="mt-2 text-2xl font-bold text-[#214c34]">{order.bids.length}</p>

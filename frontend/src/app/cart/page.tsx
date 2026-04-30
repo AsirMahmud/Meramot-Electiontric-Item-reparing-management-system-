@@ -348,35 +348,35 @@ export default function CartPage() {
         firstName={session?.user?.name?.split(" ")[0]}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <section className="overflow-hidden rounded-[2.5rem] border border-[var(--border)] bg-gradient-to-br from-[var(--mint-50)] via-[var(--card)] to-[var(--background)] p-6 shadow-[0_24px_70px_rgba(67,100,64,0.14)] md:p-8">
+      <div className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-8">
+        <section className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-gradient-to-br from-[var(--mint-50)] via-[var(--card)] to-[var(--background)] p-4 shadow-[0_24px_70px_rgba(67,100,64,0.14)] md:rounded-[2.5rem] md:p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
                 Service checkout
               </p>
-              <h1 className="mt-3 text-4xl font-black tracking-tight text-[var(--foreground)] md:text-5xl">
+              <h1 className="mt-2 text-2xl font-black tracking-tight text-[var(--foreground)] md:mt-3 md:text-4xl lg:text-5xl">
                 Review your cart
               </h1>
-              <p className="mt-3 max-w-2xl text-base text-[var(--muted-foreground)]">
+              <p className="mt-2 max-w-2xl text-xs text-[var(--muted-foreground)] md:mt-3 md:text-base">
                 Confirm the services, pickup details, and payment method before the repair shop receives your order.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--card)] shadow-sm">
-              <div className="px-5 py-4 text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Items</p>
-                <p className="mt-1 text-2xl font-bold text-[var(--foreground)]">{itemCount}</p>
+            <div className="grid grid-cols-3 overflow-hidden rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] shadow-sm md:rounded-[2rem]">
+              <div className="px-3 py-3 text-center md:px-5 md:py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Items</p>
+                <p className="mt-1 text-lg font-bold text-[var(--foreground)] md:text-2xl">{itemCount}</p>
               </div>
-              <div className="border-x border-[var(--border)] px-5 py-4 text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Shop</p>
-                <p className="mt-1 max-w-[130px] truncate text-sm font-bold text-[var(--foreground)]">
+              <div className="border-x border-[var(--border)] px-3 py-3 text-center md:px-5 md:py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Shop</p>
+                <p className="mt-1 max-w-[90px] truncate text-xs font-bold text-[var(--foreground)] md:max-w-[130px] md:text-sm">
                   {primaryCart?.shop.name || "—"}
                 </p>
               </div>
-              <div className="px-5 py-4 text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Total</p>
-                <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)]">{formatMoney(total)}</p>
+              <div className="px-3 py-3 text-center md:px-5 md:py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Total</p>
+                <p className="mt-1 text-lg font-bold text-[var(--accent-dark)] md:text-2xl">{formatMoney(total)}</p>
               </div>
             </div>
           </div>

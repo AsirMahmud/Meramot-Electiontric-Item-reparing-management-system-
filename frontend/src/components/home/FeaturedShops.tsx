@@ -57,7 +57,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 text-2xl font-bold text-[var(--foreground)]">
+      <h2 className="mb-3 text-lg font-bold text-[var(--foreground)] md:mb-4 md:text-2xl">
         Featured shops
       </h2>
 

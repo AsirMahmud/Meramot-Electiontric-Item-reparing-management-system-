@@ -8,7 +8,7 @@ export default function RecentlyViewed() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
           Recently viewed
         </p>
-        <h2 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+        <h2 className="text-lg font-bold text-[var(--foreground)] md:text-2xl lg:text-3xl">
           Jump back into previous repair searches
         </h2>
       </div>

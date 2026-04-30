@@ -57,12 +57,12 @@ export default function AdminDashboardPage() {
 
   return (
     <section>
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">
+      <div className="mb-4 md:mb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)] md:text-sm">
           Dashboard
         </p>
-        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Admin Overview</h2>
-        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
+        <h2 className="mt-2 text-2xl font-bold text-[var(--accent-dark)] md:mt-3 md:text-4xl">Admin Overview</h2>
+        <p className="mt-2 text-xs text-[var(--muted-foreground)] md:mt-3 md:text-lg">
           Monitor platform health, vendor approvals, customer support, and financial mediation.
         </p>
       </div>
@@ -70,16 +70,16 @@ export default function AdminDashboardPage() {
       {loading ? (
         <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading dashboard...</div>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
           {cards.map((card) => (
             <div
               key={card.label}
-              className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6"
+              className="rounded-[1.25rem] border border-[var(--border)] bg-[var(--mint-50)] p-4 md:rounded-[28px] md:p-6"
             >
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
                 {card.label}
               </p>
-              <p className="mt-4 text-4xl font-bold text-[var(--accent-dark)]">{card.value}</p>
+              <p className="mt-2 text-2xl font-bold text-[var(--accent-dark)] md:mt-4 md:text-4xl">{card.value}</p>
             </div>
           ))}
         </div>

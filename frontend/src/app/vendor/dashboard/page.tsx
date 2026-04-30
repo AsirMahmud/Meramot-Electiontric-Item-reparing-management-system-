@@ -489,12 +489,12 @@ export default function VendorDashboardPage() {
     <main className="min-h-screen bg-[#E4FCD5]">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mx-auto max-w-7xl px-3 py-4 md:px-4 md:py-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor dashboard</p>
-            <h1 className="mt-2 text-3xl font-bold text-[#173726]">{dashboard.shop.name}</h1>
-            <p className="mt-2 text-sm text-[#5b7262]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor dashboard</p>
+            <h1 className="mt-1 text-xl font-bold text-[#173726] md:mt-2 md:text-3xl">{dashboard.shop.name}</h1>
+            <p className="mt-1 text-xs text-[#5b7262] md:mt-2 md:text-sm">
               Review relevant requests, manage bids, handle assigned repair jobs, and send final diagnosis and quote.
             </p>
           </div>
@@ -527,13 +527,13 @@ export default function VendorDashboardPage() {
           </div>
         ) : null}
 
-        <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-4 grid gap-3 grid-cols-2 md:mt-6 md:gap-4 xl:grid-cols-4">
           {summaryCards.map((card) => {
             const inner = (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">{card.label}</p>
-                <p className="mt-3 text-4xl font-bold text-[#173726]">{card.value}</p>
-                <p className="mt-2 text-sm text-[#5b7262]">{card.description}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6b8270] md:text-xs">{card.label}</p>
+                <p className="mt-2 text-2xl font-bold text-[#173726] md:mt-3 md:text-4xl">{card.value}</p>
+                <p className="mt-1 text-[10px] text-[#5b7262] md:mt-2 md:text-sm">{card.description}</p>
                 <p className="mt-3 text-xs font-semibold text-[#214c34]">
                   {card.scrollTo ? "Scroll to section ↓" : "View details →"}
                 </p>
@@ -541,7 +541,7 @@ export default function VendorDashboardPage() {
             );
 
             const cardStyle =
-              "block rounded-[2rem] bg-white p-6 shadow-sm cursor-pointer " +
+              "block rounded-[1.25rem] bg-white p-4 shadow-sm cursor-pointer md:rounded-[2rem] md:p-6 " +
               "transition-all duration-300 ease-out " +
               "hover:shadow-lg hover:shadow-[#214c34]/10 hover:-translate-y-1 " +
               "hover:ring-2 hover:ring-[#cfe0c6] " +
@@ -657,7 +657,7 @@ export default function VendorDashboardPage() {
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-3xl">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-bold text-[#173726]">{requestItem.title}</h3>
+                        <h3 className="text-lg font-bold text-[#173726] md:text-2xl">{requestItem.title}</h3>
                         <span className="rounded-full bg-[#dff0dc] px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#214c34]">
                           {formatStatus(requestItem.status)}
                         </span>

@@ -131,7 +131,7 @@ function ProfilePageInner() {
   }
 
   return (
-    <main className="min-h-screen bg-[#E4FCD5] px-4 py-8">
+    <main className="min-h-screen bg-[#E4FCD5] px-3 py-4 md:px-4 md:py-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -156,13 +156,13 @@ function ProfilePageInner() {
           </Link>
         </div>
 
-        <div className="rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+        <div className="rounded-[1.25rem] border border-[#d9e5d5] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
                 Profile
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-[#173726]">Hi, {firstName}</h1>
+              <h1 className="mt-1 text-xl font-bold text-[#173726] md:mt-2 md:text-3xl">Hi, {firstName}</h1>
               <p className="mt-2 text-sm text-[#5b7262]">
                 Manage your account details here.
               </p>

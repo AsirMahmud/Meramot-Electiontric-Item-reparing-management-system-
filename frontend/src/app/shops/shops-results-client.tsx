@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -197,36 +197,50 @@ function ShopsResultsClientInner() {
   };
 
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
 
-      <section className="mx-auto max-w-7xl px-4 py-5 md:px-6">
-        <div className="mb-5">
-          <h1 className="text-[2.7rem] font-extrabold leading-none tracking-tight text-[var(--foreground)]">
+      <section className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-5">
+        <div className="mb-4 md:mb-5">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none">
             {loading ? "Searching..." : `${visibleShops.length} matches found`}
           </h1>
 
-          <p className="mt-2 text-[1.7rem] text-[var(--muted-foreground)]">
+          <p className="mt-1 text-lg text-[var(--muted-foreground)] md:mt-2 md:text-[1.7rem]">
             {searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Repair results")}
           </p>
 
           {apiFailed ? (
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            <p className="mt-2 text-xs text-[var(--muted-foreground)] md:text-sm">
               Showing interactive local fallback results because the backend shop
               API is not responding yet.
             </p>
           ) : null}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-          <aside className="space-y-6 pt-2">
+        {/* ── Collapsible "Filters & Sorting" toggle — mobile only ── */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((prev) => !prev)}
+          aria-expanded={filtersOpen}
+          className="mobile-collapse-toggle mb-4 lg:hidden"
+        >
+          <span>Filters &amp; Sorting</span>
+          <span className="chevron text-lg leading-none">{filtersOpen ? "▲" : "▼"}</span>
+        </button>
+
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
+          {/* Sidebar — collapsible on mobile, always visible on lg+ */}
+          <aside className={`space-y-4 md:space-y-6 pt-2 ${filtersOpen ? 'block mobile-collapse-enter' : 'hidden'} lg:block`}>
             <div>
-              <h2 className="mb-4 text-lg font-semibold text-[var(--foreground)]">
+              <h2 className="mb-3 text-sm font-semibold text-[var(--foreground)] md:mb-4 md:text-lg">
                 Filters
               </h2>
 
-              <div className="space-y-4">
+              <div className="space-y-2 md:space-y-4">
                 {sidebarSort.map((item) => {
                   const active = searchState.sort === item.value;
 
@@ -235,7 +249,7 @@ function ShopsResultsClientInner() {
                       key={item.value}
                       type="button"
                       onClick={() => updateParams({ sort: item.value })}
-                      className="flex items-center gap-3 text-left text-[1rem] text-[var(--foreground)]"
+                      className="flex items-center gap-3 text-left text-sm text-[var(--foreground)] md:text-[1rem]"
                     >
                       <span
                         className={`h-4 w-4 rounded-full ${
@@ -252,12 +266,12 @@ function ShopsResultsClientInner() {
             </div>
 
             <div>
-              <div className="mb-3 text-lg font-semibold text-[var(--foreground)]">
+              <div className="mb-2 text-sm font-semibold text-[var(--foreground)] md:mb-3 md:text-lg">
                 Distance
               </div>
 
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-                <div className="mb-2 flex items-center justify-between text-sm text-[var(--muted-foreground)]">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm md:p-4">
+                <div className="mb-2 flex items-center justify-between text-xs text-[var(--muted-foreground)] md:text-sm">
                   <span>Nearby only</span>
                   <span>{searchState.maxDistanceKm} km</span>
                 </div>
@@ -277,18 +291,18 @@ function ShopsResultsClientInner() {
             </div>
 
             <div>
-              <h3 className="mb-4 text-lg font-semibold text-[var(--foreground)]">
+              <h3 className="mb-3 text-sm font-semibold text-[var(--foreground)] md:mb-4 md:text-lg">
                 Offers & Promotions
               </h3>
 
-              <div className="space-y-4 text-[var(--foreground)]">
+              <div className="space-y-2 text-[var(--foreground)] md:space-y-4">
                 {promoToggles.map((promo) => {
                   const checked = searchState[promo.key];
 
                   return (
                     <label
                       key={promo.key}
-                      className="flex items-center gap-3 text-[1rem]"
+                      className="flex items-center gap-3 text-sm md:text-[1rem]"
                     >
                       <input
                         type="checkbox"
@@ -311,7 +325,7 @@ function ShopsResultsClientInner() {
           </aside>
 
           <div>
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-[var(--mint-100)] p-2">
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-xl bg-[var(--mint-100)] p-1.5 md:mb-4 md:gap-2 md:rounded-2xl md:p-2">
               {sortTabs.map((tab) => {
                 const active = searchState.sort === tab.value;
 
@@ -320,7 +334,7 @@ function ShopsResultsClientInner() {
                     key={tab.value}
                     type="button"
                     onClick={() => updateParams({ sort: tab.value })}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition md:rounded-xl md:px-4 md:py-2 md:text-sm ${
                       active
                         ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] shadow-sm"
                         : "bg-transparent text-[var(--foreground)] hover:bg-[var(--card)]"
@@ -331,12 +345,12 @@ function ShopsResultsClientInner() {
                 );
               })}
 
-              <div className="ml-auto rounded-xl px-3 py-2 text-[var(--muted-foreground)]">
+              <div className="ml-auto rounded-lg px-2 py-1.5 text-sm text-[var(--muted-foreground)] md:rounded-xl md:px-3 md:py-2">
                 ≡
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {visibleShops.map((shop) => (
                 <ShopResultCard key={shop.id} shop={shop} />
               ))}
