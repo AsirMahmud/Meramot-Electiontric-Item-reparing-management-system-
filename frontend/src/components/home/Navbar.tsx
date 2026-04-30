@@ -133,7 +133,7 @@ export function NavbarInner({
   return (
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-3 py-6 md:gap-4 md:px-6 md:py-5">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-3 pb-3 pt-4 md:gap-4 md:px-6 md:py-5">
           {/* ── Row 1: Logo + hamburger (mobile) / Logo + location + actions (desktop) ── */}
           <div className="flex items-center justify-between gap-3 md:grid md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center md:gap-4">
             {/* Hamburger — mobile only */}
@@ -151,9 +151,9 @@ export function NavbarInner({
                 <Image
                   src="/images/meramot.svg"
                   alt="Meramot"
-                  width={280}
-                  height={100}
-                  className="h-32 w-auto scale-150 object-contain md:h-[6rem] md:scale-100 lg:h-32"
+                  width={400}
+                  height={140}
+                  className="h-[7rem] w-auto object-contain md:h-[6rem] lg:h-32"
                   priority
                 />
               </Link>
