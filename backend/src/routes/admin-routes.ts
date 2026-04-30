@@ -17,6 +17,8 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
       pendingVendorApplications,
       openTickets,
       totalPayments,
+      activeDisputes,
+      pendingRefunds,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.vendorApplication.count(),
@@ -26,6 +28,12 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
         where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
       }),
       prisma.payment.count(),
+      prisma.disputeCase.count({
+        where: { status: { in: ["OPEN", "INVESTIGATING", "WAITING_EVIDENCE"] } },
+      }),
+      prisma.refund.count({
+        where: { status: "PENDING" },
+      }),
     ]);
 
     return res.json({
@@ -37,6 +45,8 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
         pendingVendorApplications,
         openTickets,
         totalPayments,
+        activeDisputes,
+        pendingRefunds,
       },
     });
   } catch (error) {

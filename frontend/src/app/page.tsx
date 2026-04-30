@@ -53,7 +53,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => setFiltersOpen((prev) => !prev)}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white shadow-sm lg:hidden"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm lg:hidden"
           >
             <span className="text-lg leading-none">☰</span>
             {filtersOpen ? "Close filters" : "Filters & sort"}

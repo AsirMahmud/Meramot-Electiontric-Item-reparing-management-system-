@@ -379,14 +379,14 @@ export default function AdminFinancePage() {
               value={settlePaymentId}
               onChange={(event) => setSettlePaymentId(event.target.value)}
               placeholder="Payment Transaction ID"
-              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
+              className="w-full rounded-2xl border border-[#C9D9C5] bg-[var(--mint-50)] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
             />
             <textarea
               value={settlementNote}
               onChange={(event) => setSettlementNote(event.target.value)}
               placeholder="Internal settlement note (optional)"
               rows={3}
-              className="w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
+              className="w-full rounded-2xl border border-[#C9D9C5] bg-[var(--mint-50)] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
             />
           </div>
 
@@ -411,7 +411,7 @@ export default function AdminFinancePage() {
                 value={batchLimit}
                 onChange={(event) => setBatchLimit(event.target.value)}
                 placeholder="20"
-                className="mt-2 w-full rounded-2xl border border-[#C9D9C5] bg-[#F9FBFA] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
+                className="mt-2 w-full rounded-2xl border border-[#C9D9C5] bg-[var(--mint-50)] px-4 py-4 text-sm outline-none focus:border-[var(--accent-dark)] transition"
               />
             </div>
             

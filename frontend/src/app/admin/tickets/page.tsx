@@ -8,7 +8,6 @@ import { getAuthHeaders } from "@/lib/api";
 type Ticket = {
   id: string;
   subject: string;
-  category: string;
   status: string;
   priority: string;
   createdAt: string;
@@ -68,7 +67,6 @@ export default function AdminTicketsPage() {
                 <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                   <th className="px-6 py-4">Subject</th>
                   <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Priority</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -87,8 +85,7 @@ export default function AdminTicketsPage() {
                       <p>{ticket.user.name || ticket.user.username}</p>
                       <p className="text-[var(--muted-foreground)]">{ticket.user.email}</p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.category}</td>
-                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.priority}</td>
+                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.priority || "—"}</td>
                     <td className="px-6 py-5">
                       <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
                         {ticket.status}

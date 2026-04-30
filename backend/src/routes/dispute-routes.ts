@@ -30,9 +30,16 @@ router.get("/disputes", async (req: Request, res: Response) => {
       },
     });
 
+    const enriched = disputes.map((d: any) => ({
+      ...d,
+      reason: d.repairRequest?.title || `Dispute #${d.id.slice(-6)}`,
+      description: d.resolution || null,
+      filedByType: d.openedBy?.role || "CUSTOMER",
+    }));
+
     return res.json({
       success: true,
-      data: disputes,
+      data: enriched,
     });
   } catch (error) {
     console.error("GET /disputes error:", error);
@@ -79,9 +86,16 @@ router.get("/disputes/:id", async (req: Request, res: Response) => {
       });
     }
 
+    const enriched = {
+      ...dispute,
+      reason: (dispute as any).repairRequest?.title || `Dispute #${dispute.id.slice(-6)}`,
+      description: dispute.resolution || null,
+      filedByType: (dispute as any).openedBy?.role || "CUSTOMER",
+    };
+
     return res.json({
       success: true,
-      data: dispute,
+      data: enriched,
     });
   } catch (error) {
     console.error("GET /disputes/:id error:", error);
