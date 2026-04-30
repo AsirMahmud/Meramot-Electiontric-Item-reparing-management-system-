@@ -500,7 +500,7 @@ export function NavbarInner({
                   <button
                     onClick={() => setMobileUserMenuOpen((prev) => !prev)}
                     style={{ boxShadow: 'none' }}
-                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-bold text-[var(--accent-dark)] transition bg-[var(--mint-50)]"
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-bold text-[var(--accent-dark)] transition bg-[var(--mint-50)] dark:bg-[var(--mint-200)]"
                   >
                     <span className="flex items-center gap-2">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-dark)] text-xs text-[var(--accent-foreground)]">
