@@ -252,15 +252,15 @@ export default function AdminFinancePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Vendor Payouts</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.totalVendorEarningsReleased)}</p>
           </div>
-          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] dark:bg-[#1C251F] p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#8A2A2A]">Refunds Issued</p>
             <p className="mt-3 text-3xl font-bold text-[#8A2A2A]">{formatMoney(summary.totalRefundedToCustomers)}</p>
           </div>
-          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] dark:bg-[#1C251F] p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Escrow Balance</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{formatMoney(summary.escrowHeldAmount)}</p>
           </div>
-          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] p-6">
+          <div className="rounded-[28px] border border-[var(--border)] bg-[#F9FBFA] dark:bg-[#1C251F] p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">Open Settlements</p>
             <p className="mt-3 text-3xl font-bold text-[var(--accent-dark)]">{summary.pendingSettlementCount}</p>
           </div>
