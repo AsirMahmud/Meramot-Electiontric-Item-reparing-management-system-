@@ -93,7 +93,12 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
 
   const sorted = [...filtered].sort((a, b) => {
     if (state.sort === "price") {
-      if ((a.priceLevel ?? 0) !== (b.priceLevel ?? 0)) return (a.priceLevel ?? 0) - (b.priceLevel ?? 0);
+      const getPrice = (s: any) => s.baseLaborFee ? s.baseLaborFee : (s.inspectionFee ?? ((s.priceLevel || 1) * 1000));
+      const priceA = getPrice(a);
+      const priceB = getPrice(b);
+      
+      if (priceA !== priceB) return priceA - priceB;
+      if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
       return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
     }
 
