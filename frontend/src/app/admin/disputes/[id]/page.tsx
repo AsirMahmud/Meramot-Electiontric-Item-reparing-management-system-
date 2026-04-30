@@ -263,17 +263,17 @@ export default function AdminDisputeDetailPage() {
                     <p className="text-[var(--muted-foreground)]">No notes added yet.</p>
                 ) : (
                     dispute.notes.map((note) => (
-                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white dark:bg-[#1C251F] border border-[var(--border)]"}`}>
+                        <div key={note.id} className={`rounded-2xl p-5 shadow-sm ${note.isInternal ? "bg-[#FFF9E6] dark:bg-[#FFF9E6] border border-[#FDE68A]" : "bg-white dark:bg-[#1C251F] border border-[var(--border)]"}`}>
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="font-semibold text-[var(--accent-dark)]">{note.author?.name || note.author?.email || "System"}</p>
-                                    <p className="text-xs text-[var(--muted-foreground)]">{new Date(note.createdAt).toLocaleString()}</p>
+                                    <p className={`font-semibold ${note.isInternal ? "text-[#244229]" : "text-[var(--accent-dark)]"}`}>{note.author?.name || note.author?.email || "System"}</p>
+                                    <p className={`text-xs ${note.isInternal ? "text-[#6B7280]" : "text-[var(--muted-foreground)]"}`}>{new Date(note.createdAt).toLocaleString()}</p>
                                 </div>
                                 {note.isInternal && (
                                     <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-semibold text-[#92400E]">Internal Note</span>
                                 )}
                             </div>
-                            <p className="mt-3 text-[var(--foreground)]">{note.note}</p>
+                            <p className={`mt-3 ${note.isInternal ? "text-[#1F2937]" : "text-[var(--foreground)]"}`}>{note.note}</p>
                         </div>
                     ))
                 )}

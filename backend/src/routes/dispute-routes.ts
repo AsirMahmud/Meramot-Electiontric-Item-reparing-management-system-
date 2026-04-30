@@ -111,6 +111,16 @@ router.post("/disputes/:id/note", async (req: Request & { user?: any }, res: Res
         note: String(note).trim(),
         isInternal,
       },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
     });
 
     // Using raw SQL to bypass stale Prisma Client enum validation
