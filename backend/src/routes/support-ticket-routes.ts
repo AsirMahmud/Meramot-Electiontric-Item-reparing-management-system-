@@ -58,7 +58,7 @@ router.get("/tickets/:id", async (req: Request, res: Response) => {
         user: true,
         assignedAdmin: true,
         repairRequest: true,
-        messages: {
+        supportMessages: {
           orderBy: { createdAt: "asc" },
           include: {
             author: {
@@ -81,9 +81,11 @@ router.get("/tickets/:id", async (req: Request, res: Response) => {
       });
     }
 
+    // Rename supportMessages -> messages for frontend compatibility
+    const { supportMessages, ...rest } = ticket;
     return res.json({
       success: true,
-      data: ticket,
+      data: { ...rest, messages: supportMessages },
     });
   } catch (error) {
     console.error("GET /tickets/:id error:", error);
