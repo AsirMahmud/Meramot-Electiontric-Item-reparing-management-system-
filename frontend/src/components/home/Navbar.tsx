@@ -130,7 +130,7 @@ export function NavbarInner({
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
-          <div className="grid gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
+          <div className="grid grid-cols-[auto_1fr] gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
             <Link href="/" className="inline-flex items-center">
               <Image
                 src="/images/meramot.svg"
@@ -142,17 +142,17 @@ export function NavbarInner({
               />
             </Link>
 
-            <div className="flex justify-start md:justify-center">
+            <div className="flex justify-end md:justify-center">
               <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+            <div className="col-span-2 flex flex-wrap items-center gap-3 md:col-span-1 md:justify-end">
               <ThemeToggle />
 
               {!isLoggedIn ? (
                 <Link
                   href="/login"
-                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
                 >
                   Sign in/Sign up
                 </Link>
@@ -163,7 +163,7 @@ export function NavbarInner({
                       setIsUserMenuOpen((prev) => !prev);
                       setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
                   >
                     {displayName} ▼
                   </button>
@@ -336,7 +336,7 @@ export function NavbarInner({
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
+            <div className="flex items-end gap-6 overflow-x-auto whitespace-nowrap font-semibold text-[var(--foreground)]">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
                 const params = new URLSearchParams(searchParams.toString());
@@ -405,7 +405,7 @@ export function NavbarInner({
 
               <button
                 onClick={confirmLogout}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Yes
               </button>
