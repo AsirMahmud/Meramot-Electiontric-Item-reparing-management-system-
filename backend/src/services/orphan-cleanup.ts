@@ -18,16 +18,25 @@ async function cleanupOrphanedAccounts() {
   try {
     const cutoffDate = new Date(Date.now() - ORPHAN_AGE_DAYS * 24 * 60 * 60 * 1000);
 
-    // Find users matching orphan criteria
+    // Find rejected vendor applications first, then resolve orphan users by ids.
+    // This avoids depending on a potentially stale Prisma relation alias on User.
+    const rejectedApplications = await prisma.vendorApplication.findMany({
+      where: {
+        status: "REJECTED",
+        rejectedAt: { lt: cutoffDate },
+      },
+      select: { userId: true },
+    });
+
+    const candidateUserIds = Array.from(new Set(rejectedApplications.map((row) => row.userId)));
+    if (candidateUserIds.length === 0) {
+      return { cleaned: 0 };
+    }
+
     const orphanedUsers = await prisma.user.findMany({
       where: {
+        id: { in: candidateUserIds },
         role: "CUSTOMER",
-        vendorApplications: {
-          some: {
-            status: "REJECTED",
-            rejectedAt: { lt: cutoffDate },
-          },
-        },
         // No platform activity
         repairRequests: { none: {} },
         ratings: { none: {} },

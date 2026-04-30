@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   assignDeliveryOrder,
   blockDeliveryPartner,
-  deleteDeliveryPartner,
+  
   getAdminDeliveryChatMessages,
   getDeliveryOrderTimeline,
   approveDeliveryPayoutRequest,

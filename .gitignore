@@ -15,6 +15,10 @@ frontend/node_modules/
 # Backend
 backend/dist/
 backend/build/
+/backend/dist/
+/frontend/dist/
+/dist/
+**/dist/
 *.tsbuildinfo
 
 # Frontend (Next.js)

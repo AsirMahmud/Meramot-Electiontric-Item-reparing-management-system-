@@ -52,6 +52,11 @@ export async function generateAndSendAdminPasskey() {
       `,
     });
 
+    if ((result as { error?: unknown }).error) {
+      console.warn(`[AdminPasskey] Email provider rejected passkey send:`, JSON.stringify(result));
+      return;
+    }
+
     console.log(`[AdminPasskey] Resend API Response:`, JSON.stringify(result));
     console.log(`[AdminPasskey] Passkey emailed to ${adminEmails.length} admins.`);
   } catch (error) {

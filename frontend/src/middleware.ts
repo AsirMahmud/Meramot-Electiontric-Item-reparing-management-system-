@@ -20,19 +20,6 @@ export const middleware = withAuth(
       }
     }
 
-    // Check if accessing delivery-admin routes
-    if (pathname.startsWith("/delivery-admin")) {
-      // If no token, redirect to login
-      if (!token) {
-        return NextResponse.redirect(new URL("/delivery-admin/login", req.url));
-      }
-
-      // If token exists but user is not a delivery admin, redirect to home
-      if (token.role !== "DELIVERY_ADMIN" && token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-
     // Check if accessing vendor routes
     if (pathname.startsWith("/vendor")) {
       // If no token, redirect to login
@@ -42,19 +29,6 @@ export const middleware = withAuth(
 
       // If token exists but user is not a vendor, redirect to home
       if (token.role !== "VENDOR") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-    }
-
-    // Check if accessing delivery routes
-    if (pathname.startsWith("/delivery")) {
-      // If no token, redirect to delivery login
-      if (!token) {
-        return NextResponse.redirect(new URL("/delivery/login", req.url));
-      }
-
-      // If token exists but user is not a delivery partner, redirect to home
-      if (token.role !== "DELIVERY") {
         return NextResponse.redirect(new URL("/", req.url));
       }
     }
@@ -72,7 +46,5 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/vendor/:path*",
-    "/delivery/:path*",
-    "/delivery-admin/:path*",
   ],
 };
