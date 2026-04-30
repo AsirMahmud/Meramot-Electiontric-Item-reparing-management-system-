@@ -1,11 +1,36 @@
 import { env } from "../config/env.js";
-export async function sendDeliveryCredentialsEmail(input) {
+import nodemailer from "nodemailer";
+function hasSmtpConfig() {
+    return Boolean(env.smtpHost && env.smtpPort && env.smtpUser && env.smtpPass && env.smtpFrom);
+}
+async function sendDeliveryModuleEmail(input) {
     if (!env.enableEmailNotifications) {
         return { ok: false, skipped: true, reason: "email notifications disabled" };
     }
-    if (!env.resendApiKey) {
-        console.warn("[email-fallback] Resend API Key is missing. Credentials:", input.username, input.password);
-        return { ok: false, skipped: true, reason: "missing api key" };
+    if (!hasSmtpConfig()) {
+        return { ok: false, skipped: true, reason: "missing smtp config" };
+    }
+    const transporter = nodemailer.createTransport({
+        host: env.smtpHost,
+        port: env.smtpPort,
+        secure: env.smtpSecure,
+        auth: {
+            user: env.smtpUser,
+            pass: env.smtpPass,
+        },
+    });
+    await transporter.sendMail({
+        from: env.smtpFrom,
+        to: input.toEmail,
+        subject: input.subject,
+        html: input.html,
+    });
+    return { sent: true, provider: "nodemailer" };
+}
+export async function sendDeliveryCredentialsEmail(input) {
+    if (!hasSmtpConfig()) {
+        console.warn("[delivery-email] SMTP config missing. Credentials:", input.username, input.password);
+        return { ok: false, skipped: true, reason: "missing smtp config" };
     }
     const subject = "Delivery Partner Approval - Login Credentials";
     const html = `
@@ -19,32 +44,13 @@ export async function sendDeliveryCredentialsEmail(input) {
       <p>Please change your password after your first login.</p>
     </div>
   `;
-    const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${env.resendApiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            from: "Meramot Delivery <noreply@meramot.com>",
-            to: input.toEmail,
-            subject,
-            html,
-        }),
+    return sendDeliveryModuleEmail({
+        toEmail: input.toEmail,
+        subject,
+        html,
     });
-    if (!res.ok) {
-        const errorBody = await res.text();
-        throw new Error(`Resend API error: ${res.status} ${errorBody}`);
-    }
-    return { sent: true };
 }
 export async function sendDeliveryRegistrationAcknowledgementEmail(input) {
-    if (!env.enableEmailNotifications) {
-        return { ok: false, skipped: true };
-    }
-    if (!env.resendApiKey) {
-        return { ok: false, skipped: true };
-    }
     const subject = "Delivery Registration Received - Under Review";
     const html = `
     <div style="font-family: Arial, sans-serif; color: #173626; line-height: 1.6;">
@@ -56,23 +62,10 @@ export async function sendDeliveryRegistrationAcknowledgementEmail(input) {
       <p>Meeramoot Delivery Team</p>
     </div>
   `;
-    const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${env.resendApiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            from: "Meramot Delivery <noreply@meramot.com>",
-            to: input.toEmail,
-            subject,
-            html,
-        }),
+    return sendDeliveryModuleEmail({
+        toEmail: input.toEmail,
+        subject,
+        html,
     });
-    if (!res.ok) {
-        const errorBody = await res.text();
-        throw new Error(`Resend API error: ${res.status} ${errorBody}`);
-    }
-    return { sent: true };
 }
 //# sourceMappingURL=delivery-credentials-email-service.js.map

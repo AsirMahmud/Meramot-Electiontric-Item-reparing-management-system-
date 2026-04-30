@@ -33,6 +33,7 @@ type DeliveryAuthContextValue = DeliveryAuthState & {
     email: string;
     phone: string;
     vehicleType?: string;
+    profilePictureUrl: string;
     nidDocumentUrl: string;
     educationDocumentUrl: string;
     cvDocumentUrl: string;
@@ -49,6 +50,37 @@ const PUBLIC_PREFIXES = ["/delivery/login", "/delivery/signup", "/delivery/regis
 export function isPublicDeliveryPath(pathname: string | null) {
   if (!pathname) return false;
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function normalizeRiderProfile(
+  riderProfile: DeliveryMeResponse["riderProfile"] | Record<string, unknown>,
+): DeliveryMeResponse["riderProfile"] {
+  const p = riderProfile as Record<string, any>;
+  if (p.user && typeof p.user === "object") {
+    return p as DeliveryMeResponse["riderProfile"];
+  }
+
+  return {
+    id: (p.id as string) ?? "",
+    userId: (p.userId as string) ?? (p.id as string) ?? "",
+    vehicleType: (p.vehicleType as string | null | undefined) ?? null,
+    status: (p.status as string) ?? "OFFLINE",
+    isActive: (p.isActive as boolean | undefined) ?? true,
+    registrationStatus: (p.registrationStatus as string | undefined) ?? "APPROVED",
+    currentLat: (p.currentLat as number | null | undefined) ?? (p.lat as number | null | undefined) ?? null,
+    currentLng: (p.currentLng as number | null | undefined) ?? (p.lng as number | null | undefined) ?? null,
+    coverageZones: Array.isArray(p.coverageZones) ? p.coverageZones : [],
+    user: {
+      id: (p.id as string) ?? "",
+      name: (p.name as string | null | undefined) ?? null,
+      username: (p.username as string) ?? "",
+      email: (p.email as string) ?? "",
+      phone: (p.phone as string | null | undefined) ?? null,
+      role: (p.role as string) ?? "DELIVERY",
+      status: (p.status as string | undefined) ?? "ACTIVE",
+      avatarUrl: (p.avatarUrl as string | null | undefined) ?? null,
+    },
+  };
 }
 
 export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
@@ -95,7 +127,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const profile = await fetchDeliveryMe(payload.token);
-      setMe(profile.riderProfile);
+      setMe(normalizeRiderProfile(profile.riderProfile));
     } catch {
       // Keep session from login payload even if /me is temporarily unavailable.
     }
@@ -108,7 +140,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const profile = await fetchDeliveryMe(token);
-      setMe(profile.riderProfile);
+      setMe(normalizeRiderProfile(profile.riderProfile));
     } catch {
       persistToken(null);
       setMe(null);
@@ -124,7 +156,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
     setToken(stored);
     setLoading(true);
     fetchDeliveryMe(stored)
-      .then((data) => setMe(data.riderProfile))
+      .then((data) => setMe(normalizeRiderProfile(data.riderProfile)))
       .catch(() => {
         persistToken(null);
         setMe(null);
@@ -154,6 +186,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
       email: string;
       phone: string;
       vehicleType?: string;
+      profilePictureUrl: string;
       nidDocumentUrl: string;
       educationDocumentUrl: string;
       cvDocumentUrl: string;
@@ -217,6 +250,17 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
       router.replace(`/delivery/login?next=${encodeURIComponent(pathname || "/delivery")}`);
     }
   }, [hydrated, isPublic, loading, token, me, router, pathname]);
+
+  useEffect(() => {
+    if (!hydrated || loading || isPublic) return;
+    if (!token || !me) return;
+
+    const registrationStatus = me.registrationStatus ?? "APPROVED";
+    const isProfileRoute = pathname === "/delivery/profile" || pathname?.startsWith("/delivery/profile/");
+    if (registrationStatus !== "APPROVED" && !isProfileRoute) {
+      router.replace("/delivery/profile");
+    }
+  }, [hydrated, loading, isPublic, token, me, pathname, router]);
 
   if (!hydrated || (!isPublic && (loading || !token || !me))) {
     if (isPublic) {

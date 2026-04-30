@@ -16,19 +16,40 @@ export async function getDeliveryMe(req: Request, res: Response) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const rider = await prisma.user.findUnique({
-      where: { id: riderUserId },
+    const rider = await prisma.riderProfile.findUnique({
+      where: { userId: riderUserId },
       select: {
         id: true,
-        name: true,
-        username: true,
-        email: true,
-        phone: true,
-        role: true,
+        userId: true,
+        vehicleType: true,
         status: true,
-        avatarUrl: true,
-        lat: true,
-        lng: true,
+        isActive: true,
+        registrationStatus: true,
+        currentLat: true,
+        currentLng: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            phone: true,
+            role: true,
+            status: true,
+            avatarUrl: true,
+            lat: true,
+            lng: true,
+          },
+        },
+        coverageZones: {
+          include: {
+            coverageZone: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -36,7 +57,12 @@ export async function getDeliveryMe(req: Request, res: Response) {
       return res.status(404).json({ message: "Rider profile not found" });
     }
 
-    return res.json({ riderProfile: rider });
+    return res.json({
+      riderProfile: {
+        ...rider,
+        coverageZones: rider.coverageZones.map((cz) => cz.coverageZone.name),
+      },
+    });
   } catch (error) {
     console.error("getDeliveryMe error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -219,15 +245,34 @@ export async function updateLocation(req: Request, res: Response) {
       return res.status(400).json({ message: "lat and lng must be numbers" });
     }
 
-    const updated = await prisma.user.update({
-      where: { id: riderUserId },
-      data: { lat, lng },
-      select: {
-        id: true,
-        lat: true,
-        lng: true,
-        updatedAt: true,
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: riderUserId },
+        data: { lat, lng },
+      });
+
+      return tx.riderProfile.upsert({
+        where: { userId: riderUserId },
+        create: {
+          userId: riderUserId,
+          currentLat: lat,
+          currentLng: lng,
+          registrationStatus: "APPROVED",
+          isActive: true,
+          status: "AVAILABLE",
+        },
+        update: {
+          currentLat: lat,
+          currentLng: lng,
+        },
+        select: {
+          id: true,
+          userId: true,
+          currentLat: true,
+          currentLng: true,
+          updatedAt: true,
+        },
+      });
     });
 
     return res.json({ riderProfile: updated });

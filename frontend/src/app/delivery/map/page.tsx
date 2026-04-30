@@ -35,8 +35,10 @@ export default function MapPage() {
   const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
   const [selectedPointKey, setSelectedPointKey] = useState("");
   const [error, setError] = useState("");
-  const riderLat = me?.currentLat ?? me?.lat;
-  const riderLng = me?.currentLng ?? me?.lng;
+  const [mapReady, setMapReady] = useState(false);
+  const locationSyncInFlightRef = useRef(false);
+  const riderLat = me?.currentLat ?? me?.user?.lat ?? me?.lat;
+  const riderLng = me?.currentLng ?? me?.user?.lng ?? me?.lng;
 
   useEffect(() => {
     if (!token) return;
@@ -201,7 +203,7 @@ export default function MapPage() {
   }, [filteredDeliveries]);
 
   useEffect(() => {
-    if (!mapRef.current || !leafletModuleRef.current) return;
+    if (!mapReady || !mapRef.current || !leafletModuleRef.current) return;
     const L = leafletModuleRef.current.default;
     const map = mapRef.current;
 
@@ -270,10 +272,10 @@ export default function MapPage() {
     } else if (boundsPoints.length === 1) {
       map.flyTo(boundsPoints[0], 14, { duration: 1 });
     }
-  }, [mapPoints, riderLat, riderLng]);
+  }, [mapReady, mapPoints, riderLat, riderLng]);
 
   useEffect(() => {
-    if (!mapRef.current || !leafletModuleRef.current) return;
+    if (!mapReady || !mapRef.current || !leafletModuleRef.current) return;
     const L = leafletModuleRef.current.default;
 
     if (routeLineRef.current) {
@@ -316,7 +318,7 @@ export default function MapPage() {
     return () => {
       disposed = true;
     };
-  }, [selectedPoint, riderLat, riderLng]);
+  }, [mapReady, selectedPoint, riderLat, riderLng]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -341,6 +343,7 @@ export default function MapPage() {
       }).addTo(map);
 
       mapRef.current = map;
+      setMapReady(true);
     }
 
     setupMap().catch((mapError) => {
@@ -362,11 +365,12 @@ export default function MapPage() {
         mapRef.current = null;
       }
       leafletModuleRef.current = null;
+      setMapReady(false);
     };
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || !leafletModuleRef.current) return;
+    if (!mapReady || !mapRef.current || !leafletModuleRef.current) return;
     if (typeof riderLat !== "number" || typeof riderLng !== "number") return;
 
     if (markerRef.current) {
@@ -375,15 +379,26 @@ export default function MapPage() {
     }
 
     const L = leafletModuleRef.current.default;
+    const avatarUrl = me?.user?.avatarUrl?.trim();
+    const avatarInitial = (me?.user?.name ?? me?.user?.username ?? "D").slice(0, 1).toUpperCase();
     const riderMarkerIcon = L.divIcon({
       className: "",
-      html: `<div style="position:relative;width:24px;height:32px;">
-        <div style="position:absolute;top:0;left:50%;width:24px;height:24px;background:#163625;border:2px solid #ffffff;border-radius:999px;transform:translateX(-50%);box-shadow:0 2px 6px rgba(15,23,42,.35);"></div>
-        <div style="position:absolute;bottom:0;left:50%;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #163625;transform:translateX(-50%);"></div>
-      </div>`,
-      iconSize: [24, 32],
-      iconAnchor: [12, 32],
-      popupAnchor: [0, -30],
+      html: avatarUrl
+        ? `<div style="position:relative;width:38px;height:50px;">
+          <div style="position:absolute;top:0;left:50%;width:38px;height:38px;transform:translateX(-50%);border-radius:999px;border:2px solid #ffffff;overflow:hidden;box-shadow:0 3px 10px rgba(15,23,42,.35);background:#163625;">
+            <img src="${avatarUrl}" alt="Rider avatar" style="width:100%;height:100%;object-fit:cover;" />
+          </div>
+          <div style="position:absolute;bottom:0;left:50%;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid #163625;transform:translateX(-50%);"></div>
+        </div>`
+        : `<div style="position:relative;width:38px;height:50px;">
+          <div style="position:absolute;top:0;left:50%;width:38px;height:38px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;border-radius:999px;border:2px solid #ffffff;box-shadow:0 3px 10px rgba(15,23,42,.35);background:#163625;color:#E4FCD5;font-weight:700;font-size:14px;">
+            ${avatarInitial}
+          </div>
+          <div style="position:absolute;bottom:0;left:50%;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid #163625;transform:translateX(-50%);"></div>
+        </div>`,
+      iconSize: [38, 50],
+      iconAnchor: [19, 50],
+      popupAnchor: [0, -46],
     });
     markerRef.current = L.marker([riderLat, riderLng], {
       icon: riderMarkerIcon,
@@ -397,10 +412,12 @@ export default function MapPage() {
       .addTo(mapRef.current);
 
     mapRef.current.flyTo([riderLat, riderLng], 14, { duration: 1 });
-  }, [riderLat, riderLng]);
+  }, [mapReady, riderLat, riderLng, me?.user?.avatarUrl, me?.user?.name, me?.user?.username]);
 
   async function updateMyLocation() {
     if (!token || !navigator.geolocation) return;
+    if (locationSyncInFlightRef.current) return;
+    locationSyncInFlightRef.current = true;
     setUpdatingLocation(true);
     setError("");
     navigator.geolocation.getCurrentPosition(
@@ -411,16 +428,26 @@ export default function MapPage() {
         } catch (err) {
           setError(err instanceof Error ? err.message : "Failed to update location");
         } finally {
+          locationSyncInFlightRef.current = false;
           setUpdatingLocation(false);
         }
       },
       () => {
         setError("Location permission denied");
+        locationSyncInFlightRef.current = false;
         setUpdatingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   }
+
+  useEffect(() => {
+    if (!token || !navigator.geolocation) return;
+    const interval = window.setInterval(() => {
+      updateMyLocation();
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [token]);
 
   return (
     <div className="flex h-[calc(100vh-6rem)] flex-col rounded-3xl border border-[#d9e5d5] bg-white p-6">

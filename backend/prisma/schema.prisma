@@ -509,6 +509,7 @@ model RiderProfile {
   nidDocumentUrl        String?
   educationDocumentUrl  String?
   cvDocumentUrl         String?
+  profilePictureUrl     String?
   status                DeliveryAgentStatus          @default(OFFLINE)
   isActive              Boolean                       @default(true)
   registrationStatus    DeliveryPartnerApprovalStatus @default(APPROVED)

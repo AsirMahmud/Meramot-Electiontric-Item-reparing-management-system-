@@ -637,6 +637,7 @@ export type DeliveryWithJob = {
       contactPhone?: string | null;
       user?: {
         name?: string | null;
+        phone?: string | null;
         lat?: number | null;
         lng?: number | null;
       };
@@ -694,6 +695,7 @@ export function deliveryRegister(data: {
   email: string;
   phone: string;
   vehicleType?: string;
+  profilePictureUrl: string;
   nidDocumentUrl: string;
   educationDocumentUrl: string;
   cvDocumentUrl: string;
@@ -824,6 +826,7 @@ export type DeliveryAdminPartnerRow = {
     username: string;
     email: string;
     phone?: string | null;
+    avatarUrl?: string | null;
     role?: string;
     status?: string;
     createdAt: string;
@@ -911,6 +914,18 @@ export function approveDeliveryPartnerAdmin(token: string, id: string) {
 export function rejectDeliveryPartnerAdmin(token: string, id: string) {
   return authedRequest(`/delivery-admin/partners/${id}/reject`, token, {
     method: "PATCH",
+  });
+}
+
+export function blockDeliveryPartnerAdmin(token: string, id: string) {
+  return authedRequest(`/delivery-admin/partners/${id}/block`, token, {
+    method: "PATCH",
+  });
+}
+
+export function deleteDeliveryPartnerAdmin(token: string, id: string) {
+  return authedRequest<{ message: string }>(`/delivery-admin/partners/${id}`, token, {
+    method: "DELETE",
   });
 }
 

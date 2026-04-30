@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma";
-import { env } from "../config/env";
-import { isAdminEmail } from "../config/admin";
+import prisma from "../models/prisma.js";
+import { env } from "../config/env.js";
+import { isAdminEmail } from "../config/admin.js";
 
 function signToken(user: {
   id: string;

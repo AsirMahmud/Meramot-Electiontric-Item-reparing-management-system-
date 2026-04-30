@@ -1,11 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   assignDeliveryAdminOrder,
   approveDeliveryAdminPayoutRequest,
   approveDeliveryPartnerAdmin,
+  blockDeliveryPartnerAdmin,
+  deleteDeliveryPartnerAdmin,
   fetchDeliveryAdminChatMessages,
   fetchDeliveryAdminOrderTimeline,
   fetchDeliveryAdminOrders,
@@ -307,6 +310,34 @@ export default function DeliveryAdminDashboard() {
     }
   }
 
+  async function blockPartner(id: string) {
+    if (!token) return;
+    setActionId(id);
+    try {
+      await blockDeliveryPartnerAdmin(token, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Block failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function deletePartner(id: string) {
+    if (!token) return;
+    const confirmed = window.confirm("Delete this delivery partner permanently?");
+    if (!confirmed) return;
+    setActionId(id);
+    try {
+      await deleteDeliveryPartnerAdmin(token, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
   async function assignOrder(deliveryId: string, deliveryUserId: string) {
     if (!token || !deliveryUserId) return;
     setActionId(deliveryId);
@@ -335,22 +366,25 @@ export default function DeliveryAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">Operations</p>
-            <h1 className="text-xl font-bold text-white">Delivery partner management</h1>
-            <p className="text-sm text-slate-400">
+    <div className="min-h-screen bg-[var(--mint-100)] text-[var(--foreground)]">
+      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+            <Image src="/images/meramot.svg" alt="Meramot" width={170} height={56} className="h-10 w-auto" priority />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-dark)]">Operations</p>
+              <h1 className="text-lg font-bold text-[var(--foreground)] sm:text-xl">Delivery partner management</h1>
+              <p className="break-words text-xs text-[var(--muted-foreground)] sm:text-sm">
               Signed in as {user?.name ?? user?.username}{" "}
-              <span className="text-slate-500">({user?.email})</span>
-            </p>
+              <span className="text-[var(--muted-foreground)]">({user?.email})</span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
             <button
               type="button"
               onClick={() => load()}
-              className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--mint-50)] sm:px-4"
             >
               Refresh
             </button>
@@ -360,7 +394,7 @@ export default function DeliveryAdminDashboard() {
                 logout();
                 window.location.href = "/delivery-admin/login";
               }}
-              className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+              className="rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 sm:px-4"
             >
               Sign out
             </button>
@@ -368,15 +402,15 @@ export default function DeliveryAdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
         {error ? (
-          <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </div>
         ) : null}
 
         {loading && !stats ? (
-          <p className="text-slate-400">Loading dashboard…</p>
+          <p className="text-[var(--muted-foreground)]">Loading dashboard...</p>
         ) : stats ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">
             <StatCard label="Pending approvals" value={stats.pendingRegistrations} accent="amber" />
@@ -389,19 +423,20 @@ export default function DeliveryAdminDashboard() {
         ) : null}
 
         <section className="mb-12">
-          <h2 className="mb-4 text-lg font-bold text-white">Pending registration approvals</h2>
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Pending registration approvals</h2>
           {pending.length === 0 ? (
-            <p className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400">
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted-foreground)]">
               No pending partner applications.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-800">
+            <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
               <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+                <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                   <tr>
                     <th className="px-4 py-3">Partner</th>
                     <th className="px-4 py-3">Contact</th>
                     <th className="px-4 py-3">Vehicle</th>
+                    <th className="px-4 py-3">Profile</th>
                     <th className="px-4 py-3">NID</th>
                     <th className="px-4 py-3">Education</th>
                     <th className="px-4 py-3">CV</th>
@@ -409,26 +444,40 @@ export default function DeliveryAdminDashboard() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                   {pending.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-800/50">
+                    <tr key={row.id} className="hover:bg-[var(--mint-50)]">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-white">{row.user.name ?? row.user.username}</p>
-                        <p className="text-xs text-slate-500">{row.user.id}</p>
+                        <p className="font-semibold text-[var(--foreground)]">{row.user.name ?? row.user.username}</p>
+                        <p className="text-xs text-[var(--muted-foreground)]">{row.user.id}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.user.email}
                         <br />
-                        <span className="text-slate-500">{row.user.phone ?? "—"}</span>
+                        <span className="text-[var(--muted-foreground)]">{row.user.phone ?? "—"}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{row.vehicleType ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">{row.vehicleType ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">
+                        {row.user.avatarUrl ? (
+                          <a
+                            href={row.user.avatarUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[var(--accent-dark)] hover:underline"
+                          >
+                            Open Profile
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.nidDocumentUrl ? (
                           <a
                             href={row.nidDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open NID
                           </a>
@@ -436,13 +485,13 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.educationDocumentUrl ? (
                           <a
                             href={row.educationDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open Education Doc
                           </a>
@@ -450,13 +499,13 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.cvDocumentUrl ? (
                           <a
                             href={row.cvDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open CV
                           </a>
@@ -464,7 +513,7 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-400">
+                      <td className="px-4 py-3 text-[var(--muted-foreground)]">
                         {new Date(row.user.createdAt).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -473,7 +522,7 @@ export default function DeliveryAdminDashboard() {
                             type="button"
                             disabled={actionId === row.id}
                             onClick={() => approve(row.id)}
-                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                            className="rounded-lg bg-[var(--accent-dark)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             Approve
                           </button>
@@ -481,7 +530,7 @@ export default function DeliveryAdminDashboard() {
                             type="button"
                             disabled={actionId === row.id}
                             onClick={() => reject(row.id)}
-                            className="rounded-lg border border-rose-500/50 bg-rose-950/50 px-3 py-1.5 text-xs font-bold text-rose-200 hover:bg-rose-900/50 disabled:opacity-50"
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
                           >
                             Reject
                           </button>
@@ -496,20 +545,20 @@ export default function DeliveryAdminDashboard() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-lg font-bold text-white">Live delivery partner map</h2>
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Live delivery partner map</h2>
           <div className="mb-12 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-2">
-              <div ref={mapContainerRef} className="h-[420px] w-full rounded-lg" />
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-2">
+              <div ref={mapContainerRef} className="h-[320px] w-full rounded-lg sm:h-[420px]" />
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-              <p className="text-sm font-semibold text-white">Agents with live coordinates</p>
-              <p className="mt-1 text-xs text-slate-400">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Agents with live coordinates</p>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                 {mappablePartners.length} of {allPartners.length} partners currently visible on map.
               </p>
-              <p className="mt-1 text-[11px] text-slate-500">OpenStreetMap + Leaflet</p>
+              <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">OpenStreetMap + Leaflet</p>
               <div className="mt-4 max-h-[360px] space-y-2 overflow-y-auto pr-1">
                 {mappablePartners.length === 0 ? (
-                  <p className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-500">
+                  <p className="rounded-lg border border-[var(--border)] bg-[var(--mint-50)] px-3 py-2 text-xs text-[var(--muted-foreground)]">
                     No delivery agent has updated location yet.
                   </p>
                 ) : (
@@ -521,12 +570,12 @@ export default function DeliveryAdminDashboard() {
                       className={`w-full rounded-lg border px-3 py-2 text-left transition ${
                         focusedPartnerId === partner.id
                           ? "border-emerald-500/50 bg-emerald-500/10"
-                          : "border-slate-700 bg-slate-900 hover:border-slate-600"
+                          : "border-[var(--border)] bg-[var(--card)] hover:bg-[var(--mint-50)]"
                       }`}
                     >
-                      <p className="text-sm font-semibold text-white">{partner.user.name ?? partner.user.username}</p>
-                      <p className="text-xs text-slate-400">{partner.user.phone ?? partner.user.email}</p>
-                      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{partner.user.name ?? partner.user.username}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{partner.user.phone ?? partner.user.email}</p>
+                      <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--muted-foreground)]">
                         <span>{partner.isActive ? "Active" : "Inactive"}</span>
                         <span>{partner.currentLat?.toFixed(4)}, {partner.currentLng?.toFixed(4)}</span>
                       </div>
@@ -537,15 +586,15 @@ export default function DeliveryAdminDashboard() {
             </div>
           </div>
 
-          <h2 className="mb-4 text-lg font-bold text-white">Pending delivery payout requests</h2>
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Pending delivery payout requests</h2>
           {payoutRequests.length === 0 ? (
-            <p className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400">
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted-foreground)]">
               No pending payout requests.
             </p>
           ) : (
-            <div className="mb-12 overflow-x-auto rounded-xl border border-slate-800">
+            <div className="-mx-4 mb-12 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
               <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+                <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                   <tr>
                     <th className="px-4 py-3">Delivery agent</th>
                     <th className="px-4 py-3">Email</th>
@@ -554,21 +603,21 @@ export default function DeliveryAdminDashboard() {
                     <th className="px-4 py-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                   {payoutRequests.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-800/50">
-                      <td className="px-4 py-3 text-slate-100">
+                    <tr key={row.id} className="hover:bg-[var(--mint-50)]">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.riderProfile?.user?.name ?? row.riderProfile?.user?.username ?? "Delivery agent"}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{row.riderProfile?.user?.email ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-100">BDT {row.amount.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-slate-400">{new Date(row.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">{row.riderProfile?.user?.email ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">BDT {row.amount.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-[var(--muted-foreground)]">{new Date(row.createdAt).toLocaleString()}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
                           disabled={actionId === row.id}
                           onClick={() => approvePayout(row.id)}
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                          className="rounded-lg bg-[var(--accent-dark)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
                         >
                           Approve payout
                         </button>
@@ -580,32 +629,35 @@ export default function DeliveryAdminDashboard() {
             </div>
           )}
 
-          <h2 className="mb-4 text-lg font-bold text-white">All delivery partners</h2>
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">All delivery partners</h2>
+          <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
             <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+              <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                 <tr>
                   <th className="px-4 py-3">Partner</th>
                   <th className="px-4 py-3">Registration</th>
                   <th className="px-4 py-3">Agent status</th>
+                  <th className="px-4 py-3">Profile</th>
                   <th className="px-4 py-3">NID</th>
+                  <th className="px-4 py-3">Education</th>
                   <th className="px-4 py-3">CV</th>
                   <th className="px-4 py-3">Completed jobs</th>
                   <th className="px-4 py-3">Active</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                 {allPartners.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-800/50">
+                  <tr key={row.id} className="hover:bg-[var(--mint-50)]">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-white">{row.user.name ?? row.user.username}</p>
-                      <p className="text-xs text-slate-500">{row.user.email}</p>
+                      <p className="font-semibold text-[var(--foreground)]">{row.user.name ?? row.user.username}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{row.user.email}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
                           row.registrationStatus === "APPROVED"
-                            ? "bg-emerald-500/20 text-emerald-400"
+                            ? "bg-[var(--mint-100)] text-[var(--accent-dark)]"
                             : row.registrationStatus === "PENDING"
                               ? "bg-amber-500/20 text-amber-400"
                               : "bg-rose-500/20 text-rose-400"
@@ -614,14 +666,28 @@ export default function DeliveryAdminDashboard() {
                         {row.registrationStatus}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{row.agentStatus}</td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[var(--foreground)]">{row.agentStatus}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
+                      {row.user.avatarUrl ? (
+                        <a
+                          href={row.user.avatarUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--accent-dark)] hover:underline"
+                        >
+                          Open Profile
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {row.nidDocumentUrl ? (
                         <a
                           href={row.nidDocumentUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
+                          className="text-[var(--accent-dark)] hover:underline"
                         >
                           Open NID
                         </a>
@@ -629,13 +695,27 @@ export default function DeliveryAdminDashboard() {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[var(--foreground)]">
+                      {row.educationDocumentUrl ? (
+                        <a
+                          href={row.educationDocumentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--accent-dark)] hover:underline"
+                        >
+                          Open Education Doc
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {row.cvDocumentUrl ? (
                         <a
                           href={row.cvDocumentUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
+                          className="text-[var(--accent-dark)] hover:underline"
                         >
                           Open CV
                         </a>
@@ -643,18 +723,38 @@ export default function DeliveryAdminDashboard() {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-200">{row.completedDeliveries}</td>
+                    <td className="px-4 py-3 font-mono text-[var(--foreground)]">{row.completedDeliveries}</td>
                     <td className="px-4 py-3">{row.isActive ? "Yes" : "No"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={actionId === row.id || !row.isActive}
+                          onClick={() => blockPartner(row.id)}
+                          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          Block
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionId === row.id}
+                          onClick={() => deletePartner(row.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <h2 className="mb-4 mt-12 text-lg font-bold text-white">Delivery orders and assignment</h2>
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <h2 className="mb-4 mt-12 text-lg font-bold text-[var(--foreground)]">Delivery orders and assignment</h2>
+          <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
             <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+              <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                 <tr>
                   <th className="px-4 py-3">Order</th>
                   <th className="px-4 py-3">Direction</th>
@@ -664,34 +764,40 @@ export default function DeliveryAdminDashboard() {
                     <th className="px-4 py-3">Chat</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                 {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-800/50">
+                  <tr key={order.id} className="hover:bg-[var(--mint-50)]">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-white">{order.repairJob.repairRequest.title}</p>
-                      <p className="text-xs text-slate-500">{order.id.slice(0, 10)}</p>
+                      <p className="font-semibold text-[var(--foreground)]">{order.repairJob.repairRequest.title}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{order.id.slice(0, 10)}</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{order.direction}</td>
-                    <td className="px-4 py-3 text-slate-300">{order.status}</td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[var(--foreground)]">{order.direction}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">{order.status}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {order.deliveryAgent?.user?.name ?? order.deliveryAgent?.user?.username ?? "Unassigned"}
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100"
-                        defaultValue=""
-                        onChange={(e) => assignOrder(order.id, e.target.value)}
-                        disabled={actionId === order.id}
-                      >
-                        <option value="">Select rider</option>
-                        {allPartners
-                          .filter((partner) => partner.isActive)
-                          .map((partner) => (
-                            <option key={partner.user.id} value={partner.user.id}>
-                              {partner.user.name ?? partner.user.username}
-                            </option>
-                          ))}
-                      </select>
+                      {order.status === "DELIVERED" ? (
+                        <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          Delivered - assignment locked
+                        </span>
+                      ) : (
+                        <select
+                          className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-xs text-[var(--foreground)]"
+                          defaultValue=""
+                          onChange={(e) => assignOrder(order.id, e.target.value)}
+                          disabled={actionId === order.id}
+                        >
+                          <option value="">Select rider</option>
+                          {allPartners
+                            .filter((partner) => partner.isActive)
+                            .map((partner) => (
+                              <option key={partner.user.id} value={partner.user.id}>
+                                {partner.user.name ?? partner.user.username}
+                              </option>
+                            ))}
+                        </select>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -700,7 +806,7 @@ export default function DeliveryAdminDashboard() {
                           setSelectedOrderId(order.id);
                           setIsChatOpen(true);
                         }}
-                        className="rounded-lg border border-emerald-600/40 px-3 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-900/20"
+                        className="rounded-lg border border-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)] hover:bg-[var(--mint-100)]"
                       >
                         Open chat
                       </button>
@@ -712,8 +818,8 @@ export default function DeliveryAdminDashboard() {
           </div>
         </section>
 
-        <p className="mt-10 text-center text-sm text-slate-500">
-          <Link href="/delivery/login" className="text-emerald-500 hover:underline">
+        <p className="mt-10 text-center text-sm text-[var(--muted-foreground)]">
+          <Link href="/delivery/login" className="text-[var(--accent-dark)] hover:underline">
             Delivery partner portal →
           </Link>
         </p>
@@ -727,11 +833,11 @@ export default function DeliveryAdminDashboard() {
             className="fixed inset-0 z-20 bg-black/50"
             onClick={() => setIsChatOpen(false)}
           />
-          <aside className="fixed right-0 top-0 z-30 flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-slate-950 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+          <aside className="fixed right-0 top-0 z-30 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
               <div>
-                <p className="text-sm font-bold text-white">Delivery chat</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-bold text-[var(--foreground)]">Delivery chat</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
                   {selectedOrder
                     ? `${selectedOrder.repairJob.repairRequest.title} • ${selectedOrder.status}`
                     : "Select an order"}
@@ -740,22 +846,22 @@ export default function DeliveryAdminDashboard() {
               <button
                 type="button"
                 onClick={() => setIsChatOpen(false)}
-                className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:bg-slate-900"
+                className="rounded-lg border border-[var(--border)] px-3 py-1 text-xs text-[var(--foreground)] hover:bg-[var(--mint-50)]"
               >
                 Close
               </button>
             </div>
 
-            <div className="border-b border-slate-800 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Timeline</p>
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Timeline</p>
               <div className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
                 {timeline.length === 0 ? (
-                  <p className="text-xs text-slate-500">No timeline yet.</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">No timeline yet.</p>
                 ) : (
                   timeline.map((item, index) => (
-                    <div key={`${item.code}-${index}`} className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2">
-                      <p className="text-xs font-semibold text-slate-200">{item.title}</p>
-                      <p className="text-[11px] text-slate-500">{item.at ? new Date(item.at).toLocaleString() : "Pending"}</p>
+                    <div key={`${item.code}-${index}`} className="rounded-lg border border-[var(--border)] bg-[var(--mint-50)] px-3 py-2">
+                      <p className="text-xs font-semibold text-[var(--foreground)]">{item.title}</p>
+                      <p className="text-[11px] text-[var(--muted-foreground)]">{item.at ? new Date(item.at).toLocaleString() : "Pending"}</p>
                     </div>
                   ))
                 )}
@@ -764,7 +870,7 @@ export default function DeliveryAdminDashboard() {
 
             <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
               {chatMessages.length === 0 ? (
-                <p className="text-xs text-slate-500">No messages yet.</p>
+                <p className="text-xs text-[var(--muted-foreground)]">No messages yet.</p>
               ) : (
                 chatMessages.map((msg) => {
                   const isMine = msg.senderRole === "DELIVERY_ADMIN" || msg.senderRole === "ADMIN";
@@ -772,11 +878,11 @@ export default function DeliveryAdminDashboard() {
                     <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                          isMine ? "bg-emerald-600 text-white" : "border border-slate-700 bg-slate-900 text-slate-100"
+                          isMine ? "bg-[var(--accent-dark)] text-white" : "border border-[var(--border)] bg-[var(--mint-50)] text-[var(--foreground)]"
                         }`}
                       >
                         <p>{msg.message}</p>
-                        <p className={`mt-1 text-[10px] ${isMine ? "text-emerald-100" : "text-slate-500"}`}>
+                        <p className={`mt-1 text-[10px] ${isMine ? "text-[#d9f3ce]" : "text-[var(--muted-foreground)]"}`}>
                           {new Date(msg.createdAt).toLocaleTimeString()}
                         </p>
                       </div>
@@ -786,22 +892,22 @@ export default function DeliveryAdminDashboard() {
               )}
             </div>
 
-            <div className="border-t border-slate-800 p-3">
+            <div className="border-t border-[var(--border)] p-3">
               {!selectedOrder?.deliveryAgent?.user?.id ? (
                 <p className="mb-2 text-xs text-amber-400">Assign a rider first to enable chat.</p>
               ) : null}
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+                  className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
                 />
                 <button
                   type="button"
                   onClick={() => sendChat()}
                   disabled={sendingChat || !selectedOrder?.deliveryAgent?.user?.id || !chatText.trim()}
-                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                  className="rounded-lg bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:w-auto"
                 >
                   Send
                 </button>
@@ -828,13 +934,13 @@ function StatCard({
     amber: "border-amber-500/30",
     sky: "border-sky-500/30",
     violet: "border-violet-500/30",
-    slate: "border-slate-600",
+    slate: "border-[var(--border)]",
     rose: "border-rose-500/30",
   };
   return (
-    <div className={`rounded-2xl border bg-slate-900 p-5 ${ring[accent]}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+    <div className={`rounded-2xl border bg-[var(--card)] p-5 ${ring[accent]}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{label}</p>
+      <p className="mt-2 text-3xl font-bold text-[var(--foreground)]">{value}</p>
     </div>
   );
 }

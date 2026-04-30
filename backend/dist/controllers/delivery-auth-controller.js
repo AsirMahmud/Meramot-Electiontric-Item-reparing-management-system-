@@ -13,13 +13,20 @@ function signDeliveryToken(user) {
 }
 export async function deliveryRegister(req, res) {
     try {
-        const { name, email, phone, vehicleType, nidDocumentUrl, educationDocumentUrl, cvDocumentUrl } = req.body;
-        if (!name || !email || !phone || !nidDocumentUrl || !educationDocumentUrl || !cvDocumentUrl) {
+        const { name, email, phone, vehicleType, profilePictureUrl, nidDocumentUrl, educationDocumentUrl, cvDocumentUrl } = req.body;
+        if (!name ||
+            !email ||
+            !phone ||
+            !profilePictureUrl ||
+            !nidDocumentUrl ||
+            !educationDocumentUrl ||
+            !cvDocumentUrl) {
             return res.status(400).json({
-                message: "name, email, phone, nidDocumentUrl, educationDocumentUrl, and cvDocumentUrl are required",
+                message: "name, email, phone, profilePictureUrl, nidDocumentUrl, educationDocumentUrl, and cvDocumentUrl are required",
             });
         }
         const cleanEmail = email.trim().toLowerCase();
+        const cleanProfilePictureUrl = profilePictureUrl.trim();
         const cleanNidUrl = nidDocumentUrl.trim();
         const cleanEducationUrl = educationDocumentUrl.trim();
         const cleanCvUrl = cvDocumentUrl.trim();
@@ -46,9 +53,10 @@ export async function deliveryRegister(req, res) {
                     username: tempUsername,
                     email: cleanEmail,
                     phone: phone.trim(),
+                    avatarUrl: cleanProfilePictureUrl,
                     passwordHash,
                     role: "DELIVERY",
-                    status: "ACTIVE"
+                    status: "SUSPENDED",
                 },
                 select: {
                     id: true,
@@ -57,9 +65,74 @@ export async function deliveryRegister(req, res) {
                     email: true,
                     phone: true,
                     role: true,
+                    status: true,
+                    avatarUrl: true,
+                    lat: true,
+                    lng: true,
+                    createdAt: true,
+                    updatedAt: true,
                 },
             });
-            return { user, riderProfile: { id: user.id, isActive: true, registrationStatus: "APPROVED" } };
+            const riderProfile = await tx.riderProfile.create({
+                data: {
+                    userId: user.id,
+                    vehicleType: vehicleType?.trim() || null,
+                    nidDocumentUrl: cleanNidUrl,
+                    educationDocumentUrl: cleanEducationUrl,
+                    cvDocumentUrl: cleanCvUrl,
+                    status: "OFFLINE",
+                    isActive: false,
+                    registrationStatus: "PENDING",
+                },
+                select: {
+                    id: true,
+                    userId: true,
+                    vehicleType: true,
+                    status: true,
+                    isActive: true,
+                    registrationStatus: true,
+                    currentLat: true,
+                    currentLng: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                            email: true,
+                            phone: true,
+                            role: true,
+                            status: true,
+                            avatarUrl: true,
+                            lat: true,
+                            lng: true,
+                        },
+                    },
+                    coverageZones: {
+                        include: {
+                            coverageZone: true,
+                        },
+                    },
+                },
+            });
+            return {
+                user,
+                riderProfile: {
+                    id: riderProfile.id,
+                    userId: riderProfile.userId,
+                    vehicleType: riderProfile.vehicleType,
+                    status: riderProfile.status,
+                    isActive: riderProfile.isActive,
+                    registrationStatus: riderProfile.registrationStatus,
+                    currentLat: riderProfile.currentLat,
+                    currentLng: riderProfile.currentLng,
+                    createdAt: riderProfile.createdAt,
+                    updatedAt: riderProfile.updatedAt,
+                    user: riderProfile.user,
+                    coverageZones: riderProfile.coverageZones.map((cz) => cz.coverageZone.name),
+                },
+            };
         });
         const token = signDeliveryToken(result.user);
         try {
@@ -108,13 +181,25 @@ export async function deliveryLogin(req, res) {
         if (user.status !== "ACTIVE") {
             return res.status(403).json({ message: "Delivery account is suspended" });
         }
-        const riderProfile = {
-            id: user.id,
-            vehicleType: "BIKE",
-            status: user.status,
-            isActive: user.status === "ACTIVE",
-            registrationStatus: "APPROVED",
-        };
+        const riderProfile = await prisma.riderProfile.findUnique({
+            where: { userId: user.id },
+            select: {
+                id: true,
+                vehicleType: true,
+                status: true,
+                isActive: true,
+                registrationStatus: true,
+            },
+        });
+        if (!riderProfile) {
+            return res.status(403).json({ message: "Delivery profile not found. Contact support." });
+        }
+        if (riderProfile.registrationStatus !== "APPROVED") {
+            const message = riderProfile.registrationStatus === "REJECTED"
+                ? "Delivery registration was rejected. Contact admin."
+                : "Delivery registration is pending admin approval.";
+            return res.status(403).json({ message });
+        }
         const token = signDeliveryToken(user);
         return res.json({
             message: "Delivery login successful",

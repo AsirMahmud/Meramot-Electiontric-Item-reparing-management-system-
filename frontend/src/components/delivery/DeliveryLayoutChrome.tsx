@@ -18,10 +18,10 @@ export function DeliveryLayoutChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#E4FCD5] text-foreground font-sans">
+    <div className="min-h-screen flex bg-[#E4FCD5] text-foreground font-sans">
       <Sidebar />
-      <main className="min-h-screen md:pl-[280px]">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-4 pt-2 md:px-8 md:pb-8 md:pt-4">{children}</div>
+      <main className="min-h-screen flex-1 md:ml-0">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-4 pt-20 md:px-8 md:pb-8 md:pt-4">{children}</div>
       </main>
     </div>
   );

@@ -96,28 +96,7 @@ export default function DeliveryDashboardPage() {
                 Open live map
               </Link>
             </div>
-            <div className="mb-4 inline-flex rounded-xl border border-[#d9e5d5] bg-[#f8fbf6] p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode("ACTIVE")}
-                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${
-                  viewMode === "ACTIVE" ? "bg-white text-[#163625] shadow-sm" : "text-[#163625]/70 hover:text-[#163625]"
-                }`}
-              >
-                Active deliveries ({activeDeliveries.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("ASSIGNED")}
-                className={`rounded-lg px-4 py-2 text-xs font-bold transition ${
-                  viewMode === "ASSIGNED"
-                    ? "bg-white text-[#163625] shadow-sm"
-                    : "text-[#163625]/70 hover:text-[#163625]"
-                }`}
-              >
-                Assigned deliveries ({deliveries.length})
-              </button>
-            </div>
+          
 
             {loading ? <p className="text-sm text-[#163625]/70">Loading deliveries...</p> : null}
             {error ? <p className="mb-3 text-sm text-red-700">{error}</p> : null}

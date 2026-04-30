@@ -270,7 +270,15 @@ export default function OrderRequestDetails() {
                 <div>
                   <h4 className="font-bold text-[#163625]">{delivery.repairJob.repairRequest.deviceType}</h4>
                   <p className="text-xs text-[#163625]/70 mt-1">Shop: {delivery.repairJob.shop.name}</p>
-                  <p className="text-xs text-[#163625]/70">Contact: {delivery.repairJob.repairRequest.contactPhone ?? "-"}</p>
+                  <p className="text-xs text-[#163625]/70">
+                    Customer: {delivery.repairJob.repairRequest.user?.name?.trim() || "Not provided"}
+                  </p>
+                  <p className="text-xs text-[#163625]/70">
+                    Customer phone:{" "}
+                    {delivery.repairJob.repairRequest.user?.phone?.trim() ||
+                      delivery.repairJob.repairRequest.contactPhone ||
+                      "Not provided"}
+                  </p>
                 </div>
               </div>
             </div>

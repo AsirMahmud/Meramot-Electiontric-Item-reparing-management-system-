@@ -8,6 +8,8 @@ export declare function getAdminDeliveryChatMessages(req: Request, res: Response
 export declare function sendAdminDeliveryChatMessage(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function approveDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function rejectDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function blockDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+export declare function deleteDeliveryPartner(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function listDeliveryPayoutRequests(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 export declare function approveDeliveryPayoutRequest(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 //# sourceMappingURL=delivery-admin-controller.d.ts.map

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -30,9 +31,14 @@ export default function DeliveryLoginForm() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#163625] text-lg font-bold text-[#E4FCD5]">
-            LF
-          </div>
+          <Image
+            src="/images/meramot.svg"
+            alt="Meramot"
+            width={220}
+            height={72}
+            className="mx-auto mb-4 h-14 w-auto object-contain"
+            priority
+          />
           <h1 className="text-2xl font-bold text-[#163625]">Partner sign in</h1>
           <p className="mt-2 text-sm font-medium text-[#163625]/60">
             Delivery accounts are separate from customer login.
