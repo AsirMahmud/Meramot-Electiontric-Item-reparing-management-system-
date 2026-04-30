@@ -55,7 +55,6 @@ router.get("/disputes/:id", async (req: Request, res: Response) => {
         assignedAdmin: true,
         payment: true,
         repairRequest: true,
-        supportTicket: true,
         notes: {
           orderBy: { createdAt: "asc" },
           include: {
