@@ -20,7 +20,7 @@ export default function OfferCarousel() {
           </p>
           <Link
             href={offer.href}
-            className="mt-4 inline-flex rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)]"
+            className="mt-4 inline-flex items-center justify-center text-center rounded-full bg-[var(--accent-dark)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-foreground)]"
           >
             Explore shops
           </Link>

@@ -184,7 +184,7 @@ export function NavbarInner({
                 {!isLoggedIn ? (
                   <Link
                     href="/login"
-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
+                    className="inline-flex items-center justify-center text-center rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
                   >
                     Sign in/Sign up
                   </Link>
@@ -195,7 +195,7 @@ export function NavbarInner({
                         setIsUserMenuOpen((prev) => !prev);
                         setIsLangMenuOpen(false);
                       }}
-                      className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
+                      className="inline-flex items-center justify-center text-center rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
                     >
                       {displayName} ▼
                     </button>
