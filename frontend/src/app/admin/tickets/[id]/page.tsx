@@ -220,8 +220,11 @@ export default function AdminTicketDetailPage() {
     <section className="h-full flex flex-col">
       <div className="mb-6 flex items-center justify-between shrink-0">
         <div>
-          <Link href="/admin/tickets" className="mb-2 inline-block text-sm font-semibold text-[var(--muted-foreground)] hover:underline">
-            &larr; Back to Tickets
+          <Link 
+            href="/admin/tickets" 
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white dark:bg-[#1C251F] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)] shadow-sm transition-all hover:bg-[var(--mint-50)] hover:text-[var(--accent-dark)] hover:shadow-md active:scale-95"
+          >
+            <span>←</span> Back to Tickets
           </Link>
           <h2 className="text-3xl font-bold text-[var(--accent-dark)]">{ticket.subject}</h2>
           <p className="mt-1 text-[var(--muted-foreground)]">ID: {ticket.id}</p>
