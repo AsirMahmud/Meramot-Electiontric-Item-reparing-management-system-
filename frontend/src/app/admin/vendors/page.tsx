@@ -45,7 +45,7 @@ export default function AdminVendorsPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setVendors(data.data);
+        setVendors(data.applications || []);
       }
     } catch (error) {
       console.error(error);
