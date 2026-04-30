@@ -293,7 +293,7 @@ export default function AdminDisputeDetailPage() {
                                 value={newNote}
                                 onChange={(e) => setNewNote(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[#F9FBF8] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
+                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                                 placeholder="Write your findings..."
                             />
                         </div>
@@ -325,7 +325,7 @@ export default function AdminDisputeDetailPage() {
                                 value={resolutionText}
                                 onChange={(e) => setResolutionText(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[#F9FBF8] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
+                                className="mt-1 w-full rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] px-4 py-3 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none"
                                 placeholder="Explain how this was resolved..."
                             />
                         </div>
