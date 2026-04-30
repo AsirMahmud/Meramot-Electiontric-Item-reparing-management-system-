@@ -1,0 +1,307 @@
+﻿diff --git a/frontend/src/components/home/Navbar.tsx b/frontend/src/components/home/Navbar.tsx
+index 34e2fbe..0f613db 100644
+--- a/frontend/src/components/home/Navbar.tsx
++++ b/frontend/src/components/home/Navbar.tsx
+@@ -2,15 +2,14 @@
+ 
+ import Image from "next/image";
+ import Link from "next/link";
+-import { useMemo, useState, FormEvent, useEffect } from "react";
++import { useMemo, useState, FormEvent } from "react";
+ import { usePathname, useRouter, useSearchParams } from "next/navigation";
+-import { signOut, useSession } from "next-auth/react";
++import { signOut } from "next-auth/react";
+ import ThemeToggle from "@/components/theme/ThemeToggle";
+ import NavbarLocationButton from "@/components/location/NavbarLocationButton";
+ import LocationPickerModal from "@/components/location/LocationPickerModal";
+ import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+ import NotificationBell from "@/components/notifications/NotificationBell";
+-import { getVendorApplicationStatus } from "@/lib/api";
+ 
+  type NavbarProps = {
+   isLoggedIn?: boolean;
+@@ -19,21 +18,13 @@ import { getVendorApplicationStatus } from "@/lib/api";
+   onLanguageChange?: (lang: "en" | "bn") => void;
+ };
+ 
+-type VendorNavbarStatus = {
+-  application?: {
+-    status: "PENDING" | "APPROVED" | "REJECTED";
+-    setupComplete?: boolean;
+-  };
+-  message?: string;
+-};
+-
+ const categoryTabs = [
+   { label: "Courier Pickup", value: "COURIER_PICKUP" },
+   { label: "In-shop Repair", value: "IN_SHOP_REPAIR" },
+   { label: "Spare Parts", value: "SPARE_PARTS" },
+ ] as const;
+ 
+-export function NavbarInner({
++export default function Navbar({
+   isLoggedIn = false,
+   firstName = "User",
+   language = "en",
+@@ -58,45 +49,9 @@ export function NavbarInner({
+   const activeCategory =
+     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
+ 
+-  const { data: session, status } = useSession();
+-
+-  const userRole = (session?.user as { role?: string } | undefined)?.role;
+-  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+-
+-  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
+-
+-  useEffect(() => {
+-    async function loadVendorStatus() {
+-      if (userRole !== "VENDOR" || !token) {
+-        setVendorStatus(null);
+-        return;
+-      }
+-
+-      try {
+-        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
+-        setVendorStatus(result);
+-      } catch {
+-        setVendorStatus(null);
+-      }
+-    }
+-
+-    loadVendorStatus();
+-  }, [userRole, token]);
+-
+-  const vendorApplication = vendorStatus?.application;
+-  const isVendorSetupComplete =
+-    userRole === "VENDOR" &&
+-    vendorApplication?.status === "APPROVED" &&
+-    vendorApplication?.setupComplete === true;
+-
+-  const isVendorSetupIncomplete =
+-    userRole === "VENDOR" &&
+-    vendorApplication?.status === "APPROVED" &&
+-    vendorApplication?.setupComplete !== true;
+-
+   const displayName = useMemo(() => {
+-    return firstName?.trim() || session?.user?.name?.split(" ")[0] || "User";
+-  }, [firstName, session]);
++    return firstName?.trim() || "User";
++  }, [firstName]);
+ 
+   const confirmLogout = async () => {
+     setIsUserMenuOpen(false);
+@@ -130,7 +85,7 @@ export function NavbarInner({
+     <>
+       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
+         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
+-          <div className="grid gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
++          <div className="grid grid-cols-[auto_1fr] gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
+             <Link href="/" className="inline-flex items-center">
+               <Image
+                 src="/images/meramot.svg"
+@@ -142,19 +97,19 @@ export function NavbarInner({
+               />
+             </Link>
+ 
+-            <div className="flex justify-start md:justify-center">
++            <div className="flex justify-end md:justify-center">
+               <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
+             </div>
+ 
+-            <div className="flex flex-wrap items-center gap-3 md:justify-end">
++            <div className="col-span-2 flex flex-wrap items-center gap-3 md:col-span-1 md:justify-end">
+               <ThemeToggle />
+ 
+               {!isLoggedIn ? (
+                 <Link
+                   href="/login"
+-                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
++                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                 >
+-                  Sign in/Sign up
++                  Sign in
+                 </Link>
+               ) : (
+                 <div className="relative">
+@@ -163,7 +118,7 @@ export function NavbarInner({
+                       setIsUserMenuOpen((prev) => !prev);
+                       setIsLangMenuOpen(false);
+                     }}
+-                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
++                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
+                   >
+                     {displayName} Γû╝
+                   </button>
+@@ -186,72 +141,13 @@ export function NavbarInner({
+                         Requests history
+                       </Link>
+ 
+-                      {userRole === "ADMIN" && (
+-                        <Link
+-                          href="/admin"
+-                          className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+-                          onClick={() => setIsUserMenuOpen(false)}
+-                        >
+-                          Admin dashboard
+-                        </Link>
+-                      )}
+-
+-                      {userRole === "VENDOR" ? (
+-                        <>
+-                          {isVendorSetupComplete ? (
+-                            <>
+-                              <Link
+-                                href="/vendor/dashboard"
+-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+-                                onClick={() => setIsUserMenuOpen(false)}
+-                              >
+-                                Vendor dashboard
+-                              </Link>
+-                              <Link
+-                                href="/vendor/analytics"
+-                                className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+-                                onClick={() => setIsUserMenuOpen(false)}
+-                              >
+-                                Shop analytics
+-                              </Link>
+-                            </>
+-                          ) : isVendorSetupIncomplete ? (
+-                            <Link
+-                              href="/vendor/setup-shop"
+-                              className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+-                              onClick={() => setIsUserMenuOpen(false)}
+-                            >
+-                              Set up your shop
+-                            </Link>
+-                          ) : (
+-                            <Link
+-                              href="/vendor/onboarding"
+-                              className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+-                              onClick={() => setIsUserMenuOpen(false)}
+-                            >
+-                              Vendor onboarding
+-                            </Link>
+-                          )}
+-                        </>
+-                      ) : null}
+-
+-                      {userRole === "VENDOR" ? (
+-                        <Link
+-                          href="/vendor/my-bids"
+-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+-                          onClick={() => setIsUserMenuOpen(false)}
+-                        >
+-                          My Offers
+-                        </Link>
+-                      ) : (
+-                        <Link
+-                          href="/requests/new"
+-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+-                          onClick={() => setIsUserMenuOpen(false)}
+-                        >
+-                          Make Repair Request
+-                        </Link>
+-                      )}
++                      <Link
++                        href="/requests/new"
++                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
++                        onClick={() => setIsUserMenuOpen(false)}
++                      >
++                        Make request
++                      </Link>
+ 
+                       <Link
+                         href="/cart"
+@@ -283,7 +179,18 @@ export function NavbarInner({
+                 </div>
+               )}
+ 
+-              <NotificationBell />
++              <Link
++                href="/cart"
++                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
++              >
++                <Image
++                  src="/images/cart.svg"
++                  alt="Cart"
++                  width={80}
++                  height={80}
++                  className="h-[45px] w-[45px]"
++                />
++              </Link>
+ 
+               <div className="relative">
+                 <button
+@@ -320,32 +227,19 @@ export function NavbarInner({
+                   </div>
+                 )}
+               </div>
+-              <Link
+-                href="/cart"
+-                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
+-              >
+-                <Image
+-                  src="/images/cart.svg"
+-                  alt="Cart"
+-                  width={80}
+-                  height={80}
+-                  className="h-[45px] w-[45px]"
+-                />
+-              </Link>
++
++              <NotificationBell />
++
+             </div>
+           </div>
+-
+           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+-            <div className="flex flex-wrap items-end gap-6 font-semibold text-[var(--foreground)]">
++          <div className="flex items-end gap-6 overflow-x-auto whitespace-nowrap font-semibold text-[var(--foreground)]">
+               {categoryTabs.map((tab) => {
+                 const active = activeCategory === tab.value;
+-                const params = new URLSearchParams(searchParams.toString());
+-                params.set("category", tab.value);
+-                
+                 return (
+                   <Link
+                     key={tab.value}
+-                    href={`/shops?${params.toString()}`}
++                    href={`/shops?category=${tab.value}`}
+                     className={`inline-flex border-b-[3px] pb-1 transition ${
+                       active
+                         ? "border-[var(--accent-dark)] text-[var(--accent-dark)]"
+@@ -375,7 +269,9 @@ export function NavbarInner({
+         <LocationPickerModal
+           selectedLocation={selectedLocation}
+           onClose={() => setLocationModalOpen(false)}
+-          onConfirm={saveLocation}
++          onConfirm={async (location) => {
++            await saveLocation(location);
++          }}
+         />
+       )}
+ 
+@@ -405,7 +301,7 @@ export function NavbarInner({
+ 
+               <button
+                 onClick={confirmLogout}
+-                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
++                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+               >
+                 Yes
+               </button>
+@@ -416,13 +312,3 @@ export function NavbarInner({
+     </>
+   );
+ }
+-
+-import { Suspense } from "react";
+-
+-export default function Navbar(props: NavbarProps) {
+-  return (
+-    <Suspense fallback={<div style={{ height: "70px" }}></div>}>
+-      <NavbarInner {...props} />
+-    </Suspense>
+-  );
+-}

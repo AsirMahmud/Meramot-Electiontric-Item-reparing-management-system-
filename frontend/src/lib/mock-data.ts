@@ -16,7 +16,7 @@ export const fallbackShops: ApiShop[] = [
     freeDelivery: false,
     hasDeals: false,
     categories: ["COURIER_PICKUP", "IN_SHOP_REPAIR"],
-    specialties: ["MacBook Air M2 repair", "battery replacement", "logic board repair"],
+    specialties: ["MacBook Air M2 repair", "battery replacement", "logic board repair", "laptop", "phone"],
     distanceKm: 1.2,
     etaMinutes: 140,
     resultTag: "Best Value",
@@ -37,7 +37,7 @@ export const fallbackShops: ApiShop[] = [
     freeDelivery: false,
     hasDeals: false,
     categories: ["IN_SHOP_REPAIR"],
-    specialties: ["MacBook Air M2 repair", "screen replacement", "keyboard repair"],
+    specialties: ["MacBook Air M2 repair", "screen replacement", "keyboard repair", "tablet", "smartwatch"],
     distanceKm: 0.5,
     etaMinutes: 60,
     resultTag: "Lowest Price",
@@ -58,7 +58,7 @@ export const fallbackShops: ApiShop[] = [
     freeDelivery: false,
     hasDeals: true,
     categories: ["IN_SHOP_REPAIR"],
-    specialties: ["MacBook Air M2 repair", "display replacement", "screen repair"],
+    specialties: ["MacBook Air M2 repair", "display replacement", "screen repair", "console", "printer"],
     distanceKm: 4.8,
     etaMinutes: 1440,
     resultTag: null,
@@ -269,11 +269,11 @@ export const offerCards = [
 ];
 
 export const popularCategories = [
-  { label: "Phone", sprite: "📱", trend: "High screen repair demand", href: "/shops?q=phone%20screen" },
-  { label: "Laptop", sprite: "💻", trend: "Battery and keyboard issues", href: "/shops?q=laptop%20repair" },
-  { label: "Tablet", sprite: "🧾", trend: "Port replacement trending", href: "/shops?q=tablet%20repair" },
+  { label: "Phone", sprite: "📱", trend: "High screen repair demand", href: "/shops?q=phone" },
+  { label: "Laptop", sprite: "💻", trend: "Battery and keyboard issues", href: "/shops?q=laptop" },
+  { label: "Tablet", sprite: "🧾", trend: "Port replacement trending", href: "/shops?q=tablet" },
   { label: "Smartwatch", sprite: "⌚", trend: "Glass and strap repairs", href: "/shops?q=smartwatch" },
-  { label: "Gaming Console", sprite: "🎮", trend: "Fan cleaning rising", href: "/shops?q=console%20repair" },
+  { label: "Gaming Console", sprite: "🎮", trend: "Fan cleaning rising", href: "/shops?q=console" },
   { label: "Printer", sprite: "🖨️", trend: "Roller and cartridge requests", href: "/shops?q=printer" },
 ];
 
