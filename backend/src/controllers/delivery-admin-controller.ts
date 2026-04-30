@@ -351,7 +351,7 @@ export async function listDeliveryOrders(req: Request, res: Response) {
       "FAILED",
       "CANCELLED",
     ]);
-    const statusFilter = allowedStatuses.has(rawStatus) ? rawStatus : undefined;
+    const statusFilter = allowedStatuses.has(rawStatus) ? (rawStatus as any) : undefined;
 
     const deliveries = await prisma.delivery.findMany({
       where: {
