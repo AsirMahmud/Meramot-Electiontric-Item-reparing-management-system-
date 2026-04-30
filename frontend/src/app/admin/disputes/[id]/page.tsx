@@ -183,7 +183,7 @@ export default function AdminDisputeDetailPage() {
 
   return (
     <section>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <div>
           <Link 
             href="/admin/disputes" 
@@ -191,11 +191,13 @@ export default function AdminDisputeDetailPage() {
           >
             <span>←</span> Back to Disputes
           </Link>
-          <h2 className="text-3xl font-bold text-[var(--accent-dark)]">Dispute Case</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-bold text-[var(--accent-dark)]">Dispute Case</h2>
+            <span className="rounded-full bg-[var(--mint-100)] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+              {dispute.status}
+            </span>
+          </div>
           <p className="mt-1 text-[var(--muted-foreground)]">ID: {dispute.id}</p>
-        </div>
-        <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 font-semibold tracking-wide text-[var(--accent-dark)]">
-          {dispute.status}
         </div>
       </div>
 
