@@ -607,7 +607,7 @@ export function NavbarInner({
                           setMobileMenuOpen(false);
                           setShowLogoutConfirm(true);
                         }}
-                        className="block w-full rounded-xl px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-700 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-950/30"
                       >
                         Log out
                       </button>
