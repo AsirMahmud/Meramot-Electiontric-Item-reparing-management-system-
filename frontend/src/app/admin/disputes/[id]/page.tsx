@@ -69,6 +69,7 @@ export default function AdminDisputeDetailPage() {
   const [isResolving, setIsResolving] = useState(false);
   const [statusToResolve, setStatusToResolve] = useState("RESOLVED");
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
+  const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDispute = async () => {
@@ -129,9 +130,9 @@ export default function AdminDisputeDetailPage() {
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!window.confirm("Are you sure you want to delete this note?")) return;
     try {
       setDeletingNoteId(noteId);
+      setConfirmDeleteNoteId(null);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes/${id}/notes/${noteId}`, {
         method: "DELETE",
         credentials: "include",
@@ -209,6 +210,7 @@ export default function AdminDisputeDetailPage() {
   const isClosed = ["RESOLVED", "REFUNDED", "PARTIALLY_REFUNDED", "REJECTED", "CLOSED"].includes(dispute.status);
 
   return (
+    <>
     <section>
       <div className="mb-6">
         <div>
@@ -301,7 +303,7 @@ export default function AdminDisputeDetailPage() {
                                         <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-semibold text-[#92400E]">Internal Note</span>
                                     )}
                                     <button
-                                        onClick={() => handleDeleteNote(note.id)}
+                                        onClick={() => setConfirmDeleteNoteId(note.id)}
                                         disabled={deletingNoteId === note.id}
                                         title="Delete note"
                                         className={`rounded-lg p-1.5 transition hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 ${note.isInternal ? "text-[#92400E] hover:text-red-600" : "text-[var(--muted-foreground)] hover:text-red-500"}`}
@@ -395,5 +397,42 @@ export default function AdminDisputeDetailPage() {
         </div>
       </div>
     </section>
+
+      {confirmDeleteNoteId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setConfirmDeleteNoteId(null)}
+          />
+          <div className="relative z-[101] w-[90%] max-w-sm rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-8 shadow-2xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-center text-xl font-bold text-[var(--accent-dark)]">
+              Delete this note?
+            </h2>
+            <p className="mt-2 text-center text-sm text-[var(--muted-foreground)]">
+              This action cannot be undone. The note will be permanently removed.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <button
+                onClick={() => setConfirmDeleteNoteId(null)}
+                className="rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-2.5 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteNote(confirmDeleteNoteId)}
+                className="rounded-full bg-red-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
