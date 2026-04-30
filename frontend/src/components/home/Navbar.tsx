@@ -367,7 +367,7 @@ export function NavbarInner({
           </div>
 
           {/* ── Row 2: Mobile location button ── */}
-          <div className="md:hidden">
+          <div className="mt-4 md:mt-0 md:hidden">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -390,7 +390,7 @@ export function NavbarInner({
           </div>
 
           {/* ── Row 3: Category tabs + search (desktop) ── */}
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+          <div className="mt-2 flex flex-col gap-2 md:mt-0 md:flex-row md:items-center md:justify-between md:gap-4">
             <div className="flex items-end gap-3 overflow-x-auto whitespace-nowrap text-xs font-semibold text-[var(--foreground)] md:gap-6 md:text-base">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
