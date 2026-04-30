@@ -134,8 +134,8 @@ export function NavbarInner({
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-4 md:gap-4 md:px-6 md:py-5">
-          {/* ── Row 1: Logo + hamburger (mobile) / Logo + actions (desktop) ── */}
-          <div className="flex items-center justify-between gap-3 md:gap-4">
+          {/* ── Row 1: Logo + hamburger (mobile) / Logo + location + actions (desktop) ── */}
+          <div className="flex items-center justify-between gap-3 md:grid md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center md:gap-4">
             {/* Hamburger — mobile only */}
               <button
               type="button"
@@ -157,6 +157,11 @@ export function NavbarInner({
                   priority
                 />
               </Link>
+            </div>
+
+            {/* Desktop-only: location + actions */}
+            <div className="hidden md:flex md:justify-center">
+              <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
             </div>
 
             {/* Right side icons — always visible */}
@@ -408,18 +413,15 @@ export function NavbarInner({
               })}
             </div>
 
-            <div className="hidden w-full md:flex md:items-center md:gap-3 md:w-auto">
-              <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
-              <form onSubmit={handleSearchSubmit} className="w-[300px] lg:w-[460px]">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search shops, parts, devices, or repair types"
-                  className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--mint-300)] px-5 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
-                />
-              </form>
-            </div>
+            <form onSubmit={handleSearchSubmit} className="hidden w-full md:block md:w-[520px]">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search shops, parts, devices, or repair types"
+                className="w-full rounded-xl border-2 border-[var(--border)] bg-[var(--mint-300)] px-5 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
+              />
+            </form>
           </div>
         </div>
       </header>
