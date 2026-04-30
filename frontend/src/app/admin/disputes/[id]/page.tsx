@@ -68,6 +68,7 @@ export default function AdminDisputeDetailPage() {
   const [resolutionText, setResolutionText] = useState("");
   const [isResolving, setIsResolving] = useState(false);
   const [statusToResolve, setStatusToResolve] = useState("RESOLVED");
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDispute = async () => {
@@ -124,6 +125,32 @@ export default function AdminDisputeDetailPage() {
     } catch (error) {
       console.error(error);
       alert("Error adding note.");
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!window.confirm("Are you sure you want to delete this note?")) return;
+    try {
+      setDeletingNoteId(noteId);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/disputes/${id}/notes/${noteId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: getAuthHeaders(token),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDispute((prev) => {
+          if (!prev) return prev;
+          return { ...prev, notes: prev.notes.filter((n) => n.id !== noteId) };
+        });
+      } else {
+        alert(data.message || "Failed to delete note");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error deleting note.");
+    } finally {
+      setDeletingNoteId(null);
     }
   };
 
@@ -269,9 +296,21 @@ export default function AdminDisputeDetailPage() {
                                     <p className={`font-semibold ${note.isInternal ? "text-[#244229]" : "text-[var(--accent-dark)]"}`}>{note.author?.name || note.author?.email || "System"}</p>
                                     <p className={`text-xs ${note.isInternal ? "text-[#6B7280]" : "text-[var(--muted-foreground)]"}`}>{new Date(note.createdAt).toLocaleString()}</p>
                                 </div>
-                                {note.isInternal && (
-                                    <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-semibold text-[#92400E]">Internal Note</span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {note.isInternal && (
+                                        <span className="rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-semibold text-[#92400E]">Internal Note</span>
+                                    )}
+                                    <button
+                                        onClick={() => handleDeleteNote(note.id)}
+                                        disabled={deletingNoteId === note.id}
+                                        title="Delete note"
+                                        className={`rounded-lg p-1.5 transition hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 ${note.isInternal ? "text-[#92400E] hover:text-red-600" : "text-[var(--muted-foreground)] hover:text-red-500"}`}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             <p className={`mt-3 ${note.isInternal ? "text-[#1F2937]" : "text-[var(--foreground)]"}`}>{note.note}</p>
                         </div>

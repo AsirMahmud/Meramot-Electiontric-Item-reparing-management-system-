@@ -220,4 +220,36 @@ router.patch("/disputes/:id/hold", async (req: Request & { user?: any }, res: Re
   }
 });
 
+router.delete("/disputes/:id/notes/:noteId", async (req: Request & { user?: any }, res: Response) => {
+  try {
+    const noteId = String(req.params.noteId);
+
+    const note = await prisma.disputeNote.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    await prisma.disputeNote.delete({
+      where: { id: noteId },
+    });
+
+    return res.json({
+      success: true,
+      message: "Note deleted successfully",
+    });
+  } catch (error) {
+    console.error("DELETE /disputes/:id/notes/:noteId error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete note",
+    });
+  }
+});
+
 export default router;
