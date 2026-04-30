@@ -46,6 +46,7 @@ export function NavbarInner({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -442,123 +443,158 @@ export function NavbarInner({
                 <Image
                   src="/images/meramot.svg"
                   alt="Meramot"
-                  width={160}
-                  height={56}
-                  className="h-8 w-auto object-contain"
+                  width={240}
+                  height={80}
+                  className="h-14 w-auto object-contain"
                 />
               </Link>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-full bg-[var(--mint-100)] px-3 py-1.5 text-xs font-bold text-[var(--accent-dark)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--mint-100)] text-sm font-bold text-[var(--accent-dark)]"
               >
-                ✕ Close
+                ✕
               </button>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 flex items-center gap-4">
               <ThemeToggle />
+              <Link
+                href="/cart"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105"
+              >
+                <Image src="/images/cart.svg" alt="Cart" width={24} height={24} className="h-6 w-6" />
+              </Link>
             </div>
 
             <nav className="space-y-1">
-              <Link
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-              >
-                🏠 Home
-              </Link>
-
               {!isLoggedIn ? (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                >
-                  🔑 Sign in / Sign up
-                </Link>
-              ) : (
                 <>
                   <Link
-                    href="/profile"
+                    href="/"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                   >
-                    👤 Profile
+                    🏠 Home
                   </Link>
-
                   <Link
-                    href="/orders"
+                    href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                   >
-                    📋 My Orders
+                    🔑 Sign in / Sign up
                   </Link>
-
-                  <Link
-                    href="/cart"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setMobileUserMenuOpen((prev) => !prev)}
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                   >
-                    🛒 Cart
-                  </Link>
+                    <span className="flex items-center gap-2">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-dark)] text-xs text-[var(--accent-foreground)]">
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                      {displayName}
+                    </span>
+                    <span className={`text-xs transition-transform ${mobileUserMenuOpen ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
 
-                  {userRole === "ADMIN" && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                    >
-                      ⚙️ Admin Dashboard
-                    </Link>
-                  )}
-
-                  {userRole === "VENDOR" && isVendorSetupComplete && (
-                    <>
+                  {mobileUserMenuOpen && (
+                    <div className="ml-4 space-y-1 border-l-2 border-[var(--mint-200)] pl-4 mt-1 mb-2">
                       <Link
-                        href="/vendor/dashboard"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                      >
-                        🏪 Vendor Dashboard
-                      </Link>
-                      <Link
-                        href="/vendor/analytics"
+                        href="/profile"
                         onClick={() => setMobileMenuOpen(false)}
                         className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        📊 Shop Analytics
+                        👤 Profile
                       </Link>
-                    </>
+
+                      <Link
+                        href="/orders"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                      >
+                        📋 My Orders
+                      </Link>
+
+                      {userRole === "ADMIN" && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                        >
+                          ⚙️ Admin Dashboard
+                        </Link>
+                      )}
+
+                      {userRole === "VENDOR" && isVendorSetupComplete && (
+                        <>
+                          <Link
+                            href="/vendor/dashboard"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                          >
+                            🏪 Vendor Dashboard
+                          </Link>
+                          <Link
+                            href="/vendor/analytics"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          >
+                            📊 Shop Analytics
+                          </Link>
+                        </>
+                      )}
+
+                      {userRole === "VENDOR" && isVendorSetupIncomplete && (
+                        <Link
+                          href="/vendor/setup-shop"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                        >
+                          🛠️ Set Up Shop
+                        </Link>
+                      )}
+
+                      {userRole === "VENDOR" ? (
+                        <Link
+                          href="/vendor/my-bids"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        >
+                          💰 My Offers
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/requests/new"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        >
+                          🔧 Make Repair Request
+                        </Link>
+                      )}
+                      
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setShowLogoutConfirm(true);
+                        }}
+                        className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                      >
+                        🚪 Log out
+                      </button>
+                    </div>
                   )}
 
-                  {userRole === "VENDOR" && isVendorSetupIncomplete && (
-                    <Link
-                      href="/vendor/setup-shop"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                    >
-                      🛠️ Set Up Shop
-                    </Link>
-                  )}
-
-                  {userRole === "VENDOR" ? (
-                    <Link
-                      href="/vendor/my-bids"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                    >
-                      💰 My Offers
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/requests/new"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                    >
-                      🔧 Make Repair Request
-                    </Link>
-                  )}
+                  <Link
+                    href="/"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                  >
+                    🏠 Home
+                  </Link>
 
                   <Link
                     href="/ai-chat"
@@ -567,16 +603,6 @@ export function NavbarInner({
                   >
                     🤖 AI Help
                   </Link>
-
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setShowLogoutConfirm(true);
-                    }}
-                    className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
-                  >
-                    🚪 Log out
-                  </button>
                 </>
               )}
             </nav>
