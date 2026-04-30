@@ -49,15 +49,17 @@ export default function HomePage() {
         </div>
 
         <div className="space-y-6 md:space-y-8">
-          {/* Mobile filter button */}
           <button
             type="button"
             onClick={() => setFiltersOpen((prev) => !prev)}
             aria-expanded={filtersOpen}
             className="mobile-collapse-toggle lg:hidden"
           >
-            <span>{filtersOpen ? "Close filters" : "Filters & sort"}</span>
-            <span className="chevron text-lg leading-none">{filtersOpen ? "▲" : "▼"}</span>
+            <span className="flex items-center gap-2">
+              <span className="text-xl leading-none">☰</span>
+              {filtersOpen ? "Close filters" : "Filters & sort"}
+            </span>
+            <span className="chevron text-lg leading-none">{filtersOpen ? "✕" : "▼"}</span>
           </button>
 
           <OfferCarousel />

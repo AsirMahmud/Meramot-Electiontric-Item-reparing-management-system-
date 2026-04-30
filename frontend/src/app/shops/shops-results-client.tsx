@@ -228,8 +228,11 @@ function ShopsResultsClientInner() {
           aria-expanded={filtersOpen}
           className="mobile-collapse-toggle mb-4 lg:hidden"
         >
-          <span>Filters &amp; Sorting</span>
-          <span className="chevron text-lg leading-none">{filtersOpen ? "▲" : "▼"}</span>
+          <span className="flex items-center gap-2">
+            <span className="text-xl leading-none">☰</span>
+            {filtersOpen ? "Close Filters" : "Filters & Sorting"}
+          </span>
+          <span className="chevron text-lg leading-none">{filtersOpen ? "✕" : "▼"}</span>
         </button>
 
         <div className="grid gap-4 md:gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
@@ -324,8 +327,8 @@ function ShopsResultsClientInner() {
             </div>
           </aside>
 
-          <div>
-            <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-xl bg-[var(--mint-100)] p-1.5 md:mb-4 md:gap-2 md:rounded-2xl md:p-2">
+          <div className="min-w-0">
+            <div className="mb-3 flex items-center gap-1.5 overflow-x-auto scrollbar-hide rounded-xl bg-[var(--mint-100)] p-1.5 md:mb-4 md:gap-2 md:rounded-2xl md:p-2">
               {sortTabs.map((tab) => {
                 const active = searchState.sort === tab.value;
 
@@ -334,7 +337,7 @@ function ShopsResultsClientInner() {
                     key={tab.value}
                     type="button"
                     onClick={() => updateParams({ sort: tab.value })}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition md:rounded-xl md:px-4 md:py-2 md:text-sm ${
+                    className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold transition md:rounded-xl md:px-4 md:py-2 md:text-sm ${
                       active
                         ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)] shadow-sm"
                         : "bg-transparent text-[var(--foreground)] hover:bg-[var(--card)]"
@@ -345,7 +348,7 @@ function ShopsResultsClientInner() {
                 );
               })}
 
-              <div className="ml-auto rounded-lg px-2 py-1.5 text-sm text-[var(--muted-foreground)] md:rounded-xl md:px-3 md:py-2">
+              <div className="ml-auto shrink-0 rounded-lg px-2 py-1.5 text-sm text-[var(--muted-foreground)] md:rounded-xl md:px-3 md:py-2">
                 ≡
               </div>
             </div>
