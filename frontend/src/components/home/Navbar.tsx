@@ -589,14 +589,6 @@ export function NavbarInner({
                   )}
 
                   <Link
-                    href="/"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                  >
-                    🏠 Home
-                  </Link>
-
-                  <Link
                     href="/ai-chat"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
