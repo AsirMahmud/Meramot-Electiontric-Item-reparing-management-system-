@@ -59,7 +59,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
         <div className="h-14 w-14 shrink-0 rounded-xl bg-[var(--mint-100)]" />
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div className="min-w-0">
               <h3 className="truncate text-[1.15rem] font-bold text-[var(--foreground)]">
                 {shop.name}
@@ -75,8 +75,8 @@ function ShopResultCard({ shop }: { shop: Shop }) {
               </div>
             </div>
 
-            <div className="shrink-0 text-right">
-              <div className="text-sm font-bold leading-tight text-[var(--accent-dark)]">
+            <div className="text-right">
+              <div className="text-sm font-bold leading-tight text-[var(--accent-dark)] max-w-full">
                 {shop.offerSummary ?? "৳--"}
               </div>
               <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">

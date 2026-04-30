@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState, FormEvent, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { MapPin } from "lucide-react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
@@ -139,22 +140,24 @@ export function NavbarInner({
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--card)] text-lg text-[var(--foreground)] shadow-sm md:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--card)] text-xl text-[var(--foreground)] shadow-sm md:hidden"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? "✕" : "☰"}
             </button>
 
-            <Link href="/" className="inline-flex items-center">
-              <Image
-                src="/images/meramot.svg"
-                alt="Meramot"
-                width={280}
-                height={100}
-                className="h-10 w-auto object-contain md:h-16 lg:h-20"
-                priority
-              />
-            </Link>
+            <div className="flex flex-1 justify-center md:justify-start">
+              <Link href="/" className="inline-flex items-center">
+                <Image
+                  src="/images/meramot.svg"
+                  alt="Meramot"
+                  width={280}
+                  height={100}
+                  className="h-12 w-auto object-contain md:h-16 lg:h-20"
+                  priority
+                />
+              </Link>
+            </div>
 
             {/* Desktop-only: location + actions */}
             <div className="hidden md:flex md:justify-center">
@@ -162,7 +165,7 @@ export function NavbarInner({
             </div>
 
             {/* Right side icons — always visible */}
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex shrink-0 items-center gap-2 md:gap-3">
               <NotificationBell />
               {isLoggedIn ? (
                 <button
@@ -174,14 +177,7 @@ export function NavbarInner({
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent-dark)] text-sm font-bold text-[var(--accent-foreground)] shadow-sm md:hidden"
-                >
-                  ⇨
-                </Link>
-              )}
+              ) : null}
               {/* Desktop: full action bar */}
               <div className="hidden md:flex md:items-center md:gap-3">
                 <ThemeToggle />
@@ -373,14 +369,21 @@ export function NavbarInner({
           {/* ── Row 2: Mobile location button ── */}
           <div className="md:hidden">
             <div className="flex items-center gap-2">
-              <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
+              <button
+                type="button"
+                onClick={openLocationModal}
+                className="shrink-0 p-1.5 text-[var(--accent-dark)] md:hidden"
+                aria-label="Change location"
+              >
+                <MapPin size={24} />
+              </button>
               <form onSubmit={handleSearchSubmit} className="flex-1">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search shops, parts..."
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--mint-300)] px-3 py-2 text-xs text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--mint-300)] px-4 py-2.5 text-[0.9rem] text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
                 />
               </form>
             </div>
