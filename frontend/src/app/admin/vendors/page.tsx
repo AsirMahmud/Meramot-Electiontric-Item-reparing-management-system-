@@ -39,7 +39,7 @@ export default function AdminVendorsPage() {
 
   const fetchVendors = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=100`, {
         credentials: "include",
         headers: getAuthHeaders(token),
       });
