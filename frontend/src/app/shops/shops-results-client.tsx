@@ -192,6 +192,16 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
   const [apiFailed, setApiFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const apiQueryKey = JSON.stringify({
+    q: searchState.q,
+    category: searchState.category,
+    sort: searchState.sort,
+    featured: searchState.featured,
+    maxDistanceKm: searchState.maxDistanceKm,
+    lat: searchState.lat,
+    lng: searchState.lng,
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -215,7 +225,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
     return () => {
       cancelled = true;
     };
-  }, [searchState]);
+  }, [apiQueryKey]); // Only re-fetch when backend-relevant params change
 
   const visibleShops = useMemo(() => {
     const source = remoteShops.length > 0 ? remoteShops : (fallbackShops as Shop[]);
@@ -255,15 +265,15 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
       <section className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-5">
         <div className="mb-4 md:mb-5">
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none flex items-center gap-2">
-            {forceFeatured ? (
-              <>Featured Shops {!loading && <span className="text-[var(--muted-foreground)] text-xl md:text-3xl font-medium">({visibleShops.length})</span>}</>
+            {localFeatured ? (
+              <>Featured Shops <span className="text-[var(--muted-foreground)] text-xl md:text-3xl font-medium">({visibleShops.length})</span></>
             ) : (
-              loading ? "Searching..." : `${visibleShops.length} matches found`
+              (!searchState.q && !searchState.category) ? `All Shops (${visibleShops.length})` : `${visibleShops.length} matches found`
             )}
           </h1>
 
           <p className="mt-1 text-lg text-[var(--muted-foreground)] md:mt-2 md:text-[1.7rem]">
-            {forceFeatured ? "Discover the highest-rated and most reliable repair experts in your area." : (searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Repair results"))}
+            {localFeatured ? "Discover the highest-rated and most reliable repair experts in your area." : (searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Explore reliable repair experts in your area."))}
           </p>
 
           {apiFailed ? (

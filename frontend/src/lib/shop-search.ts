@@ -42,12 +42,9 @@ export function toShopQuery(state: SearchState): ShopQuery {
     q: state.q || undefined,
     category: state.category || undefined,
     sort: state.sort,
-    voucher: state.voucher || undefined,
-    freeDelivery: state.freeDelivery || undefined,
-    deals: state.deals || undefined,
     featured: state.featured || undefined,
     maxDistanceKm: state.maxDistanceKm,
-    take: 24,
+    take: 100,
     lat: state.lat,
     lng: state.lng,
   };
@@ -87,14 +84,25 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
     const score = relevanceScore(shop, state.q);
     if (state.q && score === 0) return false;
     if (state.category && !(shop.categories ?? []).includes(state.category)) return false;
-    if (state.voucher && !shop.hasVoucher) return false;
-    if (state.freeDelivery && !shop.freeDelivery) return false;
-    if (state.deals && !shop.hasDeals) return false;
     if (typeof shop.distanceKm === "number" && shop.distanceKm > state.maxDistanceKm) return false;
     return true;
   });
 
   const sorted = [...filtered].sort((a, b) => {
+    // Promo sorting (checked promos bubble to top)
+    if (state.voucher) {
+      if (a.hasVoucher && !b.hasVoucher) return -1;
+      if (!a.hasVoucher && b.hasVoucher) return 1;
+    }
+    if (state.freeDelivery) {
+      if (a.freeDelivery && !b.freeDelivery) return -1;
+      if (!a.freeDelivery && b.freeDelivery) return 1;
+    }
+    if (state.deals) {
+      if (a.hasDeals && !b.hasDeals) return -1;
+      if (!a.hasDeals && b.hasDeals) return 1;
+    }
+
     if (state.sort === "price") {
       const getPrice = (s: any) => s.baseLaborFee ? s.baseLaborFee : (s.inspectionFee ?? ((s.priceLevel || 1) * 1000));
       const priceA = getPrice(a);
