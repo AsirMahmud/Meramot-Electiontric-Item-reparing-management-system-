@@ -14,7 +14,8 @@
     "seed": "ts-node prisma/seed.ts",
     "seed:shops": "ts-node prisma/seed.shops.ts",
     "seed:customers": "ts-node prisma/seed.customers.ts",
-    "seed:delivery": "ts-node prisma/seed-delivery.ts"
+    "seed:delivery": "ts-node prisma/seed-delivery.ts",
+    "seed:all": "ts-node prisma/seed-all.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
