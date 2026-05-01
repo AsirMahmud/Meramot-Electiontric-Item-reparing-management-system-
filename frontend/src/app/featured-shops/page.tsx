@@ -1,4 +1,4 @@
-import FeaturedShopsClient from "./featured-shops-client";
+import ShopsResultsClient from "../shops/shops-results-client";
 
 export const metadata = {
   title: "Featured Repair Shops | Meramot",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function FeaturedShopsPage() {
-  return <FeaturedShopsClient />;
+  return <ShopsResultsClient forceFeatured={true} />;
 }

@@ -123,7 +123,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
   );
 }
 
-function ShopsResultsClientInner() {
+function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean }) {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -143,13 +143,13 @@ function ShopsResultsClientInner() {
   const urlSort = (searchParams.get("sort") as any) || defaultSearchState.sort;
   const [localSort, setLocalSort] = useState<string>(urlSort);
 
-  const urlDistance = Number(searchParams.get("maxDistanceKm") ?? defaultSearchState.maxDistanceKm);
+  const urlDistance = forceFeatured ? 9999 : Number(searchParams.get("maxDistanceKm") ?? defaultSearchState.maxDistanceKm);
   const [localDistance, setLocalDistance] = useState<number>(urlDistance);
 
   const urlVoucher = searchParams.get("voucher") === "true";
   const urlFreeDelivery = searchParams.get("freeDelivery") === "true";
   const urlDeals = searchParams.get("deals") === "true";
-  const urlFeatured = searchParams.get("featured") === "true";
+  const urlFeatured = forceFeatured || searchParams.get("featured") === "true";
   const [localVoucher, setLocalVoucher] = useState(urlVoucher);
   const [localFreeDelivery, setLocalFreeDelivery] = useState(urlFreeDelivery);
   const [localDeals, setLocalDeals] = useState(urlDeals);
@@ -251,11 +251,11 @@ function ShopsResultsClientInner() {
       <section className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-5">
         <div className="mb-4 md:mb-5">
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none">
-            {loading ? "Searching..." : `${visibleShops.length} matches found`}
+            {forceFeatured ? "Featured Shops" : (loading ? "Searching..." : `${visibleShops.length} matches found`)}
           </h1>
 
           <p className="mt-1 text-lg text-[var(--muted-foreground)] md:mt-2 md:text-[1.7rem]">
-            {searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Repair results")}
+            {forceFeatured ? "Discover the highest-rated and most reliable repair experts in your area." : (searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Repair results"))}
           </p>
 
           {apiFailed ? (
@@ -320,7 +320,7 @@ function ShopsResultsClientInner() {
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm md:p-4">
                 <div className="mb-2 flex items-center justify-between text-xs text-[var(--muted-foreground)] md:text-sm">
                   <span>Nearby only</span>
-                  <span>{localDistance} km</span>
+                  <span>{localDistance === 9999 ? "Anywhere" : `${localDistance} km`}</span>
                 </div>
 
                 <input
@@ -417,10 +417,10 @@ function ShopsResultsClientInner() {
 
 import { Suspense } from "react";
 
-export default function ShopsResultsClient() {
+export default function ShopsResultsClient({ forceFeatured }: { forceFeatured?: boolean }) {
   return (
     <Suspense fallback={<div>Loading shops...</div>}>
-      <ShopsResultsClientInner />
+      <ShopsResultsClientInner forceFeatured={forceFeatured} />
     </Suspense>
   );
 }
