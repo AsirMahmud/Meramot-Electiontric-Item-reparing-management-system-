@@ -99,7 +99,7 @@ export default function FeaturedShopsClient() {
     let cancelled = false;
     setLoading(true);
 
-    getShops({ featured: true, take: 100 })
+    getShops({ featured: true, take: 100, maxDistanceKm: 9999 })
       .then((data) => {
         if (cancelled) return;
         setRemoteShops(data);
