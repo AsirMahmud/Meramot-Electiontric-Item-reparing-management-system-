@@ -1,8 +1,6 @@
 import prisma from "../models/prisma.js";
-import { Resend } from "resend";
 import { env } from "../config/env.js";
-
-const resend = new Resend(env.resendApiKey);
+import nodemailer from "nodemailer";
 
 // In-memory store for the passkey
 export let currentAdminPasskey: string | null = null;
@@ -11,6 +9,7 @@ let passkeyTimer: NodeJS.Timeout | null = null;
 function generatePin(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 
 export async function generateAndSendAdminPasskey() {
   currentAdminPasskey = generatePin();
@@ -35,9 +34,19 @@ export async function generateAndSendAdminPasskey() {
       return;
     }
 
-    const result = await resend.emails.send({
-      from: env.emailFrom,
-      to: adminEmails,
+    const transporter = nodemailer.createTransport({
+      host: env.smtpHost,
+      port: env.smtpPort,
+      secure: env.smtpSecure,
+      auth: {
+        user: env.smtpUser,
+        pass: env.smtpPass,
+      },
+    });
+
+    const result = await transporter.sendMail({
+      from: env.smtpFrom || env.emailFrom,
+      to: adminEmails.join(", "),
       subject: "Meramot Admin Security: Your Temporary Passkey",
       html: `
         <div style="font-family: sans-serif; color: #1C251F; padding: 20px;">
@@ -52,7 +61,7 @@ export async function generateAndSendAdminPasskey() {
       `,
     });
 
-    console.log(`[AdminPasskey] Resend API Response:`, JSON.stringify(result));
+    console.log(`[AdminPasskey] SMTP Response:`, result.response);
     console.log(`[AdminPasskey] Passkey emailed to ${adminEmails.length} admins.`);
   } catch (error) {
     console.error("[AdminPasskey] Failed to send passkey emails:", error);
