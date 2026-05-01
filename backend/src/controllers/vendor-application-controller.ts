@@ -294,6 +294,7 @@ export async function listVendorApplications(req: Request, res: Response) {
             select: {
               id: true,
               isActive: true,
+              isFeatured: true,
             }
           }
         },
