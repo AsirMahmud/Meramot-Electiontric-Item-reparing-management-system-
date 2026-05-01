@@ -1,4 +1,5 @@
 import { env } from "../config/env.js";
+import nodemailer from "nodemailer";
 
 export type OrderStatusEmailInput = {
   to: string;
@@ -36,6 +37,35 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
+  if (!env.smtpHost) {
+    throw new Error("SMTP_HOST is missing. Nodemailer requires SMTP credentials.");
+  }
+
+  // Using nodemailer as Resend is currently restricted on the free tier
+  const transporter = nodemailer.createTransport({
+    host: env.smtpHost,
+    port: env.smtpPort,
+    secure: env.smtpSecure,
+    auth: {
+      user: env.smtpUser,
+      pass: env.smtpPass,
+    },
+  });
+
+  try {
+    const result = await transporter.sendMail({
+      from: env.smtpFrom || env.emailFrom,
+      to: input.to,
+      subject: subjectForStatus(input.status, input.orderTitle),
+      html: htmlForStatus(input),
+    });
+    return { ok: true, skipped: false, provider: "nodemailer", data: result.response };
+  } catch (error) {
+    throw new Error(`Nodemailer request failed: ${error}`);
+  }
+
+  /*
+  // Existing Resend Logic (Commented out because free tier is restricted)
   if (!env.resendApiKey) {
     throw new Error("RESEND_API_KEY is missing");
   }
@@ -65,6 +95,7 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
   }
 
   return { ok: true, skipped: false, provider: "resend", data };
+  */
 }
 
 export type InvoiceEmailInput = {
@@ -103,6 +134,35 @@ export async function sendInvoiceLinkEmail(input: InvoiceEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
+  if (!env.smtpHost) {
+    throw new Error("SMTP_HOST is missing. Nodemailer requires SMTP credentials.");
+  }
+
+  // Using nodemailer as Resend is currently restricted on the free tier
+  const transporter = nodemailer.createTransport({
+    host: env.smtpHost,
+    port: env.smtpPort,
+    secure: env.smtpSecure,
+    auth: {
+      user: env.smtpUser,
+      pass: env.smtpPass,
+    },
+  });
+
+  try {
+    const result = await transporter.sendMail({
+      from: env.smtpFrom || env.emailFrom,
+      to: input.to,
+      subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
+      html: htmlPaymentReceipt(input),
+    });
+    return { ok: true, skipped: false, provider: "nodemailer", data: result.response };
+  } catch (error) {
+    throw new Error(`Nodemailer request failed: ${error}`);
+  }
+
+  /*
+  // Existing Resend Logic (Commented out because free tier is restricted)
   if (!env.resendApiKey) {
     throw new Error("RESEND_API_KEY is missing");
   }
@@ -132,4 +192,5 @@ export async function sendInvoiceLinkEmail(input: InvoiceEmailInput) {
   }
 
   return { ok: true, skipped: false, provider: "resend", data };
+  */
 }

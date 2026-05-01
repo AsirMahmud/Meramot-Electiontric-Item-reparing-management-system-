@@ -9,6 +9,7 @@
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sendSms } from "./sms-service.js";
+import nodemailer from "nodemailer";
 
 // ── Relevance matching (mirrors vendor-request-controller.ts) ────────────
 
@@ -192,6 +193,42 @@ export async function notifyVendorOfMatchingRequests(
     );
 
     // ── Send email ───────────────────────────────────────────────────
+    if (vendor.email && env.enableEmailNotifications && env.smtpHost) {
+      try {
+        // Using nodemailer as Resend is currently restricted on the free tier
+        const transporter = nodemailer.createTransport({
+          host: env.smtpHost,
+          port: env.smtpPort,
+          secure: env.smtpSecure,
+          auth: {
+            user: env.smtpUser,
+            pass: env.smtpPass,
+          },
+        });
+
+        const result = await transporter.sendMail({
+          from: env.smtpFrom || env.emailFrom,
+          to: vendor.email,
+          subject: matchingRequests.length
+            ? `Welcome to Meramot — ${matchingRequests.length} repair requests match your skills!`
+            : "Welcome to Meramot — your shop is approved!",
+          html: buildWelcomeEmailHtml(
+            vendor.name || "Vendor",
+            shopName,
+            matchingRequests,
+          ),
+        });
+
+        console.log(
+          `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests (Nodemailer)`,
+        );
+      } catch (emailErr) {
+        console.error("[VendorOnboard] Email error:", emailErr);
+      }
+    }
+
+    /*
+    // Existing Resend Logic (Commented out because free tier is restricted)
     if (vendor.email && env.enableEmailNotifications && env.resendApiKey && env.emailFrom) {
       try {
         const response = await fetch("https://api.resend.com/emails", {
@@ -226,6 +263,7 @@ export async function notifyVendorOfMatchingRequests(
         console.error("[VendorOnboard] Email error:", emailErr);
       }
     }
+    */
 
     // ── Send SMS ─────────────────────────────────────────────────────
     if (vendor.phone) {
