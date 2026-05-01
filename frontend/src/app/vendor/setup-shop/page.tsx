@@ -318,7 +318,7 @@ if (app) {
             </h2>
 
             <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row md:gap-5">
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-border bg-white transition-colors hover:border-accent-dark md:h-28 md:w-28">
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-border bg-[var(--mint-50)] transition-colors hover:border-accent-dark dark:bg-[#1a2e22] md:h-28 md:w-28">
                 {logoUrl ? (
                   <>
                     <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />

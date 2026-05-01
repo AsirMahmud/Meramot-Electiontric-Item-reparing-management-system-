@@ -305,8 +305,8 @@ export default function VendorApplyForm() {
       ) : null}
 
       <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit} autoComplete="off">
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-4 dark:border-white/5 dark:bg-[#15201A] sm:flex-row md:gap-5 md:p-5">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--accent-dark)] md:h-28 md:w-28">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 dark:border-white/5 dark:bg-[#15201A] sm:flex-row md:gap-5 md:p-5">
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-[var(--border)] bg-[var(--mint-50)] transition-colors hover:border-[var(--accent-dark)] dark:bg-[#1a2e22] md:h-28 md:w-28">
             {form.logoUrl ? (
               <>
                 <img src={form.logoUrl} alt="Logo" className="h-full w-full object-cover" />
