@@ -351,8 +351,8 @@ if (app) {
                 )}
               </div>
               <div className="text-center sm:text-left">
-                <p className="text-sm font-medium text-slate-700">Shop Logo (Optional)</p>
-                <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+                <p className="text-sm font-medium text-slate-700 md:text-lg">Shop Logo (Optional)</p>
+                <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500 md:text-sm">
                   Upload an optional logo or photo to make your shop stand out. A square image works best.
                 </p>
               </div>

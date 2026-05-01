@@ -327,8 +327,8 @@ export default function VendorApplyForm() {
             )}
           </div>
           <div className="text-center sm:text-left">
-            <p className="text-sm font-bold text-[var(--foreground)] md:text-base">Shop Logo</p>
-            <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--muted-foreground)]">
+            <p className="text-sm font-bold text-[var(--foreground)] md:text-lg">Shop Logo</p>
+            <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--muted-foreground)] md:text-sm">
               Upload an optional logo or photo to make your shop stand out. A square image works best.
             </p>
           </div>
