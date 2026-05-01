@@ -468,8 +468,17 @@ export function getFeaturedShops() {
   return request<Shop[]>("/shops/featured");
 }
 
-export function getShopBySlug(slug: string) {
-  return request<Shop>(`/shops/${encodeURIComponent(slug)}`);
+export async function getShopBySlug(slug: string) {
+  try {
+    return await request<Shop>(`/shops/${encodeURIComponent(slug)}`);
+  } catch (error) {
+    const { fallbackShops } = await import("./mock-data");
+    const mock = fallbackShops.find((s) => s.slug === slug);
+    if (mock) {
+      return mock as unknown as Shop;
+    }
+    throw error;
+  }
 }
 
 /* =========================================================

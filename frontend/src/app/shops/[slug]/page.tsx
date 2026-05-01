@@ -282,6 +282,7 @@ function addGuestServiceToCart(shop: ShopDetails, item: { name: string; estimate
 export default function ShopDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState("");
   const [shop, setShop] = useState<ShopDetails | null>(null);
+  const [loadingShop, setLoadingShop] = useState(true);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [eligibility, setEligibility] = useState<ReviewEligibilityState | null>(null);
   const [score, setScore] = useState(5);
@@ -306,6 +307,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   useEffect(() => {
     if (!slug) return;
 
+    setLoadingShop(true);
     getShopBySlug(slug)
       .then((data) =>
         setShop({
@@ -313,7 +315,8 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           specialties: data.specialties ?? [],
         }),
       )
-      .catch(() => setShop(null));
+      .catch(() => setShop(null))
+      .finally(() => setLoadingShop(false));
 
     getShopReviews(slug).then(setReviews).catch(() => setReviews([]));
   }, [slug]);
@@ -616,12 +619,23 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
     }
   }
 
+  if (loadingShop) {
+    return (
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
+        <div className="mx-auto max-w-6xl px-4 py-10 text-[var(--foreground)]">
+          Loading shop...
+        </div>
+      </main>
+    );
+  }
+
   if (!shop) {
     return (
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        <Navbar />
+        <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
         <div className="mx-auto max-w-6xl px-4 py-10 text-[var(--foreground)]">
-          Loading shop...
+          Shop not found or could not be loaded.
         </div>
       </main>
     );
