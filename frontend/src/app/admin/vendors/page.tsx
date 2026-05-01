@@ -283,7 +283,7 @@ export default function AdminVendorsPage() {
                           type="button"
                           disabled={actionId === vendor.id}
                           onClick={() => handleApplicationAction(vendor.id, "reject")}
-                          className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500 dark:bg-red-500/10 dark:text-red-400 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           Reject
                         </button>
@@ -363,7 +363,7 @@ export default function AdminVendorsPage() {
                             onClick={() => handleShopSuspendToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isActive)}
                             className={`inline-flex w-full items-center justify-center rounded-lg border px-3 py-1.5 text-[10px] font-bold transition disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs ${
                               vendor.shop.isActive 
-                                ? "border-[#8A2A2A] text-[#8A2A2A] hover:bg-[#FDEAEA]" 
+                                ? "border-[#8A2A2A] text-[#8A2A2A] hover:bg-[#FDEAEA] dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10" 
                                 : "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white hover:opacity-90"
                             }`}
                           >
@@ -374,7 +374,7 @@ export default function AdminVendorsPage() {
                           type="button"
                           disabled={actionId === vendor.id}
                           onClick={() => handleDeleteApplication(vendor.id)}
-                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           Delete
                         </button>

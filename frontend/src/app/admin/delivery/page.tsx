@@ -168,7 +168,7 @@ export default function AdminDeliveryPage() {
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleStatusUpdate(rider.id, "REJECTED")}
-                          className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500 dark:bg-red-500/10 dark:text-red-400 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           Reject
                         </button>
@@ -232,7 +232,7 @@ export default function AdminDeliveryPage() {
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleDeleteRider(rider.id)}
-                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           Delete
                         </button>
