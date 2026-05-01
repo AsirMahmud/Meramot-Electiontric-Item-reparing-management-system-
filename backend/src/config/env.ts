@@ -28,6 +28,10 @@ export const env = {
   smtpPass: process.env.SMTP_PASS,
   smtpFrom: process.env.SMTP_FROM,
 
+  adminSmtpUser: process.env.ADMIN_SMTP_USER || process.env.SMTP_USER,
+  adminSmtpPass: process.env.ADMIN_SMTP_PASS || process.env.SMTP_PASS,
+  adminSmtpFrom: process.env.ADMIN_SMTP_FROM || process.env.SMTP_FROM,
+
   enableAiChat: process.env.ENABLE_AI_CHAT === "true",
   groqApiKey: process.env.GROQ_API_KEY || "",
   pusherAppId: process.env.PUSHER_APP_ID || "",

@@ -39,13 +39,13 @@ export async function generateAndSendAdminPasskey() {
       port: env.smtpPort,
       secure: env.smtpSecure,
       auth: {
-        user: env.smtpUser,
-        pass: env.smtpPass,
+        user: env.adminSmtpUser,
+        pass: env.adminSmtpPass,
       },
     });
 
     const result = await transporter.sendMail({
-      from: env.smtpFrom || env.emailFrom,
+      from: env.adminSmtpFrom || env.emailFrom,
       to: adminEmails.join(", "),
       subject: "Meramot Admin Security: Your Temporary Passkey",
       html: `
