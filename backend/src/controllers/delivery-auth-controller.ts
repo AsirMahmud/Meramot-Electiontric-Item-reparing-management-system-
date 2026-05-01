@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sendDeliveryRegistrationAcknowledgementEmail } from "../services/delivery-credentials-email-service.js";
+import { validateEmail } from "../utils/validate-email.js";
 
 function signDeliveryToken(user: { id: string; username: string; email: string }) {
   return jwt.sign(
@@ -40,6 +41,12 @@ export async function deliveryRegister(req: Request, res: Response) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    const emailError = validateEmail(cleanEmail);
+    if (emailError) {
+      return res.status(400).json({ message: emailError });
+    }
+
     const cleanNidUrl = nidDocumentUrl.trim();
     const cleanEducationUrl = educationDocumentUrl.trim();
     const cleanCvUrl = cvDocumentUrl.trim();

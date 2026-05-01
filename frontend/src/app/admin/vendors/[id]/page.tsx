@@ -224,8 +224,11 @@ export default function AdminVendorDetailPage() {
     <section>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <Link href="/admin/vendors" className="mb-2 inline-block text-sm font-semibold text-[var(--muted-foreground)] hover:underline">
-            &larr; Back to Vendors
+          <Link 
+            href="/admin/vendors" 
+            className="mb-3 -ml-2 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white dark:bg-[#1C251F] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:bg-[var(--mint-50)] hover:text-[var(--accent-dark)] hover:shadow-md active:scale-95 md:mb-4 md:-ml-3 md:px-4 md:py-2 md:text-xs"
+          >
+            <span>←</span> Back to Vendors
           </Link>
           <h2 className="text-3xl font-bold text-[var(--accent-dark)]">{application.shopName}</h2>
           <p className="mt-1 text-[var(--muted-foreground)]">Application ID: {application.id}</p>

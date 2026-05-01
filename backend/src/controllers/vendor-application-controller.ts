@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "../models/prisma.js";
 import { currentAdminPasskey } from "../services/admin-passkey-service.js";
+import { validateEmail } from "../utils/validate-email.js";
 
 function parseCsvList(input?: string) {
   if (!input) return [];
@@ -113,6 +114,11 @@ export async function createVendorApplication(req: Request, res: Response) {
     }
 
     const normalizedEmail = businessEmail!.trim().toLowerCase();
+
+    const emailError = validateEmail(normalizedEmail);
+    if (emailError) {
+      return res.status(400).json({ message: emailError });
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },

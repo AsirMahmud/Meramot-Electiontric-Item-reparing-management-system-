@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { UploadDropzone } from "@/lib/uploadthing";
+import { validateEmail } from "@/lib/validate-email";
 
 type Mode = "login" | "signup";
 type UsernameStatus = "idle" | "checking" | "available" | "taken";
@@ -284,6 +285,8 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       if (isSignup) {
         if (!form.name.trim()) throw new Error("Full name is required.");
         if (!form.email.trim()) throw new Error("Email is required.");
+        const emailError = validateEmail(form.email);
+        if (emailError) throw new Error(emailError);
         if (!form.phone.trim()) throw new Error("Phone number is required.");
         
         if (isDelivery) {

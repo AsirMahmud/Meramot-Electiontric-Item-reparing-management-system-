@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { isAdminEmail } from "../config/admin.js";
+import { validateEmail } from "../utils/validate-email.js";
 function signToken(user: {
   id: string;
   username: string;
@@ -37,6 +38,11 @@ export async function signup(req: Request, res: Response) {
       return res.status(400).json({
         message: "name, username, email, phone, and password are required",
       });
+    }
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      return res.status(400).json({ message: emailError });
     }
 
     if (role && !["CUSTOMER", "VENDOR", "DELIVERY"].includes(role)) {

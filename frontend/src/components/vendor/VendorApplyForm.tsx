@@ -12,6 +12,7 @@ import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
 import { ImagePlus, X } from "lucide-react";
+import { validateEmail } from "@/lib/validate-email";
 
 const SPECIALTY_OPTIONS = [
   { value: "Smartphone Repair", label: "Smartphone Repair" },
@@ -183,6 +184,9 @@ export default function VendorApplyForm() {
       if (!form.businessEmail.trim()) {
         throw new Error("Business email is required.");
       }
+
+      const emailError = validateEmail(form.businessEmail);
+      if (emailError) throw new Error(emailError);
 
       if (!form.phone.trim()) {
         throw new Error("Phone is required.");

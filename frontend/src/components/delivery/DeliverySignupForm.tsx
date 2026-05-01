@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDeliveryAuth } from "@/lib/delivery-auth-context";
 import { UploadDropzone } from "@/lib/uploadthing";
+import { validateEmail } from "@/lib/validate-email";
 
 export default function DeliverySignupForm() {
   const router = useRouter();
@@ -41,6 +42,11 @@ export default function DeliverySignupForm() {
       if (!form.educationDocumentUrl) missing.push("education document");
       if (!form.cvDocumentUrl) missing.push("CV document");
       setError(`Please upload: ${missing.join(", ")}.`);
+      return;
+    }
+    const emailError = validateEmail(form.email);
+    if (emailError) {
+      setError(emailError);
       return;
     }
     try {
