@@ -60,6 +60,13 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
               className="flex h-[120px] flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:bg-[var(--mint-100)] md:hidden"
             >
               <div className="min-w-0">
+                <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--mint-100)] text-sm font-bold text-[var(--accent-dark)]">
+                  {shop.logoUrl ? (
+                    <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-lg object-cover" />
+                  ) : (
+                    shop.name.charAt(0).toUpperCase()
+                  )}
+                </div>
                 <h3 className="line-clamp-2 text-[11px] font-bold leading-tight text-[var(--foreground)]">
                   {shop.name}
                 </h3>

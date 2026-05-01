@@ -16,33 +16,48 @@ export default function ShopCard({
   return (
     <Link
       href={href}
-      className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition hover:shadow-md"
+      className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition hover:shadow-md h-full flex flex-col justify-between"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-bold text-[var(--foreground)]">
-            {shop.name}
-          </h3>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            {shop.description || shop.address}
-          </p>
-          <p className="mt-2 text-sm text-[var(--foreground)]">
-            ⭐ {(shop.ratingAvg ?? 0).toFixed(1)} ({shop.reviewCount ?? 0} reviews)
-          </p>
-          {typeof shop.distanceKm === "number" && (
-            <p className="mt-1 text-sm text-[var(--foreground)]">
-              {shop.distanceKm.toFixed(1)} km away
-            </p>
-          )}
-        </div>
+      <div>
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-xl font-bold text-[var(--accent-dark)]">
+            {shop.logoUrl ? (
+              <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
+            ) : (
+              shop.name.charAt(0).toUpperCase()
+            )}
+          </div>
 
-        <div className="flex shrink-0 flex-col items-end pl-2 text-right">
-          <span className="text-xs font-semibold text-[var(--muted-foreground)]">
-            {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
-          </span>
-          <span className="text-lg font-extrabold tracking-tight text-[var(--accent-dark)] leading-tight">
-            {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : formatPriceLevel(shop.priceLevel ?? 1)}
-          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="truncate text-base font-bold text-[var(--foreground)]">
+                  {shop.name}
+                </h3>
+                <p className="mt-0.5 text-xs text-[var(--muted-foreground)] line-clamp-1">
+                  {shop.description || shop.address}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--foreground)]">
+                  <span>⭐ {(shop.ratingAvg ?? 0).toFixed(1)}</span>
+                  <span className="text-[var(--muted-foreground)]">({shop.reviewCount ?? 0} reviews)</span>
+                </div>
+                {typeof shop.distanceKm === "number" && (
+                  <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
+                    {shop.distanceKm.toFixed(1)} km away
+                  </p>
+                )}
+              </div>
+
+              <div className="flex shrink-0 flex-col items-end pl-2 text-right">
+                <span className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+                  {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
+                </span>
+                <span className="text-base font-extrabold tracking-tight text-[var(--accent-dark)] leading-tight">
+                  {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : formatPriceLevel(shop.priceLevel ?? 1)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
