@@ -557,7 +557,7 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
     });
 
     // Fire-and-forget: notify vendor about matching BIDDING requests
-    sendVendorWelcomeNotification(userId).catch((err) =>
+    sendVendorWelcomeNotification(user.id).catch((err) =>
       console.error("[VendorSetup] Notification failed:", err),
     );
 
