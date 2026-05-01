@@ -267,7 +267,7 @@ export default function AdminVendorsPage() {
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--mint-100)] px-3 py-1.5 text-center text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-emerald-500 bg-[var(--mint-100)] px-3 py-1.5 text-center text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           View
                         </Link>
@@ -352,7 +352,7 @@ export default function AdminVendorsPage() {
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="inline-flex w-full items-center justify-center rounded-lg bg-[var(--mint-100)] px-3 py-1.5 text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-emerald-500 bg-[var(--mint-100)] px-3 py-1.5 text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           View
                         </Link>
