@@ -34,6 +34,7 @@ const promoToggles = [
   { label: "Vouchers", key: "voucher" },
   { label: "Free Delivery", key: "freeDelivery" },
   { label: "Deals", key: "deals" },
+  { label: "Featured", key: "featured" },
 ] as const;
 
 const categoryLabels: Record<string, string> = {
@@ -153,6 +154,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
   const [localVoucher, setLocalVoucher] = useState(urlVoucher);
   const [localFreeDelivery, setLocalFreeDelivery] = useState(urlFreeDelivery);
   const [localDeals, setLocalDeals] = useState(urlDeals);
+  const [localFeatured, setLocalFeatured] = useState(urlFeatured);
 
   // Keep local state in sync if URL changes externally (e.g. back button)
   useEffect(() => {
@@ -164,6 +166,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
   useEffect(() => { setLocalVoucher(urlVoucher); }, [urlVoucher]);
   useEffect(() => { setLocalFreeDelivery(urlFreeDelivery); }, [urlFreeDelivery]);
   useEffect(() => { setLocalDeals(urlDeals); }, [urlDeals]);
+  useEffect(() => { setLocalFeatured(urlFeatured); }, [urlFeatured]);
 
   const searchState = useMemo(
     () =>
@@ -174,12 +177,12 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
         voucher: localVoucher,
         freeDelivery: localFreeDelivery,
         deals: localDeals,
-        featured: urlFeatured,
+        featured: localFeatured,
         maxDistanceKm: localDistance,
         lat: selectedLocation?.lat,
         lng: selectedLocation?.lng,
       }),
-    [searchParams, selectedLocation, localSort, localDistance, localVoucher, localFreeDelivery, localDeals, urlFeatured]
+    [searchParams, selectedLocation, localSort, localDistance, localVoucher, localFreeDelivery, localDeals, localFeatured]
   );
 
   const categoryBrowseMode = Boolean(searchState.category && !searchState.q);
@@ -230,6 +233,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
     if ("voucher" in updates) setLocalVoucher(updates.voucher === "true");
     if ("freeDelivery" in updates) setLocalFreeDelivery(updates.freeDelivery === "true");
     if ("deals" in updates) setLocalDeals(updates.deals === "true");
+    if ("featured" in updates) setLocalFeatured(updates.featured === "true");
 
     const params = new URLSearchParams(searchParams.toString());
 
@@ -354,24 +358,27 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
                   const checked = searchState[promo.key];
 
                   return (
-                    <label
-                      key={promo.key}
-                      className="flex items-center gap-3 text-sm md:text-[1rem]"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) =>
-                          updateParams({
-                            [promo.key]: event.currentTarget.checked
-                              ? "true"
-                              : null,
-                          })
-                        }
-                        className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-dark)]"
-                      />
-                      <span>{promo.label}</span>
-                    </label>
+                      <label
+                        key={promo.key}
+                        className={`flex items-center gap-3 text-sm md:text-[1rem] ${
+                          promo.key === "featured" && forceFeatured ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={promo.key === "featured" && forceFeatured}
+                          onChange={(event) =>
+                            updateParams({
+                              [promo.key]: event.currentTarget.checked
+                                ? "true"
+                                : null,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-dark)] disabled:opacity-50"
+                        />
+                        <span>{promo.label}</span>
+                      </label>
                   );
                 })}
               </div>
