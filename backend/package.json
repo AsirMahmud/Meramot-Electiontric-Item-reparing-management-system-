@@ -33,6 +33,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^22.14.0",
+    "@types/nodemailer": "^8.0.0",
     "prisma": "^6.6.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
