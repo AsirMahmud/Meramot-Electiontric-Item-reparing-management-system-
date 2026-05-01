@@ -2,8 +2,11 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const shops = await prisma.shop.findMany({ where: { isFeatured: true } });
-  console.log(shops);
+  await prisma.shop.updateMany({
+    where: { isActive: true, isPublic: true },
+    data: { isFeatured: true }
+  });
+  console.log("Updated active shops to be featured.");
 }
 
 main().finally(() => prisma.$disconnect());

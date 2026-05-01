@@ -460,7 +460,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       },
     };
   
-    if (token && !shop!.id.startsWith("shop-")) {
+    if (token) {
       await addServiceToCart(payloadWithLocation, token);
     } else {
       const key = "meramot.guestCart";
