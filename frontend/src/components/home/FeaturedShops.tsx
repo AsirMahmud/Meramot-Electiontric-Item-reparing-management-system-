@@ -95,7 +95,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
       {displayShops.length > 6 && (
         <div className="mt-6 flex justify-center md:mt-8">
           <Link
-            href="/shops?featured=true"
+            href="/featured-shops"
             className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent-dark)] bg-transparent px-6 py-2.5 text-sm font-bold text-[var(--accent-dark)] transition-colors hover:bg-[var(--mint-50)] md:px-8 md:py-3 md:text-base"
           >
             Explore More Featured Shops
