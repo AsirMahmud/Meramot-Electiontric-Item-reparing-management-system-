@@ -845,6 +845,20 @@ export function submitVendorFinalQuote(
   );
 }
 
+export async function updateVendorNotificationPreferences(
+  token: string,
+  payload: { liveNotificationsEnabled?: boolean; liveNotificationsPrompted?: boolean }
+) {
+  return authedRequest<{ message: string; liveNotificationsEnabled: boolean; liveNotificationsPrompted: boolean }>(
+    "/vendor-status/notifications",
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 /* =========================================================
    REVIEWS
 ========================================================= */
