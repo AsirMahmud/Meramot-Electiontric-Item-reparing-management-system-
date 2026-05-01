@@ -11,13 +11,13 @@ type FeaturedShopsProps = {
 };
 
 export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProps) {
-  const [shops, setShops] = useState<Shop[] | undefined>(initialShops);
-  const [loading, setLoading] = useState(!initialShops);
+  const [shops, setShops] = useState<Shop[]>(
+    initialShops && initialShops.length > 0 ? initialShops : (fallbackShops as Shop[])
+  );
 
   useEffect(() => {
-    if (initialShops) {
+    if (initialShops && initialShops.length > 0) {
       setShops(initialShops);
-      setLoading(false);
       return;
     }
 
@@ -25,33 +25,18 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
 
     getFeaturedShops()
       .then((data) => {
-        if (!cancelled) setShops(data);
+        if (!cancelled && data && data.length > 0) {
+          setShops(data);
+        }
       })
       .catch((err) => {
         console.error("Failed to fetch featured shops:", err);
-        if (!cancelled) setShops([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
   }, [initialShops]);
-
-  if (loading) {
-    return (
-      <section className="mt-10 animate-pulse">
-        <div className="mb-4 h-8 w-48 rounded bg-[var(--mint-100)] dark:bg-[var(--mint-300)] opacity-50" />
-        <div className="grid gap-2 grid-cols-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-[120px] md:h-[280px] rounded-xl md:rounded-xl bg-[var(--mint-100)] dark:bg-[var(--card)] opacity-50 border border-[var(--border)]" />
-          ))}
-        </div>
-      </section>
-    );
-  }
 
   const displayShops = shops && shops.length > 0 ? shops : (fallbackShops as Shop[]);
 
