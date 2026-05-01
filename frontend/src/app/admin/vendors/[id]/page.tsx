@@ -222,19 +222,21 @@ export default function AdminVendorDetailPage() {
 
   return (
     <section>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+      <div className="mb-4 flex flex-col items-start gap-4 shrink-0 md:mb-6 md:flex-row md:items-center md:justify-between">
+        <div className="w-full md:w-auto">
           <Link 
             href="/admin/vendors" 
             className="mb-3 -ml-2 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white dark:bg-[#1C251F] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:bg-[var(--mint-50)] hover:text-[var(--accent-dark)] hover:shadow-md active:scale-95 md:mb-4 md:-ml-3 md:px-4 md:py-2 md:text-xs"
           >
             <span>←</span> Back to Vendors
           </Link>
-          <h2 className="text-3xl font-bold text-[var(--accent-dark)]">{application.shopName}</h2>
-          <p className="mt-1 text-[var(--muted-foreground)]">Application ID: {application.id}</p>
+          <h2 className="text-xl font-bold text-[var(--accent-dark)] break-words md:text-3xl">{application.shopName}</h2>
+          <p className="mt-1 text-xs text-[var(--muted-foreground)] md:text-sm">Application ID: {application.id}</p>
         </div>
-        <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 font-semibold tracking-wide text-[var(--accent-dark)]">
-          {application.status}
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          <span className="rounded-full bg-[var(--mint-100)] px-3 py-1.5 text-xs font-semibold tracking-wide text-[var(--accent-dark)] md:px-4 md:py-2 md:text-sm">
+            {application.status}
+          </span>
         </div>
       </div>
 
