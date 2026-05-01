@@ -353,6 +353,54 @@ router.patch("/shops/:id/active", async (req: Request, res: Response) => {
   }
 });
 
+// ─── Shop Featured Status ────────────────────────────────────────────────────────
+// PATCH /api/admin/shops/:id/featured
+// Body: { isFeatured: boolean }
+// Toggles whether a shop is featured on the homepage.
+router.patch("/shops/:id/featured", async (req: Request, res: Response) => {
+  try {
+    const shopId = String(req.params.id);
+    const { isFeatured } = req.body as { isFeatured?: unknown };
+
+    if (typeof isFeatured !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isFeatured must be a boolean",
+      });
+    }
+
+    const existing = await prisma.shop.findUnique({
+      where: { id: shopId },
+      select: { id: true, name: true, isFeatured: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: "Shop not found" });
+    }
+
+    const updated = await prisma.shop.update({
+      where: { id: shopId },
+      data: { isFeatured },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        isFeatured: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: `Shop ${isFeatured ? "marked as featured" : "removed from featured list"}`,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("PATCH /admin/shops/:id/featured error:", error);
+    return res.status(500).json({ success: false, message: "Failed to update shop featured status" });
+  }
+});
+
 import adminVendorRoutes from "./admin-vendor-application-routes.js";
 router.use("/vendors", adminVendorRoutes);
 export default router;

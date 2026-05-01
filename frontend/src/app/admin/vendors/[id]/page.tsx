@@ -208,6 +208,48 @@ export default function AdminVendorDetailPage() {
       }
   };
 
+  const handleShopFeaturedToggle = async (isFeatured: boolean) => {
+      if (!application?.shop) return;
+      if (!window.confirm(`Are you sure you want to ${isFeatured ? 'feature' : 'un-feature'} this shop?`)) {
+          return;
+      }
+
+      try {
+          setIsProcessing(true);
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/shops/${application.shop.id}/featured`, {
+              method: "PATCH",
+              credentials: "include",
+              headers: {
+                  "Content-Type": "application/json",
+                  ...getAuthHeaders(token),
+              },
+              body: JSON.stringify({ isFeatured }),
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+              setApplication(prev => {
+                  if (!prev || !prev.shop) return prev;
+                  return {
+                      ...prev,
+                      shop: {
+                          ...prev.shop,
+                          isFeatured: data.data.isFeatured
+                      }
+                  }
+              });
+              alert(data.message || "Shop featured status updated.");
+          } else {
+              alert(data.message || "Failed to update shop featured status.");
+          }
+      } catch (error) {
+          console.error(error);
+          alert("Error updating shop featured status.");
+      } finally {
+          setIsProcessing(false);
+      }
+  };
+
   if (loading) {
     return <div className="p-8 text-[var(--muted-foreground)]">Loading vendor details...</div>;
   }
@@ -383,6 +425,28 @@ export default function AdminVendorDetailPage() {
                             <p className="mt-2 text-xs text-[var(--muted-foreground)]">Reinstating the shop makes it active for customers again.</p>
                         </div>
                     )}
+
+                    <div className="mt-6 border-t border-[var(--border)] pt-6">
+                        <div className="flex items-center justify-between mb-3">
+                            <div>
+                                <p className="font-semibold text-[var(--accent-dark)]">Featured Shop</p>
+                                <p className="text-xs text-[var(--muted-foreground)]">Highlight this shop on the homepage</p>
+                            </div>
+                            <button
+                                onClick={() => handleShopFeaturedToggle(!application.shop?.isFeatured)}
+                                disabled={isProcessing}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    application.shop?.isFeatured ? "bg-[var(--accent-dark)]" : "bg-gray-300 dark:bg-gray-700"
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        application.shop?.isFeatured ? "translate-x-6" : "translate-x-1"
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
