@@ -21,9 +21,9 @@ export const env = {
   jwtSecretDelivery: process.env.JWT_SECRET_DELIVERY ?? "dev-delivery-secret",
   jwtSecretDeliveryAdmin:
     process.env.JWT_SECRET_DELIVERY_ADMIN ?? "dev-delivery-admin-secret",
-  smtpHost: process.env.SMTP_HOST,
-  smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,
-  smtpSecure: process.env.SMTP_SECURE === "true",
+  smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+  smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 465,
+  smtpSecure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : true, // Gmail works best on 465 SSL
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
   smtpFrom: process.env.SMTP_FROM,
