@@ -193,9 +193,9 @@ export async function notifyVendorOfMatchingRequests(
     );
 
     // ── Send email ───────────────────────────────────────────────────
+    // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
     if (vendor.email && env.enableEmailNotifications && env.smtpHost) {
       try {
-        // Using nodemailer as Resend is currently restricted on the free tier
         const transporter = nodemailer.createTransport({
           host: env.smtpHost,
           port: env.smtpPort,
@@ -206,7 +206,7 @@ export async function notifyVendorOfMatchingRequests(
           },
         });
 
-        const result = await transporter.sendMail({
+        await transporter.sendMail({
           from: env.smtpFrom || env.emailFrom,
           to: vendor.email,
           subject: matchingRequests.length
@@ -223,12 +223,11 @@ export async function notifyVendorOfMatchingRequests(
           `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests (Nodemailer)`,
         );
       } catch (emailErr) {
-        console.error("[VendorOnboard] Email error:", emailErr);
+        console.error("[VendorOnboard] Email error (Nodemailer):", emailErr);
       }
     }
 
-    /*
-    // Existing Resend Logic (Commented out because free tier is restricted)
+    // 2. Send via Resend (Original Logic)
     if (vendor.email && env.enableEmailNotifications && env.resendApiKey && env.emailFrom) {
       try {
         const response = await fetch("https://api.resend.com/emails", {
@@ -253,17 +252,16 @@ export async function notifyVendorOfMatchingRequests(
 
         if (!response.ok) {
           const err = await response.text().catch(() => "");
-          console.error("[VendorOnboard] Email send failed:", err);
+          console.error("[VendorOnboard] Email send failed (Resend):", err);
         } else {
           console.log(
-            `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests`,
+            `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests (Resend)`,
           );
         }
       } catch (emailErr) {
-        console.error("[VendorOnboard] Email error:", emailErr);
+        console.error("[VendorOnboard] Email error (Resend):", emailErr);
       }
     }
-    */
 
     // ── Send SMS ─────────────────────────────────────────────────────
     if (vendor.phone) {

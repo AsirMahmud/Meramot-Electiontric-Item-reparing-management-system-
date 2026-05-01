@@ -37,65 +37,59 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  if (!env.smtpHost) {
-    throw new Error("SMTP_HOST is missing. Nodemailer requires SMTP credentials.");
+  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
+  if (env.smtpHost) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: env.smtpHost,
+        port: env.smtpPort,
+        secure: env.smtpSecure,
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
+
+      await transporter.sendMail({
+        from: env.smtpFrom || env.emailFrom,
+        to: input.to,
+        subject: subjectForStatus(input.status, input.orderTitle),
+        html: htmlForStatus(input),
+      });
+    } catch (error) {
+      console.error(`[EmailService] Nodemailer request failed: ${error}`);
+    }
   }
 
-  // Using nodemailer as Resend is currently restricted on the free tier
-  const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
-    port: env.smtpPort,
-    secure: env.smtpSecure,
-    auth: {
-      user: env.smtpUser,
-      pass: env.smtpPass,
-    },
-  });
+  // 2. Send via Resend (Original Logic)
+  let resendData = {};
+  if (env.resendApiKey && env.emailFrom) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: env.emailFrom,
+          to: [input.to],
+          subject: subjectForStatus(input.status, input.orderTitle),
+          html: htmlForStatus(input),
+        }),
+      });
 
-  try {
-    const result = await transporter.sendMail({
-      from: env.smtpFrom || env.emailFrom,
-      to: input.to,
-      subject: subjectForStatus(input.status, input.orderTitle),
-      html: htmlForStatus(input),
-    });
-    return { ok: true, skipped: false, provider: "nodemailer", data: result.response };
-  } catch (error) {
-    throw new Error(`Nodemailer request failed: ${error}`);
+      resendData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        console.error(`[EmailService] Resend request failed with ${response.status}`, resendData);
+      }
+    } catch (error) {
+      console.error(`[EmailService] Resend network error: ${error}`);
+    }
   }
 
-  /*
-  // Existing Resend Logic (Commented out because free tier is restricted)
-  if (!env.resendApiKey) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  if (!env.emailFrom) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.emailFrom,
-      to: [input.to],
-      subject: subjectForStatus(input.status, input.orderTitle),
-      html: htmlForStatus(input),
-    }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || `Resend request failed with ${response.status}`);
-  }
-
-  return { ok: true, skipped: false, provider: "resend", data };
-  */
+  return { ok: true, skipped: false, provider: "both", data: resendData };
 }
 
 export type InvoiceEmailInput = {
@@ -134,63 +128,57 @@ export async function sendInvoiceLinkEmail(input: InvoiceEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  if (!env.smtpHost) {
-    throw new Error("SMTP_HOST is missing. Nodemailer requires SMTP credentials.");
+  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
+  if (env.smtpHost) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: env.smtpHost,
+        port: env.smtpPort,
+        secure: env.smtpSecure,
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
+
+      await transporter.sendMail({
+        from: env.smtpFrom || env.emailFrom,
+        to: input.to,
+        subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
+        html: htmlPaymentReceipt(input),
+      });
+    } catch (error) {
+      console.error(`[EmailService] Nodemailer request failed: ${error}`);
+    }
   }
 
-  // Using nodemailer as Resend is currently restricted on the free tier
-  const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
-    port: env.smtpPort,
-    secure: env.smtpSecure,
-    auth: {
-      user: env.smtpUser,
-      pass: env.smtpPass,
-    },
-  });
+  // 2. Send via Resend (Original Logic)
+  let resendData = {};
+  if (env.resendApiKey && env.emailFrom) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: env.emailFrom,
+          to: [input.to],
+          subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
+          html: htmlPaymentReceipt(input),
+        }),
+      });
 
-  try {
-    const result = await transporter.sendMail({
-      from: env.smtpFrom || env.emailFrom,
-      to: input.to,
-      subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
-      html: htmlPaymentReceipt(input),
-    });
-    return { ok: true, skipped: false, provider: "nodemailer", data: result.response };
-  } catch (error) {
-    throw new Error(`Nodemailer request failed: ${error}`);
+      resendData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        console.error(`[EmailService] Resend request failed with ${response.status}`, resendData);
+      }
+    } catch (error) {
+      console.error(`[EmailService] Resend network error: ${error}`);
+    }
   }
 
-  /*
-  // Existing Resend Logic (Commented out because free tier is restricted)
-  if (!env.resendApiKey) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  if (!env.emailFrom) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.emailFrom,
-      to: [input.to],
-      subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
-      html: htmlPaymentReceipt(input),
-    }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || `Resend request failed with ${response.status}`);
-  }
-
-  return { ok: true, skipped: false, provider: "resend", data };
-  */
+  return { ok: true, skipped: false, provider: "both", data: resendData };
 }

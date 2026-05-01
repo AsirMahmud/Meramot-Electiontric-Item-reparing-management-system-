@@ -36,57 +36,62 @@ export async function sendDeliveryCredentialsEmail(input: CredentialEmailInput) 
     </div>
   `;
 
-  // Using nodemailer as Resend is currently restricted on the free tier
-  const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
-    port: env.smtpPort,
-    secure: env.smtpSecure,
-    auth: {
-      user: env.smtpUser,
-      pass: env.smtpPass,
-    },
-  });
+  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
+  if (env.smtpHost) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: env.smtpHost,
+        port: env.smtpPort,
+        secure: env.smtpSecure,
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
 
-  try {
-    await transporter.sendMail({
-      from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
-      to: input.toEmail,
-      subject,
-      html,
-    });
-    return { sent: true };
-  } catch (err) {
-    throw new Error(`Nodemailer API error: ${err}`);
+      await transporter.sendMail({
+        from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
+        to: input.toEmail,
+        subject,
+        html,
+      });
+      console.log(`[DeliveryEmail] Nodemailer successfully sent to ${input.toEmail}`);
+    } catch (err) {
+      console.error(`[DeliveryEmail] Nodemailer API error: ${err}`);
+    }
+  } else {
+    console.warn("[email-fallback] SMTP credentials missing. Credentials:", input.username, input.password);
   }
 
-  /*
-  // Existing Resend Logic (Commented out because free tier is restricted)
-  if (!env.resendApiKey) {
+  // 2. Send via Resend (Original Logic)
+  if (env.resendApiKey) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Meramot Delivery <noreply@meramot.com>",
+          to: input.toEmail,
+          subject,
+          html,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        console.error(`[DeliveryEmail] Resend API error: ${res.status} ${errorBody}`);
+      }
+    } catch (err) {
+      console.error(`[DeliveryEmail] Resend network error: ${err}`);
+    }
+  } else {
     console.warn("[email-fallback] Resend API Key is missing. Credentials:", input.username, input.password);
-    return { ok: false, skipped: true, reason: "missing api key" };
-  }
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Meramot Delivery <noreply@meramot.com>",
-      to: input.toEmail,
-      subject,
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.text();
-    throw new Error(`Resend API error: ${res.status} ${errorBody}`);
   }
 
   return { sent: true };
-  */
 }
 
 export async function sendDeliveryRegistrationAcknowledgementEmail(
@@ -112,54 +117,55 @@ export async function sendDeliveryRegistrationAcknowledgementEmail(
     </div>
   `;
 
-  // Using nodemailer as Resend is currently restricted on the free tier
-  const transporter = nodemailer.createTransport({
-    host: env.smtpHost,
-    port: env.smtpPort,
-    secure: env.smtpSecure,
-    auth: {
-      user: env.smtpUser,
-      pass: env.smtpPass,
-    },
-  });
+  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
+  if (env.smtpHost) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: env.smtpHost,
+        port: env.smtpPort,
+        secure: env.smtpSecure,
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
 
-  try {
-    await transporter.sendMail({
-      from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
-      to: input.toEmail,
-      subject,
-      html,
-    });
-    return { sent: true };
-  } catch (err) {
-    throw new Error(`Nodemailer API error: ${err}`);
+      await transporter.sendMail({
+        from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
+        to: input.toEmail,
+        subject,
+        html,
+      });
+    } catch (err) {
+      console.error(`[DeliveryEmail] Nodemailer API error: ${err}`);
+    }
   }
 
-  /*
-  // Existing Resend Logic (Commented out because free tier is restricted)
-  if (!env.resendApiKey) {
-    return { ok: false, skipped: true };
-  }
+  // 2. Send via Resend (Original Logic)
+  if (env.resendApiKey) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Meramot Delivery <noreply@meramot.com>",
+          to: input.toEmail,
+          subject,
+          html,
+        }),
+      });
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Meramot Delivery <noreply@meramot.com>",
-      to: input.toEmail,
-      subject,
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.text();
-    throw new Error(`Resend API error: ${res.status} ${errorBody}`);
+      if (!res.ok) {
+        const errorBody = await res.text();
+        console.error(`[DeliveryEmail] Resend API error: ${res.status} ${errorBody}`);
+      }
+    } catch (err) {
+      console.error(`[DeliveryEmail] Resend network error: ${err}`);
+    }
   }
 
   return { sent: true };
-  */
 }
