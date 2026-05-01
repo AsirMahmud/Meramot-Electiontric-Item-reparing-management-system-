@@ -135,7 +135,7 @@ export type VendorApplicationPayload = {
   notes?: string;
 };
 
-export function createVendorApplication(data: VendorApplicationPayload) {
+export function createVendorApplication(data: VendorApplicationPayload, token?: string) {
   return request<{
     message: string;
     application: {
@@ -149,6 +149,7 @@ export function createVendorApplication(data: VendorApplicationPayload) {
     };
   }>("/vendor/applications", {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: JSON.stringify(data),
   });
 }
@@ -192,11 +193,32 @@ export type VendorApplicationStatusResponse = {
     inShopRepair?: boolean;
     spareParts?: boolean;
     notes?: string | null;
-
+    setupComplete?: boolean;
+    isPublic?: boolean;
     createdAt?: string;
   };
   message?: string;
 };
+
+export type VendorSetupShopPayload = {
+  shopName: string;
+  description?: string;
+  phone: string;
+  address: string;
+  city?: string;
+  area?: string;
+  courierPickup?: boolean;
+  inShopRepair?: boolean;
+  spareParts?: boolean;
+  inspectionFee: number;
+  baseLaborFee: number;
+  pickupFee?: number | null;
+  expressFee?: number | null;
+  skillTags: string[];
+  lat?: number | null;
+  lng?: number | null;
+};
+
 export function getMyVendorApplication(token: string) {
   return authedRequest<{ application?: VendorApplicationStatusResponse["application"]; message?: string }>(
     "/vendor/application-status",
@@ -207,6 +229,28 @@ export async function getVendorApplicationStatus(
   token: string
 ): Promise<VendorApplicationStatusResponse> {
   return authedRequest("/vendor/application-status", token);
+}
+
+export function completeVendorShopSetup(
+  token: string,
+  data: VendorSetupShopPayload
+) {
+  return request<{
+    message: string;
+    shop: {
+      id: string;
+      name: string;
+      slug: string;
+      isPublic: boolean;
+      setupComplete: boolean;
+    };
+  }>("/vendor/application-status/setup-shop", {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
 }
 export function updateVendorApplication(
   token: string,
@@ -336,6 +380,7 @@ export function rejectAdminVendorApplication(token: string, id: string, reason: 
     }
   );
 }
+
 /* =========================================================
    AUTH
 ========================================================= */
@@ -486,6 +531,114 @@ export function getShopBySlug(slug: string) {
 /* =========================================================
    SERVICES / REQUESTS
 ========================================================= */
+export type FinalQuoteItem = {
+  label: string;
+  description?: string | null;
+  amount: number;
+};
+
+export type BidItem = {
+  id: string;
+  partsCost: number;
+  laborCost: number;
+  totalCost: number;
+  estimatedDays?: number | null;
+  notes?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  shop?: {
+    id: string;
+    name: string;
+    slug: string;
+    specialties?: string[];
+    ratingAvg?: number;
+  };
+  repairRequest?: {
+    id: string;
+    title: string;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    issueCategory?: string | null;
+    problem: string;
+    mode: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+export type DeliverySummary = {
+  id: string;
+  direction: string;
+  status: string;
+  riderName?: string | null;
+  riderPhone?: string | null;
+  trackingCode?: string | null;
+  scheduledAt?: string | null;
+};
+
+export type OrderItem = {
+  id: string;
+  title: string;
+  description?: string | null;
+  deviceType: string;
+  brand?: string | null;
+  model?: string | null;
+  issueCategory?: string | null;
+  problem: string;
+  mode: string;
+  status: string;
+  preferredPickup: boolean;
+  deliveryType?: string | null;
+  quotedFinalAmount?: number | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  bids: BidItem[];
+  repairJob?: {
+    id: string;
+    status: string;
+    diagnosisNotes?: string | null;
+    finalQuotedAmount?: number | null;
+    finalQuoteItems?: FinalQuoteItem[] | null;
+    customerApproved?: boolean | null;
+    acceptedBid?: BidItem | null;
+    shop: {
+      id: string;
+      name: string;
+      slug: string;
+      ratingAvg?: number;
+    };
+    deliveries: DeliverySummary[];
+  } | null;
+};
+
+export type CreateRepairRequestPayload = {
+  title: string;
+  description?: string | null;
+  deviceType: string;
+  brand?: string | null;
+  model?: string | null;
+  issueCategory?: string | null;
+  problem: string;
+  mode?: string;
+  preferredPickup?: boolean;
+  deliveryType?: string | null;
+  scheduleType?: string;
+  scheduledAt?: string;
+  addressMode?: string;
+  address?: string;
+  city?: string;
+  area?: string;
+  pickupLat?: string;
+  pickupLng?: string;
+  contactPhone?: string;
+  shopSlug?: string;
+  imageUrls?: string[];
+};
+
 
 export async function createRepairRequest(payload: any, token?: string) {
   return authedRequest("/requests", token, {
@@ -496,6 +649,246 @@ export async function createRepairRequest(payload: any, token?: string) {
 
 export async function getMyOrders(token: string) {
   return authedRequest<any[]>("/requests/mine", token);
+}
+
+/* =========================================================
+   Vendor
+========================================================= */
+
+export type VendorDashboardData = {
+  application: {
+    id: string;
+    status: string;
+    shopName: string;
+    businessEmail: string;
+    specialties: string[];
+    courierPickup: boolean;
+    inShopRepair: boolean;
+    spareParts: boolean;
+  };
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    setupComplete: boolean;
+    isPublic: boolean;
+    inspectionFee?: number | null;
+    baseLaborFee?: number | null;
+    pickupFee?: number | null;
+    expressFee?: number | null;
+    categories: string[];
+    specialties: string[];
+  };
+  stats: {
+    relevantRequestCount: number;
+    activeBidCount: number;
+    assignedJobCount: number;
+    waitingApprovalCount: number;
+    completedJobCount: number;
+  };
+  relevantRequests: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    issueCategory?: string | null;
+    problem: string;
+    mode: string;
+    preferredPickup: boolean;
+    deliveryType?: string | null;
+    status: string;
+    createdAt: string;
+    bidCount: number;
+    lowestBidAmount?: number | null;
+    relevanceScore: number;
+    matchReasons: string[];
+    myBid?: BidItem | null;
+  }>;
+  myBids: BidItem[];
+  assignedJobs: Array<{
+    id: string;
+    status: string;
+    diagnosisNotes?: string | null;
+    finalQuotedAmount?: number | null;
+    finalQuoteItems?: FinalQuoteItem[] | null;
+    customerApproved?: boolean | null;
+    createdAt: string;
+    updatedAt: string;
+    acceptedBid?: BidItem | null;
+    repairRequest: {
+      id: string;
+      title: string;
+      description?: string | null;
+      deviceType: string;
+      brand?: string | null;
+      model?: string | null;
+      issueCategory?: string | null;
+      problem: string;
+      mode: string;
+      preferredPickup: boolean;
+      deliveryType?: string | null;
+      status: string;
+      quotedFinalAmount?: number | null;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }>;
+};
+
+
+export type VendorAnalyticsData = {
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  summary: {
+    monthLabel: string;
+    totalMonthlyEarnings: number;
+    bidsWonThisMonth: number;
+    averageCustomerRating: number;
+    reviewCount: number;
+  };
+  trends: Array<{
+    key: string;
+    label: string;
+    earnings: number;
+    bidsWon: number;
+    completedJobs: number;
+  }>;
+  recentRatings: Array<{
+    id: string;
+    score: number;
+    review?: string | null;
+    createdAt: string;
+    customerName: string;
+  }>;
+  insights: {
+    bestMonthLabel: string;
+    bestMonthEarnings: number;
+    sixMonthBidsWon: number;
+    sixMonthCompletedJobs: number;
+  };
+};
+
+export async function uploadImages(files: File[], token?: string) {
+  const formData = new FormData();
+  files.forEach(f => formData.append("images", f));
+  
+  let response: Response;
+  try {
+    response = await fetch(`${API}/api/uploads`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+  } catch {
+    throw new Error("Network error while uploading images.");
+  }
+  
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Upload failed with status ${response.status}`);
+  }
+  
+  return data as { imageUrls: string[] };
+}
+
+
+export async function acceptBid(token: string, requestId: string, bidId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/bids/${encodeURIComponent(bidId)}/accept`,
+    token,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function declineBid(token: string, requestId: string, bidId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/bids/${encodeURIComponent(bidId)}/decline`,
+    token,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export async function respondToFinalQuote(
+  token: string,
+  requestId: string,
+  action: "ACCEPT" | "DECLINE"
+) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/final-quote/respond`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ action }),
+    }
+  );
+}
+
+export function getVendorDashboard(token: string) {
+  return authedRequest<VendorDashboardData>("/vendor/requests/dashboard", token);
+}
+
+export function getVendorAnalytics(token: string) {
+  return authedRequest<VendorAnalyticsData>("/vendor/requests/analytics", token);
+}
+
+export function submitVendorBid(
+  token: string,
+  requestId: string,
+  payload: {
+    partsCost: number;
+    laborCost: number;
+    estimatedDays?: number | null;
+    notes?: string;
+  }
+) {
+  return authedRequest(
+    `/vendor/requests/${encodeURIComponent(requestId)}/bids`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export function updateVendorJobStatus(token: string, jobId: string, status: string) {
+  return authedRequest(
+    `/vendor/requests/jobs/${encodeURIComponent(jobId)}/status`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }
+  );
+}
+
+export function submitVendorFinalQuote(
+  token: string,
+  jobId: string,
+  payload: {
+    diagnosisNotes: string;
+    items: FinalQuoteItem[];
+  }
+) {
+  return authedRequest(
+    `/vendor/requests/jobs/${encodeURIComponent(jobId)}/final-quote`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
+  );
 }
 
 /* =========================================================
