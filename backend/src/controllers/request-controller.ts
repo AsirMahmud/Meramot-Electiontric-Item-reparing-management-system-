@@ -168,11 +168,11 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
             sendSms(shop.phone, message).catch(() => {});
           }
           if (shop.email) {
-            sendGmailApiEmail(
-              shop.email,
-              "New Relevant Repair Request - Meramot",
-              `<p>Hello ${shop.name},</p><p>A new repair request matching your skills (${keywords[0]}) has just been posted on Meramot.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to place a bid now!</p>`
-            ).catch(() => {});
+            sendGmailApiEmail({
+              to: shop.email,
+              subject: "New Relevant Repair Request - Meramot",
+              html: `<p>Hello ${shop.name},</p><p>A new repair request matching your skills (${keywords[0]}) has just been posted on Meramot.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to place a bid now!</p>`
+            }).catch(() => {});
           }
         });
       }
@@ -185,11 +185,11 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
         sendSms(directShop.phone, `You have a new direct repair request: ${title}. Please check your dashboard.`).catch(() => {});
       }
       if (directShop?.email) {
-        sendGmailApiEmail(
-          directShop.email,
-          "New Direct Repair Request - Meramot",
-          `<p>Hello ${directShop.name || "Vendor"},</p><p>You have received a new direct repair request: <b>${title}</b>.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to review it.</p>`
-        ).catch(() => {});
+        sendGmailApiEmail({
+          to: directShop.email,
+          subject: "New Direct Repair Request - Meramot",
+          html: `<p>Hello ${directShop.name || "Vendor"},</p><p>You have received a new direct repair request: <b>${title}</b>.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to review it.</p>`
+        }).catch(() => {});
       }
     }
 
