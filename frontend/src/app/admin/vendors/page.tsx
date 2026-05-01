@@ -23,6 +23,7 @@ type VendorApplication = {
   shop?: {
     id: string;
     isActive: boolean;
+    isFeatured: boolean;
   } | null;
 };
 
@@ -146,6 +147,51 @@ export default function AdminVendorsPage() {
     } catch (error) {
       console.error(error);
       alert("Error updating shop status");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleShopFeaturedToggle = async (vendorId: string, shopId: string, isFeatured: boolean) => {
+    if (!window.confirm(`Are you sure you want to ${isFeatured ? 'feature' : 'un-feature'} this shop?`)) {
+      return;
+    }
+
+    try {
+      setActionId(vendorId);
+      const token = (session?.user as any)?.accessToken;
+      if (!token) return;
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/shops/${shopId}/featured`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(token),
+        },
+        body: JSON.stringify({ isFeatured }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setVendors((prev) =>
+          prev.map((vendor) =>
+            vendor.id === vendorId
+              ? {
+                  ...vendor,
+                  shop: {
+                    ...vendor.shop!,
+                    isFeatured: data.data.isFeatured
+                  }
+                }
+              : vendor
+          )
+        );
+      } else {
+        alert(data.message || "Failed to update featured status");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error updating featured status");
     } finally {
       setActionId(null);
     }
@@ -312,6 +358,7 @@ export default function AdminVendorsPage() {
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">App Status</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Shop Status</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Featured</th>
                   <th className="px-4 py-3 text-right font-semibold md:px-6 md:py-4">Actions</th>
                 </tr>
               </thead>
@@ -344,6 +391,26 @@ export default function AdminVendorsPage() {
                         <span className={`font-medium ${vendor.shop.isActive ? "text-[var(--accent-dark)]" : "text-[#8A2A2A]"}`}>
                           {vendor.shop.isActive ? "Active" : "Suspended"}
                         </span>
+                      ) : (
+                        <span className="font-medium text-[var(--muted-foreground)]">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      {vendor.shop ? (
+                        <button
+                          type="button"
+                          disabled={actionId === vendor.id}
+                          onClick={() => handleShopFeaturedToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isFeatured)}
+                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 md:h-6 md:w-11 ${
+                            vendor.shop.isFeatured ? "bg-[var(--accent-dark)]" : "bg-gray-300 dark:bg-gray-700"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform md:h-4 md:w-4 ${
+                              vendor.shop.isFeatured ? "translate-x-5 md:translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
                       ) : (
                         <span className="font-medium text-[var(--muted-foreground)]">—</span>
                       )}
