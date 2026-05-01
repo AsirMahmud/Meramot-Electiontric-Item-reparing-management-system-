@@ -50,19 +50,19 @@ export default function AccountPage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#f2f7ef] px-4 py-8">
-        <div className="mx-auto max-w-4xl">Loading account...</div>
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8">
+        <div className="mx-auto max-w-4xl text-[var(--foreground)]">Loading account...</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f2f7ef] px-4 py-8">
+    <main className="min-h-screen bg-[var(--background)] px-3 py-4 md:px-4 md:py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-6">
           <Link
             href="/"
-            className="inline-flex items-center gap-3 text-[#214c34] hover:opacity-90"
+            className="inline-flex items-center gap-3 text-[var(--foreground)] hover:opacity-90"
           >
             <Image
               src="/images/meramot.svg"
@@ -76,80 +76,80 @@ export default function AccountPage() {
 
           <Link
             href="/"
-            className="rounded-full border border-[#214c34] bg-white px-5 py-2 text-sm font-semibold text-[#214c34]"
+            className="rounded-full border border-[var(--border)] bg-[var(--card)] px-5 py-2 text-sm font-semibold text-[var(--foreground)]"
           >
             Back to home
           </Link>
         </div>
 
-        <div className="rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:rounded-[2rem] md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-sm">
                 Account
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-[#173726]">
+              <h1 className="mt-1 text-2xl font-bold text-[var(--foreground)] md:mt-2 md:text-3xl">
                 Hi, {firstName}
               </h1>
-              <p className="mt-2 text-sm text-[#5b7262]">
+              <p className="mt-1 text-xs text-[var(--muted-foreground)] md:mt-2 md:text-sm">
                 Manage your customer details here.
               </p>
             </div>
 
-            <div className="grid h-20 w-20 place-items-center rounded-3xl bg-[#d5ead8] text-3xl font-bold text-[#214c34]">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[var(--mint-200)] text-2xl font-bold text-[var(--accent-dark)] md:h-20 md:w-20 md:rounded-3xl md:text-3xl">
               {firstName.charAt(0).toUpperCase()}
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl bg-[#f6faf4] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">
+          <div className="mt-6 grid gap-3 md:mt-8 md:grid-cols-2 md:gap-4">
+            <div className="rounded-2xl bg-[var(--mint-50)] p-4 md:rounded-3xl md:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-xs">
                 Full name
               </p>
-              <p className="mt-2 text-base font-medium text-[#173726]">
+              <p className="mt-2 text-sm font-medium text-[var(--foreground)] md:text-base">
                 {user.name || "Not provided"}
               </p>
             </div>
 
-            <div className="rounded-3xl bg-[#f6faf4] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">
+            <div className="rounded-2xl bg-[var(--mint-50)] p-4 md:rounded-3xl md:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-xs">
                 Username
               </p>
-              <p className="mt-2 text-base font-medium text-[#173726]">
+              <p className="mt-2 text-sm font-medium text-[var(--foreground)] md:text-base">
                 {user.username || "Not provided"}
               </p>
             </div>
 
-            <div className="rounded-3xl bg-[#f6faf4] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">
+            <div className="rounded-2xl bg-[var(--mint-50)] p-4 md:rounded-3xl md:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-xs">
                 Email
               </p>
-              <p className="mt-2 text-base font-medium text-[#173726]">
+              <p className="mt-2 text-sm font-medium text-[var(--foreground)] md:text-base">
                 {user.email || "Not provided"}
               </p>
             </div>
 
-            <div className="rounded-3xl bg-[#f6faf4] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">
+            <div className="rounded-2xl bg-[var(--mint-50)] p-4 md:rounded-3xl md:p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-xs">
                 Phone
               </p>
-              <p className="mt-2 text-base font-medium text-[#173726]">
+              <p className="mt-2 text-sm font-medium text-[var(--foreground)] md:text-base">
                 {user.phone || "Not provided"}
               </p>
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-8">
             <Link
               href="/requests/new"
-              className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
+              className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-center text-sm font-semibold text-[var(--accent-foreground)] sm:w-auto"
             >
               Make request
             </Link>
 
             <Link
               href="/"
-              className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
+              className="w-full rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-center text-sm font-semibold text-[var(--foreground)] sm:w-auto"
             >
 
               Continue browsing

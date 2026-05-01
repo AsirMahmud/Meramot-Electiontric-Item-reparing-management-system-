@@ -26,7 +26,7 @@ export default function PaymentResultPage() {
       return {
         title: "Payment Successful",
         subtitle: "Your SSLCommerz payment has been verified.",
-        badgeClass: "bg-[#dff3d7] text-[#215235]",
+        badgeClass: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
       };
     }
 
@@ -34,7 +34,7 @@ export default function PaymentResultPage() {
       return {
         title: "Payment Cancelled",
         subtitle: "You cancelled this payment session.",
-        badgeClass: "bg-[#fff1d8] text-[#6a4a10]",
+        badgeClass: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
       };
     }
 
@@ -42,31 +42,31 @@ export default function PaymentResultPage() {
       return {
         title: "Payment Failed",
         subtitle: "The gateway did not confirm this payment.",
-        badgeClass: "bg-[#ffe3de] text-[#7a2f1d]",
+        badgeClass: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
       };
     }
 
     return {
       title: "Payment Error",
       subtitle: "We could not complete the callback processing.",
-      badgeClass: "bg-[#ffe3de] text-[#7a2f1d]",
+      badgeClass: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
     };
   }, [status]);
 
   return (
-    <main className="min-h-screen bg-[#f2f7ef] px-4 py-10">
-      <section className="mx-auto max-w-2xl rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+    <main className="min-h-screen bg-[var(--background)] px-3 py-6 md:px-4 md:py-10">
+      <section className="mx-auto max-w-2xl rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:rounded-[2rem] md:p-8">
         <div className="mb-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] md:text-sm">
             SSLCommerz Result
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-[#173726]">{display.title}</h1>
-          <p className="mt-2 text-sm text-[#5b7262]">{display.subtitle}</p>
+          <h1 className="mt-2 text-2xl font-bold text-[var(--foreground)] md:text-3xl">{display.title}</h1>
+          <p className="mt-2 text-xs text-[var(--muted-foreground)] md:text-sm">{display.subtitle}</p>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-[#d9e5d5] bg-[#f8fbf6] p-5">
+        <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-4 md:p-5">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6b8270]">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">
               Status
             </span>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${display.badgeClass}`}>
@@ -75,31 +75,31 @@ export default function PaymentResultPage() {
           </div>
 
           {tranId ? (
-            <p className="text-sm text-[#2d4638]">
+            <p className="text-sm text-[var(--foreground)]">
               Transaction ID: <span className="font-semibold">{tranId}</span>
             </p>
           ) : null}
 
           {paymentId ? (
-            <p className="text-sm text-[#2d4638]">
+            <p className="text-sm text-[var(--foreground)]">
               Payment ID: <span className="font-semibold">{paymentId}</span>
             </p>
           ) : null}
 
-          {message ? <p className="text-sm text-[#2d4638]">{message}</p> : null}
+          {message ? <p className="text-sm text-[var(--foreground)]">{message}</p> : null}
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap md:mt-8">
           <Link
             href="/cart"
-            className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
+            className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-center text-sm font-semibold text-[var(--accent-foreground)] sm:w-auto"
           >
             Try payment again
           </Link>
 
           <Link
             href="/account"
-            className="rounded-full border border-[#214c34] bg-white px-6 py-3 text-sm font-semibold text-[#214c34]"
+            className="w-full rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-3 text-center text-sm font-semibold text-[var(--foreground)] sm:w-auto"
           >
             Go to account
           </Link>
