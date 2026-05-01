@@ -69,7 +69,15 @@ export default function AdminVendorDetailPage() {
         });
         const data = await res.json();
         if (res.ok) {
-          setApplication(data.data);
+          const app = data.application || data.data;
+          // API returns `user` but frontend type expects `applicant`
+          if (app && app.user && !app.applicant) {
+            app.applicant = app.user;
+          }
+          if (app && app.createdAt && !app.submittedAt) {
+            app.submittedAt = app.createdAt;
+          }
+          setApplication(app);
         } else {
           alert(data.message || "Failed to load vendor application");
         }
