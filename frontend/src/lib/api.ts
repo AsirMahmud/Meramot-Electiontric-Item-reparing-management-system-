@@ -113,6 +113,7 @@ export type VendorApplicationPayload = {
   password: string;
   confirmPassword: string;
   shopName: string;
+  logoUrl?: string;
   tradeLicenseNo?: string;
   address: string;
   city?: string;
@@ -172,7 +173,8 @@ export type VendorApplicationStatusResponse = {
     ownerName?: string;
     businessEmail?: string;
     phone?: string;
-    shopName?: string;
+    shopName: string;
+    logoUrl?: string | null;
     tradeLicenseNo?: string | null;
     address?: string;
     city?: string | null;
@@ -191,6 +193,7 @@ export type VendorApplicationStatusResponse = {
 
 export type VendorSetupShopPayload = {
   shopName: string;
+  logoUrl?: string;
   description?: string;
   phone: string;
   address: string;
@@ -248,6 +251,7 @@ export function updateVendorApplication(
     businessEmail: string;
     phone: string;
     shopName: string;
+    logoUrl?: string;
     tradeLicenseNo?: string;
     address: string;
     city?: string;

@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { MapPin } from "lucide-react";
+import { MapPin, ImagePlus, X } from "lucide-react";
 import { completeVendorShopSetup, getVendorApplicationStatus } from "@/lib/api";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import type { StoredLocation } from "@/components/location/types";
@@ -20,6 +20,7 @@ type VendorStatusPayload = {
     city: string;
     area: string;
     notes?: string | null;
+    logoUrl?: string | null;
     specialties: string[];
     courierPickup: boolean;
     inShopRepair: boolean;
@@ -60,6 +61,7 @@ export default function VendorSetupShopPage() {
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
 
   const [shopName, setShopName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [description, setDescription] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -114,6 +116,7 @@ if (app) {
     setIsEditMode(Boolean(app.setupComplete));
 
     setShopName(app.shopName || "");
+    setLogoUrl(app.logoUrl || "");
     setDescription(app.notes || "");
     setPhone(app.phone || "");
     setAddress(app.address || "");
@@ -248,6 +251,7 @@ if (app) {
 
     await completeVendorShopSetup(token, {
       shopName: shopName.trim(),
+      logoUrl: logoUrl || undefined,
       description: description.trim() || "",
       phone: phone.trim(),
       address: address.trim(),
@@ -312,6 +316,47 @@ if (app) {
             <h2 className="text-lg font-semibold text-accent-dark">
               Shop identity
             </h2>
+
+            <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row md:gap-5">
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-border bg-white transition-colors hover:border-accent-dark md:h-28 md:w-28">
+                {logoUrl ? (
+                  <>
+                    <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setLogoUrl("")}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white backdrop-blur-sm transition-colors hover:bg-red-500"
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-muted-foreground transition-colors hover:text-accent-dark">
+                    <ImagePlus size={24} className="mb-1" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Logo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setLogoUrl(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="text-sm font-medium text-slate-700">Shop Logo (Optional)</p>
+                <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500">
+                  Upload an optional logo or photo to make your shop stand out. A square image works best.
+                </p>
+              </div>
+            </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block">

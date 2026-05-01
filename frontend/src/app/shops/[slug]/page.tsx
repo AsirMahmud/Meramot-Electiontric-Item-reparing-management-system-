@@ -672,7 +672,17 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
-            <div className="h-[120px] w-[120px] rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)]" />
+            {shop.logoUrl ? (
+              <div className="h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)]">
+                <img src={shop.logoUrl} alt={shop.name} className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A]">
+                <span className="text-4xl font-bold text-[var(--accent-dark)] opacity-40">
+                  {shop.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
 
             <div>
               <p className="text-sm text-[var(--muted-foreground)]">

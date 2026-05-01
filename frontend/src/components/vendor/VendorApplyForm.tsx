@@ -11,6 +11,7 @@ import {
 import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
+import { ImagePlus, X } from "lucide-react";
 
 const SPECIALTY_OPTIONS = [
   { value: "Smartphone Repair", label: "Smartphone Repair" },
@@ -47,6 +48,7 @@ type ExistingVendorApplication = {
   inShopRepair?: boolean;
   spareParts?: boolean;
   notes?: string | null;
+  logoUrl?: string | null;
 };
 
 const emptyVendorApplicationForm = {
@@ -65,6 +67,7 @@ const emptyVendorApplicationForm = {
   inShopRepair: true,
   spareParts: false,
   notes: "",
+  logoUrl: "",
 };
 
 type VendorApplicationFormState = typeof emptyVendorApplicationForm;
@@ -154,6 +157,7 @@ export default function VendorApplyForm() {
             typeof app.inShopRepair === "boolean" ? app.inShopRepair : true,
           spareParts: Boolean(app.spareParts),
           notes: app.notes || "",
+          logoUrl: app.logoUrl || "",
         });
         setIsEditMode(app.status === "REJECTED" || app.status === "PENDING");
       } catch (err) {
@@ -211,6 +215,7 @@ export default function VendorApplyForm() {
           inShopRepair: form.inShopRepair,
           spareParts: form.spareParts,
           notes: form.notes.trim() || undefined,
+          logoUrl: form.logoUrl || undefined,
         });
 
         router.push("/vendor/status");
@@ -248,6 +253,7 @@ export default function VendorApplyForm() {
         inShopRepair: form.inShopRepair,
         spareParts: form.spareParts,
         notes: form.notes.trim() || undefined,
+        logoUrl: form.logoUrl || undefined,
       }, token || undefined);
 
       router.push(
@@ -259,6 +265,17 @@ export default function VendorApplyForm() {
       setLoading(false);
     }
   }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm((prev) => ({ ...prev, logoUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (status === "loading" || loadingExisting) {
     return (
@@ -287,7 +304,36 @@ export default function VendorApplyForm() {
         </div>
       ) : null}
 
-      <form className="space-y-3 md:space-y-4" onSubmit={handleSubmit} autoComplete="off">
+      <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit} autoComplete="off">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-4 dark:border-white/5 dark:bg-[#15201A] sm:flex-row md:gap-5 md:p-5">
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.5rem] border-2 border-dashed border-[var(--border)] bg-[var(--card)] transition-colors hover:border-[var(--accent-dark)] md:h-28 md:w-28">
+            {form.logoUrl ? (
+              <>
+                <img src={form.logoUrl} alt="Logo" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white backdrop-blur-sm transition-colors hover:bg-red-500"
+                >
+                  <X size={14} />
+                </button>
+              </>
+            ) : (
+              <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-[var(--muted-foreground)] transition-colors hover:text-[var(--accent-dark)]">
+                <ImagePlus size={24} className="mb-1" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Logo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </label>
+            )}
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-sm font-bold text-[var(--foreground)] md:text-base">Shop Logo</p>
+            <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--muted-foreground)]">
+              Upload an optional logo or photo to make your shop stand out. A square image works best.
+            </p>
+          </div>
+        </div>
+
         <div className="grid gap-3 md:gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1">
             <label htmlFor="vendorOwnerName" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Owner name</label>
