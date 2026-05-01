@@ -464,8 +464,16 @@ export function getShops(params: ShopQuery = {}) {
   return request<Shop[]>(`/shops${buildQuery(params)}`);
 }
 
-export function getFeaturedShops() {
-  return request<Shop[]>("/shops/featured");
+let _featuredCache: { data: Shop[]; ts: number } | null = null;
+const FEATURED_TTL = 60_000; // 60 seconds
+
+export async function getFeaturedShops(): Promise<Shop[]> {
+  if (_featuredCache && Date.now() - _featuredCache.ts < FEATURED_TTL) {
+    return _featuredCache.data;
+  }
+  const data = await request<Shop[]>("/shops/featured");
+  _featuredCache = { data, ts: Date.now() };
+  return data;
 }
 
 export function getShopBySlug(slug: string) {
