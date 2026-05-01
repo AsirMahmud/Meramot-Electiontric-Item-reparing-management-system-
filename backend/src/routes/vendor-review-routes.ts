@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "../models/prisma.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
-import { notifyVendorOfMatchingRequests } from "../services/vendor-onboarding-notify.js";
+import { sendVendorWelcomeNotification } from "../services/vendor-onboarding-notify.js";
 
 const router = Router();
 
@@ -181,10 +181,9 @@ router.patch("/vendors/:id/approve", async (req: Request & { user?: any }, res: 
     });
 
     // Fire-and-forget: notify vendor of matching repair requests via email + SMS
-    notifyVendorOfMatchingRequests(
-      application.userId,
-      application.specialties || [],
-    ).catch((err) => console.error("Vendor onboarding notify failed:", err));
+    sendVendorWelcomeNotification(application.userId).catch((err) =>
+      console.error("[VendorReview] Notification failed:", err),
+    );
 
     return res.json({
       success: true,

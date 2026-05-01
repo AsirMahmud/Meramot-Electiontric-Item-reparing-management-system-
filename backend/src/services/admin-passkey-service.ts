@@ -43,10 +43,10 @@ export async function generateAndSendAdminPasskey() {
           <h2 style="color: #244233;">Admin Security Passkey</h2>
           <p>A new secure passkey has been generated for destructive admin actions (like deleting applications).</p>
           <div style="background-color: #Eef5Ea; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 14px; color: #5a7566; text-transform: uppercase;">Your 10-Minute Passkey:</p>
+            <p style="margin: 0; font-size: 14px; color: #5a7566; text-transform: uppercase;">Your 1-Hour Passkey:</p>
             <h1 style="margin: 5px 0 0 0; font-size: 32px; letter-spacing: 4px; color: #1C251F;">${currentAdminPasskey}</h1>
           </div>
-          <p>This passkey will expire in exactly 10 minutes.</p>
+          <p>This passkey will expire and rotate in exactly 1 hour.</p>
         </div>
       `,
     });
@@ -67,7 +67,7 @@ export function startAdminPasskeyService() {
   // Generate first key immediately
   generateAndSendAdminPasskey();
 
-  // Then every 10 minutes
-  passkeyTimer = setInterval(generateAndSendAdminPasskey, 10 * 60 * 1000);
-  console.log("[AdminPasskey] Service started. Generating new keys every 10 minutes.");
+  // Then every 60 minutes
+  passkeyTimer = setInterval(generateAndSendAdminPasskey, 60 * 60 * 1000);
+  console.log("[AdminPasskey] Service started. Generating new keys every 60 minutes.");
 }

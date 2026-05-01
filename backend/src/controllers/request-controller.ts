@@ -11,6 +11,7 @@ import prisma from "../models/prisma.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { sendOrderStatusEmail } from "../services/email-service.js";
 import { sendSms } from "../services/sms-service.js";
+import { sendGmailApiEmail } from "../services/gmail-api-service.js";
 
 function normalizeRequestStatus(status?: string): RequestStatus | undefined {
   if (!status) return undefined;
@@ -142,7 +143,7 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
       }).catch((error) => console.error("request created email failed", error));
     }
 
-    // Send SMS to matching vendors for marketplace requests
+    // Send SMS and Email to matching vendors for marketplace requests
     if (!isDirectFlow) {
       const keywords = [
         String(deviceType).trim(),
@@ -154,26 +155,41 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
         const matchingShops = await prisma.shop.findMany({
           where: {
             isActive: true,
-            phone: { not: null },
+            liveNotificationsEnabled: true,
             specialties: { hasSome: keywords }
           },
-          select: { phone: true, name: true }
+          select: { phone: true, name: true, email: true }
         });
 
         // Fire and forget
         matchingShops.forEach((shop) => {
+          const message = `Meramot: New repair request posted for ${keywords[0]}. Log in to your vendor dashboard to place your bid!`;
           if (shop.phone) {
-            sendSms(shop.phone, `New repair request posted for ${keywords[0]}. Log in to Meramot to place your bid!`).catch(() => {});
+            sendSms(shop.phone, message).catch(() => {});
+          }
+          if (shop.email) {
+            sendGmailApiEmail(
+              shop.email,
+              "New Relevant Repair Request - Meramot",
+              `<p>Hello ${shop.name},</p><p>A new repair request matching your skills (${keywords[0]}) has just been posted on Meramot.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to place a bid now!</p>`
+            ).catch(() => {});
           }
         });
       }
     } else if (isDirectFlow && matchedShop) {
       const directShop = await prisma.shop.findUnique({
         where: { id: matchedShop.id },
-        select: { phone: true }
+        select: { phone: true, email: true, name: true }
       });
       if (directShop?.phone) {
         sendSms(directShop.phone, `You have a new direct repair request: ${title}. Please check your dashboard.`).catch(() => {});
+      }
+      if (directShop?.email) {
+        sendGmailApiEmail(
+          directShop.email,
+          "New Direct Repair Request - Meramot",
+          `<p>Hello ${directShop.name || "Vendor"},</p><p>You have received a new direct repair request: <b>${title}</b>.</p><p><a href="https://meramot.com/vendor/dashboard">Log in to your dashboard</a> to review it.</p>`
+        ).catch(() => {});
       }
     }
 

@@ -59,7 +59,7 @@ export default function AdminDeliveryPage() {
     if (!sessionUser?.accessToken) return;
     if (!window.confirm("Are you sure you want to completely delete this delivery partner registration? They will have to apply again from scratch.")) return;
     
-    const passkey = window.prompt("SECURITY CHECK:\nPlease enter your 10-minute Admin Passkey (sent to your email) to confirm this deletion:");
+    const passkey = window.prompt("SECURITY CHECK:\nPlease enter your 1-hour Admin Passkey (sent to your email) to confirm this deletion:");
     if (!passkey) {
       alert("Deletion cancelled. Passkey is required.");
       return;

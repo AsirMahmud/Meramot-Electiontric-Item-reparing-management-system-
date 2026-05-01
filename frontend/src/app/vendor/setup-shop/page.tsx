@@ -269,7 +269,7 @@ if (app) {
       lng,
     });
 
-    router.push("/vendor/dashboard");
+    router.push("/");
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to save shop setup";

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
-import { notifyVendorOfMatchingRequests } from "../services/vendor-onboarding-notify.js";
+import { sendVendorWelcomeNotification } from "../services/vendor-onboarding-notify.js";
 
 type AuthPayload = {
   sub: string;
@@ -557,10 +557,9 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
     });
 
     // Fire-and-forget: notify vendor about matching BIDDING requests
-    notifyVendorOfMatchingRequests(
-      user.id,
-      normalizedSkillTags,
-    ).catch((err) => console.error("Shop-setup onboarding notify failed:", err));
+    sendVendorWelcomeNotification(userId).catch((err) =>
+      console.error("[VendorSetup] Notification failed:", err),
+    );
 
     return res.json({
       message: "Shop setup completed successfully",
@@ -568,6 +567,60 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("completeVendorShopSetup error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function updateVendorNotificationPreferences(req: Request, res: Response) {
+  try {
+    const user = await requireVendorUser(req, res);
+    if (!user) return;
+
+    const application = await prisma.vendorApplication.findUnique({
+      where: { userId: user.id },
+      select: { id: true, businessEmail: true },
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Vendor application not found" });
+    }
+
+    const shop = await prisma.shop.findFirst({
+      where: {
+        OR: [
+          { vendorApplicationId: application.id },
+          ...(application.businessEmail ? [{ email: application.businessEmail }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (!shop) {
+      return res.status(404).json({ message: "Vendor shop not found" });
+    }
+
+    const { liveNotificationsEnabled, liveNotificationsPrompted } = req.body;
+    
+    const updateData: any = {};
+    if (typeof liveNotificationsEnabled === "boolean") {
+      updateData.liveNotificationsEnabled = liveNotificationsEnabled;
+    }
+    if (typeof liveNotificationsPrompted === "boolean") {
+      updateData.liveNotificationsPrompted = liveNotificationsPrompted;
+    }
+
+    const updatedShop = await prisma.shop.update({
+      where: { id: shop.id },
+      data: updateData,
+    });
+
+    return res.json({
+      message: "Notification preferences updated",
+      liveNotificationsEnabled: updatedShop.liveNotificationsEnabled,
+      liveNotificationsPrompted: updatedShop.liveNotificationsPrompted,
+    });
+  } catch (error) {
+    console.error("updateVendorNotificationPreferences error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 }

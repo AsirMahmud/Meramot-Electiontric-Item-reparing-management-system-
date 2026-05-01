@@ -10,6 +10,7 @@ import {
   submitVendorBid,
   submitVendorFinalQuote,
   updateVendorJobStatus,
+  updateVendorNotificationPreferences,
   type FinalQuoteItem,
   type VendorDashboardData,
 } from "@/lib/api";
@@ -181,6 +182,9 @@ export default function VendorDashboardPage() {
   const [jobStatusDrafts, setJobStatusDrafts] = useState<Record<string, string>>({});
   const [finalQuoteDrafts, setFinalQuoteDrafts] = useState<Record<string, FinalQuoteDraft>>({});
   const [bidConfirm, setBidConfirm] = useState<BidConfirmation | null>(null);
+  
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     if (!token) {
@@ -235,6 +239,35 @@ export default function VendorDashboardPage() {
 
     void loadDashboard();
   }, [loadDashboard, role, router, session, status]);
+
+  useEffect(() => {
+    if (dashboard && dashboard.shop.setupComplete && dashboard.shop.liveNotificationsPrompted === false) {
+      setShowNotificationPrompt(true);
+    }
+  }, [dashboard]);
+
+  async function handleNotificationPreference(enabled: boolean, fromPrompt = false) {
+    if (!token) return;
+    try {
+      setIsUpdatingNotifications(true);
+      await updateVendorNotificationPreferences(token, {
+        liveNotificationsEnabled: enabled,
+        ...(fromPrompt ? { liveNotificationsPrompted: true } : {})
+      });
+      
+      if (fromPrompt) {
+        setShowNotificationPrompt(false);
+        setFlash({ type: "success", text: "Notification preferences saved." });
+      } else {
+        setFlash({ type: "success", text: enabled ? "Live notifications turned ON." : "Live notifications turned OFF." });
+      }
+      void loadDashboard();
+    } catch (e) {
+      setFlash({ type: "error", text: "Failed to update notification settings." });
+    } finally {
+      setIsUpdatingNotifications(false);
+    }
+  }
 
   const activeRequestCount = dashboard?.stats.relevantRequestCount ?? 0;
   const totalOpenJobs = dashboard?.stats.assignedJobCount ?? 0;
@@ -641,13 +674,42 @@ export default function VendorDashboardPage() {
             <div>
               <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Relevant repair requests</h2>
             </div>
-            <button
-              type="button"
-              onClick={() => void loadDashboard()}
-              className="w-full rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34] md:w-auto md:py-3"
-            >
-              Refresh
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-full border border-[#cfe0c6]">
+                <div className="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                  <input 
+                    type="checkbox" 
+                    className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                    style={{
+                      top: "2px",
+                      left: dashboard.shop.liveNotificationsEnabled ? "18px" : "2px",
+                      transition: "all 0.3s",
+                      borderColor: dashboard.shop.liveNotificationsEnabled ? "#214c34" : "#cbd5e1"
+                    }}
+                    checked={!!dashboard.shop.liveNotificationsEnabled}
+                    onChange={(e) => handleNotificationPreference(e.target.checked)}
+                    disabled={isUpdatingNotifications}
+                  />
+                  <div 
+                    className="toggle-label block overflow-hidden h-6 rounded-full cursor-pointer"
+                    style={{
+                      backgroundColor: dashboard.shop.liveNotificationsEnabled ? "#dff0dc" : "#e2e8f0",
+                      transition: "all 0.3s"
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-[#173726] whitespace-nowrap">
+                  Live Notifications
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={() => void loadDashboard()}
+                className="w-full rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34] sm:w-auto md:py-3"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           <div className="space-y-5">
@@ -1226,6 +1288,47 @@ export default function VendorDashboardPage() {
                 className="flex-1 rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173726] transition-colors"
               >
                 Confirm offer
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Notification Prompt Modal ─────────────────────────────── */}
+      {showNotificationPrompt ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4 transition-opacity"
+          onClick={() => setShowNotificationPrompt(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-[2rem] bg-white p-6 shadow-2xl sm:rounded-[2rem] md:p-8 animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-6 h-1.5 w-12 rounded-full bg-gray-200 sm:hidden" />
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#dff0dc] text-3xl">
+              🔔
+            </div>
+            <h3 className="text-xl font-bold text-[#173726] md:text-2xl">Enable live notifications?</h3>
+            <p className="mt-3 text-sm leading-relaxed text-[#5b7262]">
+              Do you want to receive instant emails and SMS alerts when a new repair request matches your skills? You can change this later.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={isUpdatingNotifications}
+                onClick={() => handleNotificationPreference(true, true)}
+                className="w-full rounded-full bg-[#214c34] px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#173726] disabled:opacity-50"
+              >
+                {isUpdatingNotifications ? "Saving..." : "Yes, turn them on"}
+              </button>
+              <button
+                type="button"
+                disabled={isUpdatingNotifications}
+                onClick={() => handleNotificationPreference(false, true)}
+                className="w-full rounded-full border border-[#cfe0c6] bg-transparent px-5 py-3.5 text-sm font-semibold text-[#355541] transition-colors hover:bg-[#f6faf4] disabled:opacity-50"
+              >
+                Maybe later
               </button>
             </div>
           </div>

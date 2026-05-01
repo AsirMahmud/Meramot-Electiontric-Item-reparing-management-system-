@@ -620,6 +620,8 @@ export type VendorDashboardData = {
     expressFee?: number | null;
     categories: string[];
     specialties: string[];
+    liveNotificationsEnabled?: boolean;
+    liveNotificationsPrompted?: boolean;
   };
   stats: {
     relevantRequestCount: number;

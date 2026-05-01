@@ -226,6 +226,8 @@ async function getVendorContext(userId: string) {
       specialties: true,
       ratingAvg: true,
       reviewCount: true,
+      liveNotificationsEnabled: true,
+      liveNotificationsPrompted: true,
     },
   });
 

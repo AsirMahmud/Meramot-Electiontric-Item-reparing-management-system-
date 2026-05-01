@@ -348,6 +348,8 @@ model Shop {
 
   isPublic      Boolean @default(false)
   setupComplete Boolean @default(false)
+  liveNotificationsEnabled  Boolean @default(false)
+  liveNotificationsPrompted Boolean @default(false)
 
   inspectionFee  Float?
   baseLaborFee   Float?
