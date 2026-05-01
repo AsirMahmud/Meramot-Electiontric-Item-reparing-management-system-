@@ -402,7 +402,8 @@ export default function CartPage() {
         ) : null}
 
         {primaryCart ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <>
+            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
             <section className="space-y-6">
               <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 1 ? 'hidden md:block' : 'block'}`}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -827,6 +828,7 @@ export default function CartPage() {
               )}
             </div>
           )}
+          </>
         ) : (
           <div className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-10 text-center shadow-sm">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--mint-100)] text-3xl">

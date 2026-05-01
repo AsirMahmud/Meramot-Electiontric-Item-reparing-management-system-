@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-prisma.payment.findMany({ orderBy: { createdAt: 'desc' }, take: 2 })
-  .then(console.log)
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+
+async function main() {
+  const shops = await prisma.shop.findMany({ where: { isFeatured: true } });
+  console.log(shops);
+}
+
+main().finally(() => prisma.$disconnect());

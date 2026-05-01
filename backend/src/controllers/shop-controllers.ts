@@ -183,7 +183,7 @@ export async function getShops(req: Request, res: Response) {
 
 export async function getFeaturedShops(_req: Request, res: Response) {
   try {
-    const shops = await prisma.shop.findMany({
+    let shops = await prisma.shop.findMany({
       where: {
         isActive: true,
         isFeatured: true,
@@ -214,6 +214,39 @@ export async function getFeaturedShops(_req: Request, res: Response) {
         inspectionFee: true,
       },
     });
+
+    if (shops.length === 0) {
+      shops = await prisma.shop.findMany({
+        where: {
+          isActive: true,
+          isPublic: true,
+        },
+        orderBy: [{ ratingAvg: "desc" }, { reviewCount: "desc" }],
+        take: 8,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          logoUrl: true,
+          address: true,
+          city: true,
+          area: true,
+          lat: true,
+          lng: true,
+          ratingAvg: true,
+          reviewCount: true,
+          priceLevel: true,
+          hasVoucher: true,
+          freeDelivery: true,
+          hasDeals: true,
+          categories: true,
+          specialties: true,
+          baseLaborFee: true,
+          inspectionFee: true,
+        },
+      });
+    }
 
     const enriched = shops.map((shop) => ({
       ...shop,

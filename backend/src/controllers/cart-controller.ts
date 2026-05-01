@@ -107,8 +107,12 @@ export async function addItemToCart(req: AuthedRequest, res: Response) {
       });
     }
 
-    const shop = await prisma.shop.findUnique({
-      where: { slug: shopSlug.trim() },
+    const shop = await prisma.shop.findFirst({
+      where: { 
+        slug: shopSlug.trim(),
+        isActive: true,
+        isPublic: true,
+      },
       select: { id: true, slug: true, name: true },
     });
 
