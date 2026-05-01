@@ -1,5 +1,5 @@
 import { env } from "../config/env.js";
-import nodemailer from "nodemailer";
+import { sendGmailApiEmail } from "./gmail-api-service.js";
 
 type CredentialEmailInput = {
   toEmail: string;
@@ -18,11 +18,6 @@ export async function sendDeliveryCredentialsEmail(input: CredentialEmailInput) 
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  if (!env.smtpHost) {
-    console.warn("[email-fallback] SMTP credentials missing. Credentials:", input.username, input.password);
-    return { ok: false, skipped: true, reason: "missing smtp config" };
-  }
-
   const subject = "Delivery Partner Approval - Login Credentials";
   const html = `
     <div style="font-family: Arial, sans-serif; color: #173626; line-height: 1.6;">
@@ -36,31 +31,16 @@ export async function sendDeliveryCredentialsEmail(input: CredentialEmailInput) 
     </div>
   `;
 
-  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
-  if (env.smtpHost) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: env.smtpHost,
-        port: env.smtpPort,
-        secure: env.smtpSecure,
-        auth: {
-          user: env.smtpUser,
-          pass: env.smtpPass,
-        },
-      });
-
-      await transporter.sendMail({
-        from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
-        to: input.toEmail,
-        subject,
-        html,
-      });
-      console.log(`[DeliveryEmail] Nodemailer successfully sent to ${input.toEmail}`);
-    } catch (err) {
-      console.error(`[DeliveryEmail] Nodemailer API error: ${err}`);
-    }
-  } else {
-    console.warn("[email-fallback] SMTP credentials missing. Credentials:", input.username, input.password);
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.toEmail,
+      subject,
+      html,
+    });
+    console.log(`[DeliveryEmail] Gmail API successfully sent to ${input.toEmail}`);
+  } catch (err) {
+    console.error(`[DeliveryEmail] Gmail API error: ${err}`);
   }
 
   // 2. Send via Resend (Original Logic)
@@ -101,9 +81,6 @@ export async function sendDeliveryRegistrationAcknowledgementEmail(
     return { ok: false, skipped: true };
   }
 
-  if (!env.smtpHost) {
-    return { ok: false, skipped: true };
-  }
 
   const subject = "Delivery Registration Received - Under Review";
   const html = `
@@ -117,28 +94,15 @@ export async function sendDeliveryRegistrationAcknowledgementEmail(
     </div>
   `;
 
-  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
-  if (env.smtpHost) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: env.smtpHost,
-        port: env.smtpPort,
-        secure: env.smtpSecure,
-        auth: {
-          user: env.smtpUser,
-          pass: env.smtpPass,
-        },
-      });
-
-      await transporter.sendMail({
-        from: env.smtpFrom || "Meramot Delivery <noreply@meramot.com>",
-        to: input.toEmail,
-        subject,
-        html,
-      });
-    } catch (err) {
-      console.error(`[DeliveryEmail] Nodemailer API error: ${err}`);
-    }
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.toEmail,
+      subject,
+      html,
+    });
+  } catch (err) {
+    console.error(`[DeliveryEmail] Gmail API error: ${err}`);
   }
 
   // 2. Send via Resend (Original Logic)

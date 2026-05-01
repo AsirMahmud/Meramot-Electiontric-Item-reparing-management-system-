@@ -32,6 +32,12 @@ export const env = {
   adminSmtpPass: process.env.ADMIN_SMTP_PASS || process.env.SMTP_PASS,
   adminSmtpFrom: process.env.ADMIN_SMTP_FROM || process.env.SMTP_FROM,
 
+  // Gmail API OAuth2 (used because Render blocks SMTP ports 587/465)
+  gmailClientId: process.env.GMAIL_CLIENT_ID || "",
+  gmailClientSecret: process.env.GMAIL_CLIENT_SECRET || "",
+  gmailRefreshToken: process.env.GMAIL_REFRESH_TOKEN || "",
+  gmailUser: process.env.GMAIL_USER || "",
+
   enableAiChat: process.env.ENABLE_AI_CHAT === "true",
   groqApiKey: process.env.GROQ_API_KEY || "",
   pusherAppId: process.env.PUSHER_APP_ID || "",

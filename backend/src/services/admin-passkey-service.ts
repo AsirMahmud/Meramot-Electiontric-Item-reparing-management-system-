@@ -1,6 +1,6 @@
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
-import nodemailer from "nodemailer";
+import { sendGmailApiEmail } from "./gmail-api-service.js";
 
 // In-memory store for the passkey
 export let currentAdminPasskey: string | null = null;
@@ -34,19 +34,9 @@ export async function generateAndSendAdminPasskey() {
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: env.smtpHost,
-      port: env.smtpPort,
-      secure: env.smtpSecure,
-      auth: {
-        user: env.adminSmtpUser,
-        pass: env.adminSmtpPass,
-      },
-    });
-
-    const result = await transporter.sendMail({
-      from: env.adminSmtpFrom || env.emailFrom,
-      to: adminEmails.join(", "),
+    // Using Gmail REST API over HTTPS because Render blocks SMTP ports (587/465)
+    const result = await sendGmailApiEmail({
+      to: adminEmails,
       subject: "Meramot Admin Security: Your Temporary Passkey",
       html: `
         <div style="font-family: sans-serif; color: #1C251F; padding: 20px;">
@@ -61,8 +51,11 @@ export async function generateAndSendAdminPasskey() {
       `,
     });
 
-    console.log(`[AdminPasskey] SMTP Response:`, result.response);
-    console.log(`[AdminPasskey] Passkey emailed to ${adminEmails.length} admins.`);
+    if (result.ok) {
+      console.log(`[AdminPasskey] Gmail API: Passkey emailed to ${adminEmails.length} admins.`);
+    } else {
+      console.error(`[AdminPasskey] Gmail API failed:`, result.error);
+    }
   } catch (error) {
     console.error("[AdminPasskey] Failed to send passkey emails:", error);
   }

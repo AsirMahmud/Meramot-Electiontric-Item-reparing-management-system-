@@ -9,7 +9,7 @@
 import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sendSms } from "./sms-service.js";
-import nodemailer from "nodemailer";
+import { sendGmailApiEmail } from "./gmail-api-service.js";
 
 // ── Relevance matching (mirrors vendor-request-controller.ts) ────────────
 
@@ -193,21 +193,10 @@ export async function notifyVendorOfMatchingRequests(
     );
 
     // ── Send email ───────────────────────────────────────────────────
-    // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
-    if (vendor.email && env.enableEmailNotifications && env.smtpHost) {
+    // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+    if (vendor.email && env.enableEmailNotifications) {
       try {
-        const transporter = nodemailer.createTransport({
-          host: env.smtpHost,
-          port: env.smtpPort,
-          secure: env.smtpSecure,
-          auth: {
-            user: env.smtpUser,
-            pass: env.smtpPass,
-          },
-        });
-
-        await transporter.sendMail({
-          from: env.smtpFrom || env.emailFrom,
+        await sendGmailApiEmail({
           to: vendor.email,
           subject: matchingRequests.length
             ? `Welcome to Meramot — ${matchingRequests.length} repair requests match your skills!`
@@ -218,12 +207,11 @@ export async function notifyVendorOfMatchingRequests(
             matchingRequests,
           ),
         });
-
         console.log(
-          `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests (Nodemailer)`,
+          `[VendorOnboard] Welcome email sent to ${vendor.email} with ${matchingRequests.length} matching requests (Gmail API)`,
         );
       } catch (emailErr) {
-        console.error("[VendorOnboard] Email error (Nodemailer):", emailErr);
+        console.error("[VendorOnboard] Email error (Gmail API):", emailErr);
       }
     }
 

@@ -1,5 +1,5 @@
 import { env } from "../config/env.js";
-import nodemailer from "nodemailer";
+import { sendGmailApiEmail } from "./gmail-api-service.js";
 
 export type OrderStatusEmailInput = {
   to: string;
@@ -37,28 +37,15 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
-  if (env.smtpHost) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: env.smtpHost,
-        port: env.smtpPort,
-        secure: env.smtpSecure,
-        auth: {
-          user: env.smtpUser,
-          pass: env.smtpPass,
-        },
-      });
-
-      await transporter.sendMail({
-        from: env.smtpFrom || env.emailFrom,
-        to: input.to,
-        subject: subjectForStatus(input.status, input.orderTitle),
-        html: htmlForStatus(input),
-      });
-    } catch (error) {
-      console.error(`[EmailService] Nodemailer request failed: ${error}`);
-    }
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.to,
+      subject: subjectForStatus(input.status, input.orderTitle),
+      html: htmlForStatus(input),
+    });
+  } catch (error) {
+    console.error(`[EmailService] Gmail API request failed: ${error}`);
   }
 
   // 2. Send via Resend (Original Logic)
@@ -128,28 +115,15 @@ export async function sendInvoiceLinkEmail(input: InvoiceEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  // 1. Send via Nodemailer (Added because Resend is currently restricted on the free tier to verified emails only)
-  if (env.smtpHost) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: env.smtpHost,
-        port: env.smtpPort,
-        secure: env.smtpSecure,
-        auth: {
-          user: env.smtpUser,
-          pass: env.smtpPass,
-        },
-      });
-
-      await transporter.sendMail({
-        from: env.smtpFrom || env.emailFrom,
-        to: input.to,
-        subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
-        html: htmlPaymentReceipt(input),
-      });
-    } catch (error) {
-      console.error(`[EmailService] Nodemailer request failed: ${error}`);
-    }
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.to,
+      subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
+      html: htmlPaymentReceipt(input),
+    });
+  } catch (error) {
+    console.error(`[EmailService] Gmail API request failed: ${error}`);
   }
 
   // 2. Send via Resend (Original Logic)
