@@ -56,7 +56,13 @@ function ShopResultCard({ shop }: { shop: Shop }) {
       className="group rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start gap-3">
-        <div className="h-14 w-14 shrink-0 rounded-xl bg-[var(--mint-100)]" />
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-2xl font-bold text-[var(--accent-dark)]">
+          {shop.logoUrl ? (
+            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
+          ) : (
+            shop.name.charAt(0).toUpperCase()
+          )}
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
