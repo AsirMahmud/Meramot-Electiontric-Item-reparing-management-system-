@@ -159,7 +159,9 @@ export async function getShops(req: Request, res: Response) {
       }
 
       if (sort === "distance") {
-        return (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
+        const distDiff = (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
+        if (distDiff !== 0) return distDiff;
+        return (a.etaMinutes ?? Number.MAX_SAFE_INTEGER) - (b.etaMinutes ?? Number.MAX_SAFE_INTEGER);
       }
 
       if (sort === "relevance") {

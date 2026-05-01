@@ -116,7 +116,7 @@ export default function VendorAnalyticsPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor analytics</p>
-            <h1 className="mt-2 text-3xl font-bold text-[#173726]">Shop owner analytics dashboard</h1>
+            <h1 className="mt-2 text-2xl font-bold text-[#173726] md:text-3xl">Shop owner analytics dashboard</h1>
             <p className="mt-2 text-sm text-[#5b7262]">
               Monitor monthly earnings, bids won, and customer sentiment for {analytics?.shop.name || "your shop"}.
             </p>
@@ -157,7 +157,7 @@ export default function VendorAnalyticsPage() {
             <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">Monthly earnings</p>
-                <p className="mt-3 text-4xl font-bold text-[#173726]">
+                <p className="mt-3 text-2xl font-bold text-[#173726] md:text-4xl">
                   {formatMoney(analytics.summary.totalMonthlyEarnings)}
                 </p>
                 <p className="mt-2 text-sm text-[#5b7262]">For {analytics.summary.monthLabel}</p>
@@ -165,13 +165,13 @@ export default function VendorAnalyticsPage() {
 
               <article className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">Bids won</p>
-                <p className="mt-3 text-4xl font-bold text-[#173726]">{analytics.summary.bidsWonThisMonth}</p>
+                <p className="mt-3 text-2xl font-bold text-[#173726] md:text-4xl">{analytics.summary.bidsWonThisMonth}</p>
                 <p className="mt-2 text-sm text-[#5b7262]">Accepted customer decisions this month</p>
               </article>
 
               <article className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">Average customer rating</p>
-                <p className="mt-3 text-4xl font-bold text-[#173726]">
+                <p className="mt-3 text-2xl font-bold text-[#173726] md:text-4xl">
                   {analytics.summary.averageCustomerRating.toFixed(1)}
                 </p>
                 <p className="mt-2 text-sm text-[#5b7262]">Based on {analytics.summary.reviewCount} review(s)</p>
@@ -179,7 +179,7 @@ export default function VendorAnalyticsPage() {
 
               <article className="rounded-[2rem] bg-white p-6 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6b8270]">Best recent month</p>
-                <p className="mt-3 text-4xl font-bold text-[#173726]">
+                <p className="mt-3 text-2xl font-bold text-[#173726] md:text-4xl">
                   {formatMoney(analytics.insights.bestMonthEarnings)}
                 </p>
                 <p className="mt-2 text-sm text-[#5b7262]">Peak month: {analytics.insights.bestMonthLabel}</p>
@@ -198,7 +198,7 @@ export default function VendorAnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 grid min-h-[280px] grid-cols-6 items-end gap-3">
+                <div className="mt-6 grid min-h-[200px] grid-cols-3 items-end gap-2 md:mt-8 md:min-h-[280px] md:grid-cols-6 md:gap-3">
                   {analytics.trends.map((item) => {
                     const height = item.earnings > 0 ? Math.max(18, Math.round((item.earnings / maxEarnings) * 220)) : 0;
 
@@ -207,7 +207,7 @@ export default function VendorAnalyticsPage() {
                         <p className="text-center text-xs font-semibold text-[#355541]">{formatMoney(item.earnings)}</p>
                         <div className="flex h-[220px] items-end">
                           <div
-                            className="w-12 rounded-t-3xl bg-[#214c34] shadow-sm transition-all"
+                            className="w-8 rounded-t-2xl bg-[#214c34] shadow-sm transition-all md:w-12 md:rounded-t-3xl"
                             style={{ height: `${height}px` }}
                             title={`${item.label}: ${formatMoney(item.earnings)}`}
                           />
@@ -253,7 +253,7 @@ export default function VendorAnalyticsPage() {
                 <h2 className="mt-2 text-2xl font-bold text-[#173726]">Rating overview</h2>
 
                 <div className="mt-6 rounded-[2rem] bg-[#f6faf4] p-6 text-center">
-                  <p className="text-5xl font-bold text-[#173726]">{analytics.summary.averageCustomerRating.toFixed(1)}</p>
+                  <p className="text-4xl font-bold text-[#173726] md:text-5xl">{analytics.summary.averageCustomerRating.toFixed(1)}</p>
                   <p className="mt-3 text-lg tracking-[0.2em] text-[#214c34]">
                     {renderStars(analytics.summary.averageCustomerRating)}
                   </p>

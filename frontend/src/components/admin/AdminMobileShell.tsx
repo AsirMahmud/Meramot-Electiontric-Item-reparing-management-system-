@@ -15,9 +15,9 @@ export default function AdminMobileShell({
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-4 px-3 py-4 md:gap-6 md:px-4 md:py-6 md:grid-cols-[260px_1fr]">
+      <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 grid-rows-[auto_1fr] gap-3 px-3 py-3 md:grid-rows-1 md:gap-6 md:px-4 md:py-6 md:grid-cols-[260px_1fr]">
         {/* ── Sidebar column ── */}
-        <div className="flex flex-col gap-4 md:gap-6">
+        <div className="relative flex flex-col md:gap-6">
           <div className="flex items-center justify-between gap-3">
             <Link href="/" className="inline-block transition-transform hover:scale-105">
               <Image
@@ -25,7 +25,7 @@ export default function AdminMobileShell({
                 alt="Meramot"
                 width={240}
                 height={80}
-                className="h-10 w-auto object-contain md:h-16 lg:h-20"
+                className="h-[3.5rem] w-auto object-contain md:h-[4.5rem] lg:h-[5rem]"
                 priority
               />
             </Link>
@@ -44,8 +44,8 @@ export default function AdminMobileShell({
             </div>
           </div>
 
-          {/* Sidebar panel — collapsible on mobile, always visible on md+ */}
-          <aside className={`rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm md:rounded-[2rem] md:p-6 ${sidebarOpen ? "block mobile-collapse-enter" : "hidden"} md:block`}>
+          {/* Sidebar panel — collapsible overlay on mobile, static on md+ */}
+          <aside className={`absolute left-0 right-0 top-full z-50 mt-0 rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-2xl md:static md:rounded-[2rem] md:p-6 md:shadow-sm ${sidebarOpen ? "block mobile-collapse-enter" : "hidden"} md:block`}>
             <div className="mb-4 md:mb-8">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)] md:text-sm">
                 Meramot
@@ -58,7 +58,7 @@ export default function AdminMobileShell({
               </p>
             </div>
 
-            <AdminSidebarNav />
+            <AdminSidebarNav onNavClick={() => setSidebarOpen(false)} />
           </aside>
         </div>
 

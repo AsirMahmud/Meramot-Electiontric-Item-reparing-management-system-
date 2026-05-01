@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
 @import "./mobile.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -20,6 +19,11 @@
   --mint-700: #436440;
   --accent-dark: #244229;
   --accent-foreground: #ffffff;
+  --vendor-select-bg: #ffffff;
+  --vendor-select-hover: #f0fdf4;
+  --vendor-select-tag: #dcfce7;
+  --vendor-select-tag-text: #166534;
+  --vendor-select-tag-remove-hover: #bbf7d0;
 }
 
 .dark {
@@ -38,6 +42,11 @@
   --mint-700: #c4dabb;
   --accent-dark: #b5e4a8;
   --accent-foreground: #0f1c12;
+  --vendor-select-bg: #15201A;
+  --vendor-select-hover: #1e2e24;
+  --vendor-select-tag: #1e3a28;
+  --vendor-select-tag-text: #a8d5a2;
+  --vendor-select-tag-remove-hover: #2a4d35;
 }
 
 @theme inline {
@@ -82,8 +91,8 @@ select {
   outline: none;
 }
 
-input:focus,
-button:focus,
-select:focus {
+input:focus-visible,
+button:focus-visible,
+select:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--mint-500) 24%, transparent);
 }

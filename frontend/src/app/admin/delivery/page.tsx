@@ -90,8 +90,8 @@ export default function AdminDeliveryPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-[var(--accent-dark)]">Delivery Riders</h2>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+        <h2 className="text-xl font-bold text-[var(--accent-dark)] md:text-2xl">Delivery Riders</h2>
+        <p className="mt-1 text-xs text-[var(--muted-foreground)] md:text-sm">
           Approve, reject, and monitor delivery personnel on the platform.
         </p>
       </div>
@@ -103,64 +103,64 @@ export default function AdminDeliveryPage() {
       ) : null}
 
       {stats && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
-            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Total Riders</p>
-            <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)]">{stats.totalRiders}</p>
+        <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
+          <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
+            <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Total Riders</p>
+            <p className="mt-1 text-lg font-bold text-[var(--accent-dark)] md:text-2xl">{stats.totalRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
-            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Pending</p>
-            <p className="mt-1 text-2xl font-bold text-amber-600">{stats.pendingRiders}</p>
+          <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
+            <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Pending</p>
+            <p className="mt-1 text-lg font-bold text-amber-600 md:text-2xl">{stats.pendingRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
-            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Approved</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-600">{stats.approvedRiders}</p>
+          <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
+            <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Approved</p>
+            <p className="mt-1 text-lg font-bold text-emerald-600 md:text-2xl">{stats.approvedRiders}</p>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4">
-            <p className="text-xs font-semibold uppercase text-[var(--muted-foreground)]">Rejected</p>
-            <p className="mt-1 text-2xl font-bold text-rose-600">{stats.rejectedRiders}</p>
+          <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
+            <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Rejected</p>
+            <p className="mt-1 text-lg font-bold text-rose-600 md:text-2xl">{stats.rejectedRiders}</p>
           </div>
         </div>
       )}
 
       <section>
-        <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">Pending Approvals ({pendingRiders.length})</h3>
+        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({pendingRiders.length})</h3>
         {pendingRiders.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
+          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
             No pending delivery rider applications.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white dark:bg-[#1C251F]">
-            <table className="w-full text-left text-sm text-[var(--foreground)]">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">User</th>
-                  <th className="px-6 py-4 font-semibold">Contact</th>
-                  <th className="px-6 py-4 font-semibold">Applied At</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">User</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Applied At</th>
+                  <th className="px-4 py-3 text-right font-semibold md:px-6 md:py-4">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#Eef5Ea]">
+              <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
                 {pendingRiders.map((rider) => (
-                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)]">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-[var(--accent-dark)]">{rider.name || "Unknown"}</p>
-                      <p className="text-xs text-[var(--muted-foreground)]">ID: {rider.id}</p>
+                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{rider.name || "Unknown"}</p>
+                      <p className="text-[9px] text-[var(--muted-foreground)] md:text-xs">ID: {rider.id}</p>
                     </td>
-                    <td className="px-6 py-4">
-                      <p>{rider.email || "—"}</p>
-                      <p className="text-[var(--muted-foreground)]">{rider.phone || "—"}</p>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      <p className="line-clamp-1">{rider.email || "—"}</p>
+                      <p className="text-[var(--muted-foreground)] line-clamp-1">{rider.phone || "—"}</p>
                     </td>
-                    <td className="px-6 py-4 text-[var(--muted-foreground)]">
+                    <td className="px-4 py-3 text-[var(--muted-foreground)] md:px-6 md:py-4">
                       {new Date(rider.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-3 text-right md:px-6 md:py-4">
+                      <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <button
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleStatusUpdate(rider.id, "APPROVED")}
-                          className="rounded-xl bg-[#244233] px-4 py-2 text-xs font-bold text-[#DCEAD7] transition hover:bg-[var(--accent-dark)] disabled:opacity-50"
+                          className="inline-flex w-full items-center justify-center rounded-lg bg-[#244233] px-3 py-1.5 text-[10px] font-bold text-[#DCEAD7] transition hover:bg-[var(--accent-dark)] disabled:opacity-50 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           Approve
                         </button>
@@ -168,7 +168,7 @@ export default function AdminDeliveryPage() {
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleStatusUpdate(rider.id, "REJECTED")}
-                          className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           Reject
                         </button>
@@ -183,37 +183,37 @@ export default function AdminDeliveryPage() {
       </section>
 
       <section>
-        <h3 className="mb-4 text-lg font-bold text-[var(--accent-dark)]">All Delivery Riders ({allOtherRiders.length})</h3>
+        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Delivery Riders ({allOtherRiders.length})</h3>
         {allOtherRiders.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#C7D7C2] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
+          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
             No verified delivery riders found.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white dark:bg-[#1C251F]">
-            <table className="w-full text-left text-sm text-[var(--foreground)]">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">User</th>
-                  <th className="px-6 py-4 font-semibold">Contact</th>
-                  <th className="px-6 py-4 font-semibold">Reg. Status</th>
-                  <th className="px-6 py-4 font-semibold">System Status</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">User</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Reg. Status</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">System Status</th>
+                  <th className="px-4 py-3 text-right font-semibold md:px-6 md:py-4">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#Eef5Ea]">
+              <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
                 {allOtherRiders.map((rider) => (
-                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)]">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-[var(--accent-dark)]">{rider.name || "Unknown"}</p>
-                      <p className="text-xs text-[var(--muted-foreground)]">ID: {rider.id}</p>
+                  <tr key={rider.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{rider.name || "Unknown"}</p>
+                      <p className="text-[9px] text-[var(--muted-foreground)] md:text-xs">ID: {rider.id}</p>
                     </td>
-                    <td className="px-6 py-4">
-                      <p>{rider.email || "—"}</p>
-                      <p className="text-[var(--muted-foreground)]">{rider.phone || "—"}</p>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      <p className="line-clamp-1">{rider.email || "—"}</p>
+                      <p className="text-[var(--muted-foreground)] line-clamp-1">{rider.phone || "—"}</p>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 md:px-6 md:py-4">
                       <span
-                        className={`inline-block rounded-lg px-3 py-1 text-xs font-bold ${
+                        className={`inline-block rounded-lg px-2 py-0.5 text-[8px] font-bold md:px-3 md:py-1 md:text-xs ${
                           rider.registrationStatus === "APPROVED"
                             ? "bg-emerald-100 text-emerald-800"
                             : rider.registrationStatus === "REJECTED"
@@ -224,15 +224,15 @@ export default function AdminDeliveryPage() {
                         {rider.registrationStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 md:px-6 md:py-4">
                       <span className="font-medium text-[var(--muted-foreground)]">{rider.status}</span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-3 text-right md:px-6 md:py-4">
                         <button
                           type="button"
                           disabled={actionId === rider.id}
                           onClick={() => handleDeleteRider(rider.id)}
-                          className="rounded-xl border border-[#8A2A2A] px-3 py-1 text-xs font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50"
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           Delete
                         </button>

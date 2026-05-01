@@ -163,8 +163,9 @@ export function NavbarInner({
                   alt="Meramot"
                   width={280}
                   height={100}
-                  className="h-32 w-auto scale-[1.75] object-contain md:h-[6rem] md:scale-100 lg:h-32"
+                  className="h-[4.62rem] w-auto object-contain md:h-[5.1975rem] lg:h-[6.3525rem]"
                   priority
+                  fetchPriority="high"
                 />
               </Link>
             </div>
@@ -305,7 +306,7 @@ export function NavbarInner({
                             setIsUserMenuOpen(false);
                             setShowLogoutConfirm(true);
                           }}
-                          className="block w-full rounded-2xl px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-700 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-950/30"
                         >
                           Log out
                         </button>
@@ -412,7 +413,7 @@ export function NavbarInner({
               })}
             </div>
 
-            <form onSubmit={handleSearchSubmit} className="hidden w-full md:block md:w-[520px]">
+            <form onSubmit={handleSearchSubmit} className="hidden w-full md:block md:flex-1 md:max-w-[640px]">
               <input
                 type="text"
                 value={searchQuery}
@@ -460,30 +461,23 @@ export function NavbarInner({
               <Link
                 href="/cart"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105"
+                className="ml-auto flex items-center justify-center rounded-full bg-[var(--mint-100)] p-3 transition active:bg-[var(--mint-300)]"
               >
-                <Image src="/images/cart.svg" alt="Cart" width={24} height={24} className="h-6 w-6" />
+                <Image src="/images/cart.svg" alt="Cart" width={48} height={48} className="h-12 w-12" />
               </Link>
             </div>
 
             <nav className="space-y-1">
               {!isLoggedIn ? (
-                <>
-                  <Link
-                    href="/"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                  >
-                    🏠 Home
-                  </Link>
+                <div className="flex">
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
+                    className="inline-flex items-center justify-center rounded-xl bg-[var(--mint-50)] dark:bg-[var(--mint-200)] px-5 py-3 text-sm font-bold text-[var(--accent-dark)] transition hover:opacity-90"
                   >
-                    🔑 Sign in / Sign up
+                    Sign in / Sign up
                   </Link>
-                </>
+                </div>
               ) : (
                 <>
                   <button
@@ -522,7 +516,7 @@ export function NavbarInner({
                         <Link
                           href="/admin"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                         >
                           Admin dashboard
                         </Link>
@@ -533,7 +527,7 @@ export function NavbarInner({
                           <Link
                             href="/vendor/dashboard"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                            className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                           >
                             Vendor dashboard
                           </Link>
@@ -551,7 +545,7 @@ export function NavbarInner({
                         <Link
                           href="/vendor/setup-shop"
                           onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
                         >
                           Set up your shop
                         </Link>

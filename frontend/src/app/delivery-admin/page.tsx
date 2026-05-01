@@ -175,6 +175,7 @@ export default function DeliveryAdminDashboard() {
     let isDisposed = false;
 
     async function setupMap() {
+      await import("leaflet/dist/leaflet.css");
       const leafletModule = await import("leaflet");
       if (isDisposed || !mapContainerRef.current) return;
 

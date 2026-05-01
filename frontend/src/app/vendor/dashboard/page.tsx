@@ -451,7 +451,12 @@ export default function VendorDashboardPage() {
     return (
       <main className="min-h-screen bg-[#E4FCD5]">
         <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
-        <div className="mx-auto max-w-6xl px-4 py-10 text-[#173726]">Loading vendor dashboard...</div>
+        <div className="mx-auto max-w-6xl px-3 py-8 md:px-4 text-[#173726]">
+          <div className="animate-pulse space-y-3">
+            <div className="h-6 w-48 rounded-full bg-[#d3ecc8]" />
+            <div className="h-8 w-64 rounded-full bg-[#d3ecc8]" />
+          </div>
+        </div>
       </main>
     );
   }
@@ -464,17 +469,17 @@ export default function VendorDashboardPage() {
     return (
       <main className="min-h-screen bg-[#E4FCD5]">
         <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
-        <div className="mx-auto max-w-4xl px-4 py-10">
-          <div className="rounded-[2rem] bg-white p-8 shadow-sm">
+        <div className="mx-auto max-w-4xl px-3 py-8 md:px-4">
+          <div className="rounded-[1.5rem] bg-white p-5 shadow-sm md:rounded-[2rem] md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
-            <h1 className="mt-2 text-3xl font-bold text-[#173726]">Vendor dashboard unavailable</h1>
+            <h1 className="mt-2 text-2xl font-bold text-[#173726] md:text-3xl">Vendor dashboard unavailable</h1>
             <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {flash?.text || "We could not load your vendor workspace right now."}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/vendor/setup-shop"
-                className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white"
+                className="w-full rounded-full bg-[#214c34] px-6 py-3 text-center text-sm font-semibold text-white md:w-auto"
               >
                 Complete shop setup
               </Link>
@@ -499,16 +504,16 @@ export default function VendorDashboardPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2 md:gap-3">
             <Link
               href="/vendor/analytics"
-              className="rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
+              className="flex-1 rounded-full border border-[#214c34] bg-white px-4 py-2.5 text-center text-sm font-semibold text-[#214c34] md:flex-none md:px-5 md:py-3"
             >
               View analytics
             </Link>
             <Link
               href="/vendor/setup-shop"
-              className="rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
+              className="flex-1 rounded-full border border-[#214c34] bg-white px-4 py-2.5 text-center text-sm font-semibold text-[#214c34] md:flex-none md:px-5 md:py-3"
             >
               Edit shop setup
             </Link>
@@ -573,8 +578,8 @@ export default function VendorDashboardPage() {
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <article className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
+          <article className="rounded-[1.5rem] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Shop setup</p>
                 <h2 className="mt-2 text-2xl font-bold text-[#173726]">Your vendor profile</h2>
@@ -611,7 +616,7 @@ export default function VendorDashboardPage() {
             </div>
           </article>
 
-          <article className="rounded-[2rem] bg-white p-6 shadow-sm">
+          <article className="rounded-[1.5rem] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Skill tags</p>
             <h2 className="mt-2 text-2xl font-bold text-[#173726]">Request matching</h2>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -631,15 +636,15 @@ export default function VendorDashboardPage() {
           </article>
         </section>
 
-        <section id="relevant-requests" className="mt-8 scroll-mt-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <section id="relevant-requests" className="mt-6 scroll-mt-6 md:mt-8">
+          <div className="mb-3 flex flex-col gap-2 md:mb-4 md:flex-row md:items-center md:justify-between md:gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-[#173726]">Relevant repair requests</h2>
+              <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Relevant repair requests</h2>
             </div>
             <button
               type="button"
               onClick={() => void loadDashboard()}
-              className="rounded-full border border-[#214c34] bg-white px-5 py-3 text-sm font-semibold text-[#214c34]"
+              className="w-full rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34] md:w-auto md:py-3"
             >
               Refresh
             </button>
@@ -653,16 +658,16 @@ export default function VendorDashboardPage() {
               const totalPreview = partsTotal + (Number(draft.laborCost) || 0);
 
               return (
-                <article key={requestItem.id} className="rounded-[2rem] bg-white p-6 shadow-sm">
+                <article key={requestItem.id} className="rounded-[1.5rem] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-6">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-3xl">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-bold text-[#173726] md:text-2xl">{requestItem.title}</h3>
+                        <h3 className="text-base font-bold text-[#173726] md:text-2xl">{requestItem.title}</h3>
                         <span className="rounded-full bg-[#dff0dc] px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#214c34]">
                           {formatStatus(requestItem.status)}
                         </span>
                       </div>
-                      <p className="mt-2 text-[#355541]">
+                      <p className="mt-2 text-sm text-[#355541]">
                         {requestItem.deviceType}
                         {requestItem.brand ? ` • ${requestItem.brand}` : ""}
                         {requestItem.model ? ` • ${requestItem.model}` : ""}
@@ -725,7 +730,7 @@ export default function VendorDashboardPage() {
 
                         <div className="space-y-2">
                           {draft.parts.map((part, partIndex) => (
-                            <div key={partIndex} className="flex items-center gap-2">
+                            <div key={partIndex} className="flex flex-wrap items-center gap-2">
                               {/* + button to insert row below */}
                               <button
                                 type="button"
@@ -805,7 +810,7 @@ export default function VendorDashboardPage() {
                       </div>
 
                       {/* Labor + Estimated days + Total row */}
-                      <div className="grid gap-4 lg:grid-cols-3">
+                      <div className="grid gap-3 md:gap-4 lg:grid-cols-3">
                         <label className="block">
                           <span className="mb-2 block text-sm font-medium text-[#355541]">Labor cost</span>
                           <input
@@ -899,7 +904,7 @@ export default function VendorDashboardPage() {
             })}
 
             {!dashboard.relevantRequests.length ? (
-              <div className="rounded-[2rem] bg-white p-8 text-[#355541] shadow-sm">
+              <div className="rounded-[1.5rem] bg-white p-5 text-sm text-[#355541] shadow-sm md:rounded-[2rem] md:p-8">
                 No repair requests currently match your configured skill tags. Update your specialties if you want to broaden what you see.
               </div>
             ) : null}
@@ -908,7 +913,7 @@ export default function VendorDashboardPage() {
 
         <section className="mt-8">
           <div className="mb-4">
-            <h2 className="text-2xl font-bold text-[#173726]">Assigned jobs and final quote</h2>
+            <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Assigned jobs and final quote</h2>
           </div>
 
           <div className="space-y-5">
@@ -924,11 +929,11 @@ export default function VendorDashboardPage() {
               const waitingForApproval = job.status === "WAITING_APPROVAL";
 
               return (
-                <article key={job.id} className="rounded-[2rem] bg-white p-6 shadow-sm">
+                <article key={job.id} className="rounded-[1.5rem] bg-white p-4 shadow-sm md:rounded-[2rem] md:p-6">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-3xl">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-bold text-[#173726]">{job.repairRequest.title}</h3>
+                        <h3 className="text-base font-bold text-[#173726] md:text-2xl">{job.repairRequest.title}</h3>
                         <span className="rounded-full bg-[#dff0dc] px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-[#214c34]">
                           {formatStatus(job.status)}
                         </span>
@@ -1172,7 +1177,7 @@ export default function VendorDashboardPage() {
             })}
 
             {!dashboard.assignedJobs.length ? (
-              <div className="rounded-[2rem] bg-white p-8 text-[#355541] shadow-sm">
+              <div className="rounded-[1.5rem] bg-white p-5 text-sm text-[#355541] shadow-sm md:rounded-[2rem] md:p-8">
                 No assigned jobs yet. Once a customer accepts one of your bids, the job will appear here for inspection, diagnosis, and final quote handling.
               </div>
             ) : null}

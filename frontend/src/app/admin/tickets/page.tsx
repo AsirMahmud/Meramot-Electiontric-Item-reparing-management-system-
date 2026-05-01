@@ -49,52 +49,53 @@ export default function AdminTicketsPage() {
 
   return (
     <section>
-      <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Support</p>
-        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Support tickets</h2>
-        <p className="mt-3 text-lg text-[var(--muted-foreground)]">
+      <div className="mb-6 md:mb-8">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] md:text-sm md:tracking-[0.28em]">Support</p>
+        <h2 className="mt-2 text-2xl font-bold text-[var(--accent-dark)] md:mt-3 md:text-4xl">Support tickets</h2>
+        <p className="mt-2 text-sm text-[var(--muted-foreground)] md:mt-3 md:text-lg">
           Track user complaints, payment issues, and escalations.
         </p>
       </div>
 
       {loading ? (
-        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading tickets...</div>
+        <div className="rounded-[1.5rem] bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)] md:rounded-[24px] md:p-6 md:text-base">Loading tickets...</div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
+        <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-50)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:rounded-[28px]">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
-                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
-                  <th className="px-6 py-4">Subject</th>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Priority</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--muted-foreground)] md:text-sm md:tracking-[0.18em]">
+                  <th className="px-3 py-3 md:px-6 md:py-4">Subject</th>
+                  <th className="px-3 py-3 md:px-6 md:py-4">User</th>
+                  <th className="px-3 py-3 md:px-6 md:py-4">Priority</th>
+                  <th className="px-3 py-3 md:px-6 md:py-4">Status</th>
+                  <th className="px-3 py-3 text-right md:px-6 md:py-4">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#F0F0F0] dark:divide-white/10">
                 {tickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-[var(--border)] last:border-b-0">
-                    <td className="px-6 py-5">
-                      <p className="font-semibold text-[var(--accent-dark)]">{ticket.subject}</p>
-                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                        {new Date(ticket.createdAt).toLocaleString()}
+                  <tr key={ticket.id} className="border-b border-[var(--border)] transition hover:bg-[#F9FBFA] last:border-b-0 dark:hover:bg-white/5">
+                    <td className="px-3 py-3 md:px-6 md:py-5">
+                      <p className="text-xs font-semibold text-[var(--accent-dark)] md:text-base">{ticket.subject}</p>
+                      <p className="mt-0.5 text-[9px] text-[var(--muted-foreground)] md:mt-1 md:text-sm">
+                        <span className="md:hidden">{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                        <span className="hidden md:inline">{new Date(ticket.createdAt).toLocaleString()}</span>
                       </p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">
-                      <p>{ticket.user.name || ticket.user.username}</p>
-                      <p className="text-[var(--muted-foreground)]">{ticket.user.email}</p>
+                    <td className="px-3 py-3 text-[10px] text-[var(--foreground)] md:px-6 md:py-5 md:text-sm">
+                      <p className="line-clamp-1 font-medium">{ticket.user.name || ticket.user.username}</p>
+                      <p className="line-clamp-1 text-[var(--muted-foreground)]">{ticket.user.email}</p>
                     </td>
-                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{ticket.priority || "—"}</td>
-                    <td className="px-6 py-5">
-                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
+                    <td className="px-3 py-3 text-[10px] text-[var(--foreground)] md:px-6 md:py-5 md:text-sm">{ticket.priority || "—"}</td>
+                    <td className="px-3 py-3 md:px-6 md:py-5">
+                      <span className="inline-block rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-[8px] font-bold text-[var(--accent-dark)] md:px-3 md:py-1 md:text-[10px]">
                         {ticket.status}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-right">
+                    <td className="px-3 py-3 text-right md:px-6 md:py-5">
                       <Link
                         href={`/admin/tickets/${ticket.id}`}
-                        className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
+                        className="inline-flex items-center justify-center rounded-full bg-[var(--accent-dark)] px-3 py-1.5 text-center text-[10px] font-semibold text-[var(--accent-foreground)] shadow-lg shadow-[#1F4D2E]/20 transition hover:opacity-90 md:px-4 md:py-2 md:text-sm"
                       >
                         View
                       </Link>
@@ -105,7 +106,7 @@ export default function AdminTicketsPage() {
             </table>
           </div>
 
-          {!tickets.length && <div className="p-6 text-[var(--muted-foreground)]">No tickets found.</div>}
+          {!tickets.length && <div className="p-4 text-sm text-[var(--muted-foreground)] md:p-6 md:text-base">No tickets found.</div>}
         </div>
       )}
     </section>

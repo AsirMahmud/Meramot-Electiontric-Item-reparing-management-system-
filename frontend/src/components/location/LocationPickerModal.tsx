@@ -89,19 +89,13 @@ export default function LocationPickerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center sm:px-4 sm:py-6">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-[121] flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--card)] shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] p-5">
+      <div className="relative z-[121] flex max-h-[100vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-2xl sm:max-h-[90vh] sm:rounded-[2rem]">
+        <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] px-3 py-2 sm:items-start sm:gap-4 sm:p-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
-              Delivery location
-            </p>
-            <h2 className="mt-1 text-2xl font-bold text-[var(--foreground)]">Choose your location</h2>
-            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-              Click the map to pin an address or use GPS to detect your current location.
-            </p>
+            <h2 className="text-base font-bold text-[var(--foreground)] sm:text-2xl">Choose your location</h2>
           </div>
 
           <button
@@ -114,7 +108,7 @@ export default function LocationPickerModal({
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 lg:grid-cols-[1fr_280px]">
+        <div className="grid min-h-0 min-w-0 flex-1 gap-2 overflow-y-auto overflow-x-hidden p-2 sm:gap-4 sm:p-5 lg:grid-cols-[1fr_280px]">
           <MapPicker
             selectedLocation={selectedLocation}
             draftLocation={draftLocation}
@@ -126,25 +120,25 @@ export default function LocationPickerModal({
             onError={setLocationError}
           />
 
-          <div className="flex flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"
                 placeholder="Search location (e.g. Dhaka)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-accent-dark dark:bg-[#1f2923]"
+                className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--foreground)] outline-none transition focus:border-accent-dark dark:bg-[#1f2923] sm:rounded-2xl sm:px-4 sm:py-3"
               />
               <button
                 type="submit"
                 disabled={locationLoading || !searchQuery.trim()}
-                className="rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
+                className="shrink-0 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60 sm:rounded-2xl sm:px-4 sm:py-3"
               >
                 Search
               </button>
             </form>
 
-            <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-3 sm:flex">
               <div className="h-px flex-1 bg-[var(--border)]" />
               <span className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">or</span>
               <div className="h-px flex-1 bg-[var(--border)]" />
@@ -154,21 +148,21 @@ export default function LocationPickerModal({
               type="button"
               onClick={useGpsLocation}
               disabled={locationLoading || locationSaving}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60 sm:rounded-2xl sm:px-4 sm:py-3"
             >
               <LocateFixed size={18} className={locationLoading ? "animate-spin" : ""} />
               {locationLoading ? "Detecting..." : "Use GPS location"}
             </button>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--mint-50)] p-3 sm:rounded-2xl sm:p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-foreground)] sm:text-xs">
                 Selected address
               </p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-[var(--foreground)]">
+              <p className="mt-1 text-sm font-semibold leading-5 text-[var(--foreground)]">
                 {draftLocation?.address || "No location selected yet."}
               </p>
               {(draftLocation?.area || draftLocation?.city) && (
-                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                   {[draftLocation.area, draftLocation.city].filter(Boolean).join(", ")}
                 </p>
               )}
@@ -184,7 +178,7 @@ export default function LocationPickerModal({
               type="button"
               onClick={confirmLocation}
               disabled={locationSaving || !draftLocation}
-              className="mt-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--accent-dark)] px-4 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
+              className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60 sm:rounded-2xl sm:px-4 sm:py-3"
             >
               <Check size={18} />
               {locationSaving ? "Saving..." : "Confirm location"}

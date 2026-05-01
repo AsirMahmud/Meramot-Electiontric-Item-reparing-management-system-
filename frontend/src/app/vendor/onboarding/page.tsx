@@ -119,9 +119,9 @@ export default function VendorOnboardingPage() {
               />
             </Link>
           </div>
-          <div className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
+          <div className="rounded-[1.5rem] border border-white/60 bg-white/90 p-5 shadow-2xl backdrop-blur md:rounded-[2rem] md:p-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
-            <h1 className="mt-2 text-3xl font-bold text-accent-dark">Vendor application</h1>
+            <h1 className="mt-2 text-2xl font-bold text-accent-dark md:text-3xl">Vendor application</h1>
           <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
@@ -174,9 +174,9 @@ export default function VendorOnboardingPage() {
             />
           </Link>
         </div>
-        <div className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
+        <div className="rounded-[1.5rem] border border-white/60 bg-white/90 p-5 shadow-2xl backdrop-blur md:rounded-[2rem] md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">Vendor</p>
-          <h1 className="mt-2 text-3xl font-bold text-accent-dark">{heading}</h1>
+          <h1 className="mt-2 text-2xl font-bold text-accent-dark md:text-3xl">{heading}</h1>
         <p className="mt-3 text-sm text-slate-600">{description}</p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">

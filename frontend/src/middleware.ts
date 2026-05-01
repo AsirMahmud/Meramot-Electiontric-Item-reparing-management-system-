@@ -22,6 +22,11 @@ export const middleware = withAuth(
 
     // Check if accessing vendor routes
     if (pathname.startsWith("/vendor")) {
+      // Allow public access to vendor application and success pages
+      if (pathname.startsWith("/vendor/apply")) {
+        return NextResponse.next();
+      }
+
       // If no token, redirect to login
       if (!token) {
         return NextResponse.redirect(new URL("/login", req.url));
@@ -37,7 +42,11 @@ export const middleware = withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow public access to vendor application pages
+        if (req.nextUrl.pathname.startsWith("/vendor/apply")) return true;
+        return !!token;
+      },
     },
   }
 );

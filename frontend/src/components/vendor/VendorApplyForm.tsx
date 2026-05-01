@@ -262,19 +262,19 @@ export default function VendorApplyForm() {
 
   if (status === "loading" || loadingExisting) {
     return (
-      <div className="w-full max-w-4xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
+      <div className="w-full max-w-4xl rounded-[1.5rem] border border-white/60 bg-white/90 p-5 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-[#1C251F]/95 md:rounded-[2rem] md:p-8">
         <p className="text-sm text-muted-foreground">Loading vendor application...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-4xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-accent-dark">
+    <div className="w-full max-w-4xl rounded-[1.5rem] border border-white/60 bg-white/90 p-5 shadow-2xl backdrop-blur dark:border-white/10 dark:bg-[#1C251F]/95 md:rounded-[2rem] md:p-8">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-2xl font-bold text-accent-dark dark:text-[#A8D5A2] md:text-3xl">
           {isEditMode ? "Edit Vendor Application" : "Vendor Application"}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground md:mt-2 md:text-sm">
           {isEditMode
             ? "Update your submitted vendor information below."
             : "Apply as a repair shop partner. Your application will be reviewed by the admin team."}
@@ -282,18 +282,18 @@ export default function VendorApplyForm() {
       </div>
 
       {isEditMode ? (
-        <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        <div className="mb-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-3 py-2.5 text-xs text-yellow-800 dark:border-yellow-700/40 dark:bg-yellow-900/20 dark:text-yellow-300 md:px-4 md:py-3 md:text-sm">
           Update your previous vendor application and submit again. It will go back to pending review.
         </div>
       ) : null}
 
-      <form className="space-y-4" onSubmit={handleSubmit} autoComplete="off">
-        <div className="grid gap-4 md:grid-cols-2">
+      <form className="space-y-3 md:space-y-4" onSubmit={handleSubmit} autoComplete="off">
+        <div className="grid gap-3 md:gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorOwnerName" className="text-xs font-medium text-slate-600 pl-1">Owner name</label>
+            <label htmlFor="vendorOwnerName" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Owner name</label>
             <input
               id="vendorOwnerName"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Owner name"
               name="vendorOwnerName"
               autoComplete="off"
@@ -303,10 +303,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorBusinessEmail" className="text-xs font-medium text-slate-600 pl-1">Business email</label>
+            <label htmlFor="vendorBusinessEmail" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Business email</label>
             <input
               id="vendorBusinessEmail"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Business email"
               type="email"
               name="vendorBusinessEmail"
@@ -319,10 +319,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorPhone" className="text-xs font-medium text-slate-600 pl-1">Phone</label>
+            <label htmlFor="vendorPhone" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Phone</label>
             <input
               id="vendorPhone"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="01XXXXXXXXX"
               type="tel"
               pattern="^(?:\+?8801|01)[3-9]\d{8}$"
@@ -335,10 +335,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorShopName" className="text-xs font-medium text-slate-600 pl-1">Shop name</label>
+            <label htmlFor="vendorShopName" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Shop name</label>
             <input
               id="vendorShopName"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Shop name"
               name="vendorShopName"
               autoComplete="off"
@@ -350,10 +350,10 @@ export default function VendorApplyForm() {
           {!isEditMode && !token ? (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-600 pl-1">Password</label>
+                <label className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Password</label>
                 <PasswordInput
                   showStrength={true}
-                  className="rounded-2xl border border-border px-4 py-3 text-sm"
+                  className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
                   placeholder="Password"
                   name="vendorPassword"
                   autoComplete="new-password"
@@ -365,9 +365,9 @@ export default function VendorApplyForm() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-slate-600 pl-1">Confirm password</label>
+                <label className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Confirm password</label>
                 <PasswordInput
-                  className="rounded-2xl border border-border px-4 py-3 text-sm"
+                  className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
                   placeholder="Confirm password"
                   name="vendorConfirmPassword"
                   autoComplete="new-password"
@@ -384,10 +384,10 @@ export default function VendorApplyForm() {
           ) : null}
 
           <div className="flex flex-col gap-1 md:col-span-2">
-            <label htmlFor="vendorTradeLicenseNo" className="text-xs font-medium text-slate-600 pl-1">Trade license number (optional)</label>
+            <label htmlFor="vendorTradeLicenseNo" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Trade license number (optional)</label>
             <input
               id="vendorTradeLicenseNo"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Trade license number (optional)"
               name="vendorTradeLicenseNo"
               autoComplete="off"
@@ -399,10 +399,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1 md:col-span-2">
-            <label htmlFor="vendorBusinessAddress" className="text-xs font-medium text-slate-600 pl-1">Business address</label>
+            <label htmlFor="vendorBusinessAddress" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Business address</label>
             <input
               id="vendorBusinessAddress"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Business address"
               name="vendorBusinessAddress"
               autoComplete="off"
@@ -412,10 +412,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorCity" className="text-xs font-medium text-slate-600 pl-1">City</label>
+            <label htmlFor="vendorCity" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">City</label>
             <input
               id="vendorCity"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="City"
               name="vendorCity"
               autoComplete="off"
@@ -425,10 +425,10 @@ export default function VendorApplyForm() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="vendorArea" className="text-xs font-medium text-slate-600 pl-1">Area</label>
+            <label htmlFor="vendorArea" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Area</label>
             <input
               id="vendorArea"
-              className="rounded-2xl border border-border px-4 py-3 text-sm"
+              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
               placeholder="Area"
               name="vendorArea"
               autoComplete="off"
@@ -439,7 +439,7 @@ export default function VendorApplyForm() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600 pl-1">Specialties</label>
+          <label className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Specialties</label>
           <CreatableSelect
             isMulti
             options={mergedOptions}
@@ -459,19 +459,68 @@ export default function VendorApplyForm() {
               control: (base) => ({
                 ...base,
                 borderRadius: "1rem",
-                borderColor: "hsl(var(--border))",
+                borderColor: "var(--border, hsl(var(--border)))",
+                backgroundColor: "var(--vendor-select-bg, white)",
                 padding: "0.25rem",
                 boxShadow: "none",
                 "&:hover": {
-                  borderColor: "hsl(var(--border))",
+                  borderColor: "var(--border, hsl(var(--border)))",
                 },
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: "var(--vendor-select-bg, white)",
+                borderRadius: "0.75rem",
+                border: "1px solid var(--border, hsl(var(--border)))",
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused ? "var(--vendor-select-hover, #f0fdf4)" : "transparent",
+                color: "var(--foreground, #1a1a1a)",
+                fontSize: "0.875rem",
+              }),
+              multiValue: (base) => ({
+                ...base,
+                backgroundColor: "var(--vendor-select-tag, #dcfce7)",
+                borderRadius: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                margin: "2px 4px 2px 0",
+              }),
+              multiValueLabel: (base) => ({
+                ...base,
+                color: "var(--vendor-select-tag-text, #166534)",
+                fontSize: "0.8rem",
+                padding: "3px 4px 3px 8px",
+                lineHeight: "1.2",
+              }),
+              multiValueRemove: (base) => ({
+                ...base,
+                color: "var(--vendor-select-tag-text, #166534)",
+                padding: "3px 6px",
+                display: "flex",
+                alignItems: "center",
+                borderRadius: "0 0.5rem 0.5rem 0",
+                ":hover": { backgroundColor: "var(--vendor-select-tag-remove-hover, #bbf7d0)", color: "#166534" },
+              }),
+              input: (base) => ({
+                ...base,
+                color: "var(--foreground, #1a1a1a)",
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: "var(--muted-foreground, #6b7280)",
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: "var(--foreground, #1a1a1a)",
               }),
             }}
           />
         </div>
 
         <textarea
-          className="min-h-[120px] w-full rounded-2xl border border-border px-4 py-3 text-sm"
+          className="min-h-[100px] w-full rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:min-h-[120px] md:px-4 md:py-3"
           placeholder="Additional notes (optional)"
           name="vendorNotes"
           autoComplete="off"
@@ -479,36 +528,39 @@ export default function VendorApplyForm() {
           onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
         />
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="grid gap-2 md:gap-3 md:grid-cols-3">
+          <label className="flex items-center gap-2 text-sm text-[var(--foreground)]">
             <input
               type="checkbox"
               checked={form.courierPickup}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, courierPickup: e.target.checked }))
               }
+              className="h-4 w-4 rounded accent-[var(--accent-dark)]"
             />
             Courier pickup
           </label>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-[var(--foreground)]">
             <input
               type="checkbox"
               checked={form.inShopRepair}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, inShopRepair: e.target.checked }))
               }
+              className="h-4 w-4 rounded accent-[var(--accent-dark)]"
             />
             In-shop repair
           </label>
 
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-[var(--foreground)]">
             <input
               type="checkbox"
               checked={form.spareParts}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, spareParts: e.target.checked }))
               }
+              className="h-4 w-4 rounded accent-[var(--accent-dark)]"
             />
             Spare parts
           </label>
@@ -516,7 +568,7 @@ export default function VendorApplyForm() {
 
         {error ? (
           error.toLowerCase().includes("already exists") || error.toLowerCase().includes("sign in") ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300 md:px-4 md:py-3 md:text-sm">
               <p>{error}</p>
               <Link
                 href="/login"
@@ -526,14 +578,14 @@ export default function VendorApplyForm() {
               </Link>
             </div>
           ) : (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
           )
         ) : null}
 
         <button
           type="submit"
           disabled={loading || (!isEditMode && passwordsMismatch)}
-          className="w-full rounded-2xl bg-accent-dark px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          className="w-full rounded-2xl bg-accent-dark px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
         >
           {loading
             ? isEditMode

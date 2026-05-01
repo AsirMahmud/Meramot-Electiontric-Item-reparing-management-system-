@@ -43,10 +43,6 @@ body {
     gap: 0.5rem;
   }
 
-  /* Smaller logo on mobile */
-  header img[alt="Meramot"] {
-    height: 2.5rem;
-  }
 
   /* Compact search bar */
   header input[type="text"] {

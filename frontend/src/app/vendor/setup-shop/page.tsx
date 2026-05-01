@@ -294,7 +294,7 @@ if (app) {
           Vendor
         </p>
 
-      <h1 className="mt-2 text-3xl font-bold text-accent-dark">
+      <h1 className="mt-2 text-2xl font-bold text-accent-dark md:text-3xl">
         {isEditMode ? "Edit vendor details" : "Set up your shop"}
         </h1>
        <p className="mt-3 max-w-3xl text-sm text-slate-600">

@@ -78,12 +78,13 @@ export default function VendorStatusPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-mint-300 via-mint-200 to-mint-50 px-4 py-10">
-      <div className="w-full max-w-3xl rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-2xl backdrop-blur">
-        <h1 className="text-3xl font-bold text-accent-dark">Vendor application status</h1>
+      <div className="w-full max-w-3xl rounded-[1.5rem] border border-white/60 bg-white/90 p-5 shadow-2xl backdrop-blur md:rounded-[2rem] md:p-8">
+        <h1 className="text-2xl font-bold text-accent-dark md:text-3xl">Vendor application status</h1>
 
         <div className="mt-6 space-y-4 text-sm text-slate-700">
           <p>
-            <span className="font-semibold">Application ID:</span> {app.id}
+            <span className="font-semibold">Application ID:</span>{" "}
+            <span className="break-all">{app.id}</span>
           </p>
           <p>
             <span className="font-semibold">Owner:</span> {app.ownerName}

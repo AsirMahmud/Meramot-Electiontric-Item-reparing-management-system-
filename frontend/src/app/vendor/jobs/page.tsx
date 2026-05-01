@@ -192,16 +192,16 @@ export default function VendorJobsPage() {
       <Navbar />
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href="/vendor/dashboard" className="-ml-6 mb-4 inline-flex items-center gap-2 rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#355541] transition-all hover:bg-[#f6faf4] hover:shadow-sm">
+            <Link href="/vendor/dashboard" className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#355541] transition-all hover:bg-[#f6faf4] hover:shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
               Back to dashboard
             </Link>
-            <h1 className="mt-2 text-3xl font-bold text-[#173726]">Assigned Jobs</h1>
-            <p className="mt-1 text-[#5b7262]">Manage repair jobs assigned to your shop. Update status, diagnose, and submit final quotes.</p>
+            <h1 className="mt-2 text-2xl font-bold text-[#173726] md:text-3xl">Assigned Jobs</h1>
+            <p className="mt-1 text-sm text-[#5b7262]">Manage repair jobs assigned to your shop. Update status, diagnose, and submit final quotes.</p>
           </div>
-          <button onClick={() => void load()} className="rounded-full bg-[#214c34] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173726] transition-colors">
+          <button onClick={() => void load()} className="w-full rounded-full bg-[#214c34] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#173726] transition-colors md:w-auto">
             Refresh
           </button>
         </div>
@@ -237,11 +237,11 @@ export default function VendorJobsPage() {
             return (
               <article key={job.id} className="rounded-3xl bg-white shadow-sm overflow-hidden">
                 {/* Tile header */}
-                <button type="button" onClick={() => toggleExpand(job.id)} className="w-full px-6 py-5 text-left transition-colors hover:bg-[#f6faf4]">
+                <button type="button" onClick={() => toggleExpand(job.id)} className="w-full px-4 py-4 text-left transition-colors hover:bg-[#f6faf4] md:px-6 md:py-5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-bold text-[#173726] truncate">{job.repairRequest.title}</h3>
+                        <h3 className="text-base font-bold text-[#173726] truncate md:text-lg">{job.repairRequest.title}</h3>
                         <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusColor(job.status)}`}>
                           {fmt(job.status)}
                         </span>
@@ -254,9 +254,9 @@ export default function VendorJobsPage() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0 md:gap-4">
                       <div className="text-right">
-                        <p className="text-lg font-bold text-[#173726]">{formatMoney(job.acceptedBid?.totalCost)}</p>
+                        <p className="text-base font-bold text-[#173726] md:text-lg">{formatMoney(job.acceptedBid?.totalCost)}</p>
                         <p className="text-xs text-[#5b7262]">accepted bid</p>
                       </div>
                       <span className={`text-xl text-[#5b7262] transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
@@ -266,7 +266,7 @@ export default function VendorJobsPage() {
 
                 {/* Expanded */}
                 {isOpen ? (
-                  <div className="border-t border-[#e8f0e5] px-6 pb-6 pt-4 space-y-5">
+                  <div className="border-t border-[#e8f0e5] px-4 pb-5 pt-4 space-y-4 md:px-6 md:pb-6 md:space-y-5">
                     {/* Device + bid info */}
                     <div className="grid gap-4 lg:grid-cols-2">
                       <div className="rounded-2xl bg-[#f6faf4] p-4 text-sm text-[#355541]">
@@ -346,7 +346,7 @@ export default function VendorJobsPage() {
 
                         <div className="space-y-2">
                           {quoteDraft.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
+                            <div key={idx} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                               <button
                                 type="button"
                                 onClick={() => {

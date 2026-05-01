@@ -70,16 +70,18 @@ export default function AdminDashboardPage() {
       {loading ? (
         <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading dashboard...</div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
           {cards.map((card) => (
             <div
               key={card.label}
-              className="rounded-[1.25rem] border border-[var(--border)] bg-[var(--mint-50)] p-4 md:rounded-[28px] md:p-6"
+              className="flex aspect-square flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-2 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:block sm:aspect-auto sm:text-left md:rounded-[28px] md:p-6"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+              <p className="mb-1 text-[10px] font-bold uppercase leading-tight tracking-wider text-[var(--muted-foreground)] sm:mb-0 sm:text-xs sm:font-semibold sm:tracking-[0.22em]">
                 {card.label}
               </p>
-              <p className="mt-2 text-2xl font-bold text-[var(--accent-dark)] md:mt-4 md:text-4xl">{card.value}</p>
+              <p className="text-2xl font-extrabold leading-none text-[var(--accent-dark)] sm:mt-2 sm:font-bold md:mt-4 md:text-4xl">
+                {card.value}
+              </p>
             </div>
           ))}
         </div>
