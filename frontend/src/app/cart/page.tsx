@@ -85,6 +85,9 @@ export default function CartPage() {
   const [busy, setBusy] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<StoredLocation | null>(null);
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 5;
+
   const [scheduleType, setScheduleType] = useState<ScheduleType>("NOW");
   const [scheduledAt, setScheduledAt] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("SSLCOMMERZ");
@@ -401,7 +404,7 @@ export default function CartPage() {
         {primaryCart ? (
           <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
             <section className="space-y-6">
-              <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
+              <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 1 ? 'hidden md:block' : 'block'}`}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
@@ -487,8 +490,8 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
+              <div className={`grid gap-6 lg:grid-cols-2 ${currentStep !== 2 && currentStep !== 3 ? 'hidden md:grid' : 'grid'}`}>
+                <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 2 ? 'hidden md:block' : 'block'}`}>
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">⏱️</span>
                     <div>
@@ -552,7 +555,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
+                <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 3 ? 'hidden md:block' : 'block'}`}>
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">💳</span>
                     <div>
@@ -589,7 +592,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
+              <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 4 ? 'hidden md:block' : 'block'}`}>
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">📍</span>
@@ -712,7 +715,7 @@ export default function CartPage() {
               </div>
             </section>
 
-            <aside className="h-fit rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_18px_50px_rgba(67,100,64,0.12)] md:p-6 xl:sticky xl:top-6">
+            <aside className={`h-fit rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_18px_50px_rgba(67,100,64,0.12)] md:p-6 xl:sticky xl:top-6 ${currentStep !== 5 ? 'hidden md:block' : 'block'}`}>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                 Order summary
               </p>
@@ -790,6 +793,40 @@ export default function CartPage() {
               ) : null}
             </aside>
           </div>
+
+          {/* Mobile Navigation Controls */}
+          {primaryCart && (
+            <div className="md:hidden mt-6 flex items-center justify-between gap-4">
+              <button 
+                type="button" 
+                onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
+                disabled={currentStep === 1}
+                className="rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-3 font-semibold text-[var(--foreground)] disabled:opacity-50 transition active:scale-95"
+              >
+                Back
+              </button>
+              
+              <div className="text-sm font-semibold text-[var(--muted-foreground)]">
+                Step {currentStep} of {totalSteps}
+              </div>
+
+              {currentStep < totalSteps ? (
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentStep(prev => {
+                    const next = Math.min(totalSteps, prev + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return next;
+                  })}
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-95 active:scale-95"
+                >
+                  Next
+                </button>
+              ) : (
+                <div className="px-6 py-3 invisible">Next</div> /* Placeholder to keep alignment */
+              )}
+            </div>
+          )}
         ) : (
           <div className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-10 text-center shadow-sm">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--mint-100)] text-3xl">
