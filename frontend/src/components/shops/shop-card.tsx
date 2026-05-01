@@ -36,8 +36,13 @@ export default function ShopCard({
           )}
         </div>
 
-        <div className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-sm font-semibold text-[var(--foreground)]">
-          {shop.offerSummary ?? formatPriceLevel(shop.priceLevel ?? 1)}
+        <div className="flex shrink-0 flex-col items-end pl-2 text-right">
+          <span className="text-xs font-semibold text-[var(--muted-foreground)]">
+            {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
+          </span>
+          <span className="text-lg font-extrabold tracking-tight text-[var(--accent-dark)] leading-tight">
+            {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : formatPriceLevel(shop.priceLevel ?? 1)}
+          </span>
         </div>
       </div>
 

@@ -75,12 +75,15 @@ function ShopResultCard({ shop }: { shop: Shop }) {
               </div>
             </div>
 
-            <div className="text-right">
-              <div className="text-sm font-bold leading-tight text-[var(--accent-dark)] max-w-full">
-                {shop.offerSummary ?? "৳--"}
+            <div className="text-right flex flex-col items-end">
+              <span className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+                {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
+              </span>
+              <div className="text-[1.1rem] font-extrabold leading-tight text-[var(--accent-dark)]">
+                {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : "৳--"}
               </div>
-              <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">
-                {etaLabel(shop.etaMinutes)}
+              <div className="mt-1 text-[10px] font-medium text-[var(--muted-foreground)] bg-[var(--mint-50)] px-2 py-0.5 rounded-md">
+                ETA: {etaLabel(shop.etaMinutes)}
               </div>
             </div>
           </div>
