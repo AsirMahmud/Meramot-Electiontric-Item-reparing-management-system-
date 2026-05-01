@@ -141,6 +141,7 @@ function ShopsResultsClientInner() {
   const urlVoucher = searchParams.get("voucher") === "true";
   const urlFreeDelivery = searchParams.get("freeDelivery") === "true";
   const urlDeals = searchParams.get("deals") === "true";
+  const urlFeatured = searchParams.get("featured") === "true";
   const [localVoucher, setLocalVoucher] = useState(urlVoucher);
   const [localFreeDelivery, setLocalFreeDelivery] = useState(urlFreeDelivery);
   const [localDeals, setLocalDeals] = useState(urlDeals);
@@ -165,11 +166,12 @@ function ShopsResultsClientInner() {
         voucher: localVoucher,
         freeDelivery: localFreeDelivery,
         deals: localDeals,
+        featured: urlFeatured,
         maxDistanceKm: localDistance,
         lat: selectedLocation?.lat,
         lng: selectedLocation?.lng,
       }),
-    [searchParams, selectedLocation, localSort, localDistance, localVoucher, localFreeDelivery, localDeals]
+    [searchParams, selectedLocation, localSort, localDistance, localVoucher, localFreeDelivery, localDeals, urlFeatured]
   );
 
   const categoryBrowseMode = Boolean(searchState.category && !searchState.q);

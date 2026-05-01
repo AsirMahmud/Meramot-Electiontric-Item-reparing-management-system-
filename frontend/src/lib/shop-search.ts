@@ -7,6 +7,7 @@ export type SearchState = {
   voucher: boolean;
   freeDelivery: boolean;
   deals: boolean;
+  featured: boolean;
   maxDistanceKm: number;
   lat?: number | null;
   lng?: number | null;
@@ -19,6 +20,7 @@ export const defaultSearchState: SearchState = {
   voucher: false,
   freeDelivery: false,
   deals: false,
+  featured: false,
   maxDistanceKm: 15,
 };
 
@@ -43,6 +45,7 @@ export function toShopQuery(state: SearchState): ShopQuery {
     voucher: state.voucher || undefined,
     freeDelivery: state.freeDelivery || undefined,
     deals: state.deals || undefined,
+    featured: state.featured || undefined,
     maxDistanceKm: state.maxDistanceKm,
     take: 24,
     lat: state.lat,
