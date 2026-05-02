@@ -56,8 +56,8 @@ function ShopResultCard({ shop }: { shop: Shop }) {
       href={`/shops/${shop.slug}`}
       className="group rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="flex items-start gap-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-2xl font-bold text-[var(--accent-dark)]">
+      <div className="flex items-start gap-2.5 md:gap-3">
+        <div className="flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-xl md:text-2xl font-bold text-[var(--accent-dark)]">
           {shop.logoUrl ? (
             <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
           ) : (
@@ -66,13 +66,13 @@ function ShopResultCard({ shop }: { shop: Shop }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-1.5 md:gap-3">
             <div className="min-w-0">
-              <h3 className="truncate text-[1.15rem] font-bold text-[var(--foreground)]">
+              <h3 className="truncate text-base md:text-[1.15rem] font-bold text-[var(--foreground)]">
                 {shop.name}
               </h3>
 
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] md:text-xs text-[var(--muted-foreground)]">
                 <span>⭐ {(shop.ratingAvg ?? 0).toFixed(1)}</span>
                 <span>({shop.reviewCount})</span>
                 {typeof shop.distanceKm === "number" ? (
@@ -81,14 +81,14 @@ function ShopResultCard({ shop }: { shop: Shop }) {
               </div>
             </div>
 
-            <div className="shrink-0 text-right flex flex-col items-end">
-              <span className="text-[10px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+            <div className="shrink-0 flex flex-col items-end text-right pl-1">
+              <span className="text-[9px] md:text-[10px] font-semibold text-[var(--muted-foreground)] uppercase">
                 {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
               </span>
-              <div className="text-[1.25rem] font-extrabold leading-none text-[var(--accent-dark)] mt-0.5">
+              <div className="mt-0.5 text-[1.1rem] md:text-[1.25rem] font-extrabold leading-none tracking-tight text-[var(--accent-dark)]">
                 {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : "৳--"}
               </div>
-              <div className="mt-1 text-[10px] font-semibold text-[var(--muted-foreground)]">
+              <div className="mt-1 text-[9px] md:text-[10px] font-semibold text-[var(--muted-foreground)]">
                 ETA: {etaLabel(shop.etaMinutes)}
               </div>
             </div>
