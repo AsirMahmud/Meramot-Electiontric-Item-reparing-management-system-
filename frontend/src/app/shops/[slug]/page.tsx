@@ -359,10 +359,23 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
         ? shop.specialties
         : ["General diagnostics", "Battery replacement", "Screen repair"];
 
-    return items.map((item) => ({
-      name: item,
-      ...getServiceSummary(item),
-    }));
+    return items.map((item) => {
+      let name = item;
+      let estimate = undefined;
+      
+      if (item.includes("|")) {
+        const parts = item.split("|");
+        name = parts[0];
+        estimate = Number(parts[1]);
+      }
+
+      const summaryData = getServiceSummary(name);
+      return {
+        name,
+        summary: summaryData.summary,
+        estimate: estimate !== undefined && !isNaN(estimate) ? estimate : summaryData.estimate,
+      };
+    });
   }, [shop]);
 
   const ratingSummary = useMemo(() => {
@@ -739,7 +752,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <h3 className="text-xl font-semibold text-[var(--foreground)]">{item.name}</h3>
+                        <h3 className="text-xl font-semibold text-[var(--foreground)] capitalize">{item.name}</h3>
                         <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
                       </div>
 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { MapPin, ImagePlus, X } from "lucide-react";
-import { completeVendorShopSetup, getVendorApplicationStatus } from "@/lib/api";
+import { completeVendorShopSetup, getVendorApplicationStatus, getShops } from "@/lib/api";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import type { StoredLocation } from "@/components/location/types";
 import { forwardGeocode } from "@/components/location/location-utils";
@@ -82,9 +82,11 @@ export default function VendorSetupShopPage() {
   const [pickupFee, setPickupFee] = useState("");
   const [expressFee, setExpressFee] = useState("");
 
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [customTagInput, setCustomTagInput] = useState("");
-  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [services, setServices] = useState<{name: string, price: string}[]>([]);
+  const [serviceName, setServiceName] = useState("");
+  const [servicePrice, setServicePrice] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -149,27 +151,33 @@ if (app) {
       ? String(app.expressFee)
       : ""
   );
-          const presetLowerMap = new Map(
-            PRESET_SKILL_TAGS.map((tag) => [tag.toLowerCase(), tag])
-          );
-
-          const matchedPresetTags: string[] = [];
-          const unmatchedCustomTags: string[] = [];
-
+          const loadedServices: {name: string, price: string}[] = [];
           for (const rawTag of app.specialties || []) {
             const normalized = rawTag.trim();
             if (!normalized) continue;
 
-            const matchedPreset = presetLowerMap.get(normalized.toLowerCase());
-            if (matchedPreset) {
-              matchedPresetTags.push(matchedPreset);
+            if (normalized.includes("|")) {
+              const parts = normalized.split("|");
+              loadedServices.push({ name: parts[0], price: parts[1] });
             } else {
-              unmatchedCustomTags.push(normalized);
+              loadedServices.push({ name: normalized, price: "" });
             }
           }
 
-          setSelectedTags(Array.from(new Set(matchedPresetTags)));
-          setCustomTags(Array.from(new Set(unmatchedCustomTags)));
+          setServices(loadedServices);
+
+          // Fetch suggestions
+          getShops({ take: 100 }).then(data => {
+            const allSpecialties = new Set<string>([...PRESET_SKILL_TAGS]);
+            data.forEach(shop => {
+              (shop.specialties || []).forEach(spec => {
+                const name = spec.includes("|") ? spec.split("|")[0] : spec;
+                allSpecialties.add(name);
+              });
+            });
+            setSuggestions(Array.from(allSpecialties));
+          }).catch(console.error);
+
         }
       } catch {
         // keep empty defaults for now
@@ -182,9 +190,33 @@ if (app) {
   }, [session, status, role, router, token]);
 
   const allSkillTags = useMemo(
-    () => [...selectedTags, ...customTags],
-    [selectedTags, customTags]
+    () => services.map(s => s.price ? `${s.name}|${s.price}` : s.name),
+    [services]
   );
+
+  function addService() {
+    const normalizedName = serviceName.trim();
+    if (!normalizedName) return;
+
+    const alreadyExists = services.some(
+      (s) => s.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+
+    if (alreadyExists) {
+      setServiceName("");
+      setServicePrice("");
+      return;
+    }
+
+    setServices((prev) => [...prev, { name: normalizedName, price: servicePrice.trim() }]);
+    setServiceName("");
+    setServicePrice("");
+    setShowSuggestions(false);
+  }
+
+  function removeService(nameToRemove: string) {
+    setServices((prev) => prev.filter((s) => s.name !== nameToRemove));
+  }
 
   function togglePresetTag(tag: string) {
     setSelectedTags((prev) =>
@@ -572,71 +604,94 @@ if (app) {
 
           <section className="rounded-3xl bg-[#f6faf4] p-5">
             <h2 className="text-lg font-semibold text-accent-dark">
-              Skill tags
+              Available services
             </h2>
 
             <p className="mt-2 text-sm text-slate-600">
-              Select your specialties so customers can understand your shop and
-              later matching can work properly.
+              List the services your shop provides and set a base price or starting estimate for each.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              {PRESET_SKILL_TAGS.map((tag) => {
-                const active = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => togglePresetTag(tag)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                      active
-                        ? "bg-accent-dark text-white"
-                        : "border border-border bg-white text-slate-700"
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="mt-5 relative flex flex-col gap-3 md:flex-row md:items-start">
+              <div className="relative flex-1">
+                <input
+                  value={serviceName}
+                  onChange={(e) => {
+                    setServiceName(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="e.g. Logic board repair"
+                  className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent-dark"
+                />
+                
+                {showSuggestions && serviceName && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-white p-1 shadow-lg">
+                    {suggestions
+                      .filter((s) => s.toLowerCase().includes(serviceName.toLowerCase()) && !services.some((existing) => existing.name.toLowerCase() === s.toLowerCase()))
+                      .map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setServiceName(suggestion);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-mint-50 focus:bg-mint-50"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    {suggestions.filter((s) => s.toLowerCase().includes(serviceName.toLowerCase()) && !services.some((existing) => existing.name.toLowerCase() === s.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-2 text-xs text-slate-500">No suggestions, hit + to add as new.</div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-            <div className="mt-5 flex flex-col gap-3 md:flex-row">
-              <input
-                value={customTagInput}
-                onChange={(e) => setCustomTagInput(e.target.value)}
-                placeholder="Add custom skill tag"
-                className="flex-1 rounded-2xl border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-accent-dark"
-              />
+              <div className="relative w-full md:w-32 shrink-0">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">৳</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={servicePrice}
+                  onChange={(e) => setServicePrice(e.target.value)}
+                  placeholder="Price"
+                  className="w-full rounded-2xl border border-border bg-white py-3 pl-7 pr-4 text-sm outline-none transition focus:border-accent-dark"
+                />
+              </div>
+
               <button
                 type="button"
-                onClick={addCustomTag}
-                className="rounded-2xl border border-accent-dark px-5 py-3 text-sm font-semibold text-accent-dark"
+                onClick={addService}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-dark text-white transition hover:bg-[#1a2e22]"
               >
-                Add custom tag
+                <span className="text-2xl font-light leading-none">+</span>
               </button>
             </div>
 
-            {allSkillTags.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-3">
-                {selectedTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-accent-dark px-4 py-2 text-sm font-medium text-white"
-                  >
-                    {tag}
-                  </span>
-                ))}
-
-                {customTags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => removeCustomTag(tag)}
-                    className="rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-slate-700"
-                    title="Click to remove"
-                  >
-                    {tag} ×
-                  </button>
+            {services.length > 0 && (
+              <div className="mt-5 flex flex-col gap-2">
+                {services.map((svc) => (
+                  <div key={svc.name} className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-3 shadow-sm">
+                    <span className="text-sm font-medium text-slate-800 capitalize">{svc.name}</span>
+                    <div className="flex items-center gap-4">
+                      {svc.price ? (
+                        <span className="text-sm font-bold text-accent-dark">৳{Number(svc.price).toLocaleString("en-BD")}</span>
+                      ) : (
+                        <span className="text-xs italic text-slate-400">No price set</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeService(svc.name)}
+                        className="text-slate-400 transition hover:text-red-500"
+                        title="Remove service"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
