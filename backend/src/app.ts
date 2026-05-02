@@ -49,6 +49,11 @@ export function createApp() {
   app.use("/api/delivery-admin/auth", deliveryAdminAuthRoutes);
   app.use("/api/delivery-admin", deliveryAdminRoutes);
 
+  // Health check for UptimeRobot / monitoring
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   app.use("/uploads", express.static("uploads"));
 
   app.use((_req, res) => {
