@@ -291,7 +291,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
 
-      <section className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-5">
+      <section className="mx-auto max-w-[1600px] px-3 py-4 md:px-6 md:py-5">
         <div className="mb-4 md:mb-5">
           <h1 className="text-xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none flex items-center gap-2">
             {localFeatured ? (
@@ -448,7 +448,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
               })}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {paginatedShops.map((shop) => (
                 <ShopResultCard key={shop.id} shop={shop} />
               ))}
