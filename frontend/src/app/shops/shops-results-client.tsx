@@ -365,21 +365,20 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
 
               <div className="space-y-2 text-[var(--foreground)] md:space-y-4">
                 {promoToggles.map((promo) => {
-                  if (promo.key === "featured" && forceFeatured) return null;
-                  
-                  const checked = searchState[promo.key];
+                  const isForcedFeatured = promo.key === "featured" && forceFeatured;
+                  const checked = isForcedFeatured ? true : searchState[promo.key];
 
                   return (
                       <label
                         key={promo.key}
                         className={`flex items-center gap-3 text-sm md:text-[1rem] ${
-                          promo.key === "featured" && forceFeatured ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                          isForcedFeatured ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={promo.key === "featured" && forceFeatured}
+                          disabled={isForcedFeatured}
                           onChange={(event) =>
                             updateParams({
                               [promo.key]: event.currentTarget.checked
