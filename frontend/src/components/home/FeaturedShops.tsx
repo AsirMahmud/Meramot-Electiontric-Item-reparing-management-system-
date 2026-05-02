@@ -57,7 +57,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
 
       {/* Mobile Grid — 2 cols, natural height tiles */}
       <div className="grid grid-cols-2 gap-3 md:hidden">
-        {displayShops.slice(0, 6).map((shop) => (
+        {displayShops.slice(0, 4).map((shop) => (
           <Link
             key={shop.id}
             href={`/shops/${shop.slug}`}
