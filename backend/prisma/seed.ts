@@ -441,6 +441,112 @@ async function main() {
     shops.push(shop);
   }
 
+  // ── PENDING VENDOR APPLICATIONS (for admin approval demo) ──
+  console.log("  Creating pending vendor applications...");
+  const pendingApplicants = [
+    { name: "Sakib Al Hasan", email: "sakib.tech@gmail.com", phone: "+8801712345001", shopName: "Sakib's Phone Clinic", address: "House 15, Road 3, Mirpur 10", city: "Dhaka", area: "Mirpur", specialties: ["Phone screen repair", "Battery replacement", "Charging port fix"] },
+    { name: "Nusrat Jahan", email: "nusrat.electronics@gmail.com", phone: "+8801812345002", shopName: "NJ Electronics Hub", address: "45 Elephant Road", city: "Dhaka", area: "New Market", specialties: ["Laptop motherboard repair", "SSD upgrade", "RAM replacement"] },
+    { name: "Tanvir Rahman", email: "tanvir.fixlab@gmail.com", phone: "+8801912345003", shopName: "FixLab Bangladesh", address: "Block C, Bashundhara R/A", city: "Dhaka", area: "Bashundhara", specialties: ["MacBook repair", "iPad screen replacement", "Apple device specialist"] },
+    { name: "Ayesha Siddiqua", email: "ayesha.repair@gmail.com", phone: "+8801612345004", shopName: "Ayesha Smart Repair", address: "22 Shantinagar", city: "Dhaka", area: "Shantinagar", specialties: ["Water damage recovery", "Micro soldering", "Data recovery"] },
+    { name: "Imran Hossain", email: "imran.gadgetcare@gmail.com", phone: "+8801512345005", shopName: "Gadget Care Center", address: "Sector 7, Uttara", city: "Dhaka", area: "Uttara", specialties: ["Gaming console repair", "Desktop assembly", "Printer service"] },
+  ];
+
+  for (const applicant of pendingApplicants) {
+    const appUser = await prisma.user.upsert({
+      where: { email: applicant.email },
+      update: {},
+      create: {
+        username: applicant.email.split("@")[0].replace(/\./g, "_"),
+        email: applicant.email,
+        passwordHash,
+        name: applicant.name,
+        phone: applicant.phone,
+        role: "CUSTOMER", // stays CUSTOMER until approved
+      },
+    });
+
+    await prisma.vendorApplication.upsert({
+      where: { businessEmail: applicant.email },
+      update: {},
+      create: {
+        userId: appUser.id,
+        ownerName: applicant.name,
+        businessEmail: applicant.email,
+        phone: applicant.phone,
+        shopName: applicant.shopName,
+        address: applicant.address,
+        city: applicant.city,
+        area: applicant.area,
+        specialties: applicant.specialties,
+        courierPickup: true,
+        inShopRepair: true,
+        spareParts: false,
+        status: "PENDING",
+      },
+    });
+  }
+  console.log(`  ✓ ${pendingApplicants.length} pending vendor applications created.`);
+
+  // ── PENDING DELIVERY RIDER REGISTRATIONS ──
+  console.log("  Creating pending delivery rider registrations...");
+  const pendingRiders = [
+    { name: "Jubayer Ahmed", email: "jubayer.rider@gmail.com", phone: "+8801712346001", vehicle: "Motorbike", area: "Mirpur" },
+    { name: "Morshed Alam", email: "morshed.rider@gmail.com", phone: "+8801812346002", vehicle: "Bicycle", area: "Dhanmondi" },
+    { name: "Rifat Hasan", email: "rifat.rider@gmail.com", phone: "+8801912346003", vehicle: "Motorbike", area: "Gulshan" },
+    { name: "Sumaiya Akter", email: "sumaiya.rider@gmail.com", phone: "+8801612346004", vehicle: "Bicycle", area: "Uttara" },
+  ];
+
+  for (const rider of pendingRiders) {
+    const riderUser = await prisma.user.upsert({
+      where: { email: rider.email },
+      update: {},
+      create: {
+        username: rider.email.split("@")[0].replace(/\./g, "_"),
+        email: rider.email,
+        passwordHash,
+        name: rider.name,
+        phone: rider.phone,
+        role: "DELIVERY",
+        area: rider.area,
+        city: "Dhaka",
+      },
+    });
+
+    await prisma.riderProfile.upsert({
+      where: { userId: riderUser.id },
+      update: {},
+      create: {
+        userId: riderUser.id,
+        vehicleType: rider.vehicle,
+        status: "OFFLINE",
+        isActive: false,
+        registrationStatus: "PENDING",
+      },
+    });
+  }
+  console.log(`  ✓ ${pendingRiders.length} pending delivery rider registrations created.`);
+
+  // ── ADDITIONAL SUPPORT TICKETS (diverse statuses) ──
+  console.log("  Creating support tickets...");
+  const ticketData = [
+    { subject: "Payment stuck in processing", message: "I paid via SSLCommerz but the order still shows pending after 2 hours.", priority: "HIGH", status: "OPEN" as const },
+    { subject: "Wrong device returned", message: "I received a different phone back from the shop. My iPhone 14 was swapped with an iPhone 13.", priority: "HIGH", status: "ESCALATED" as const },
+    { subject: "Shop not responding to messages", message: "I've been trying to reach the shop for 3 days about my repair status with no response.", priority: "MEDIUM", status: "OPEN" as const },
+  ];
+
+  for (const ticket of ticketData) {
+    await prisma.supportTicket.create({
+      data: {
+        userId: user.id,
+        subject: ticket.subject,
+        message: ticket.message,
+        priority: ticket.priority,
+        status: ticket.status,
+      },
+    });
+  }
+  console.log(`  ✓ ${ticketData.length} support tickets created.`);
+
   const completedRequest = await prisma.repairRequest.create({
     data: {
       userId: user.id,
