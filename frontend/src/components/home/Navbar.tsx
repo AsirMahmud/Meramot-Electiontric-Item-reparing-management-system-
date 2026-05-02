@@ -143,7 +143,7 @@ export function NavbarInner({
   return (
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-3 py-6 md:gap-4 md:px-6 md:py-5">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-3 py-6 md:gap-4 md:px-6 md:py-5">
           {/* ── Row 1: Logo + hamburger (mobile) / Logo + location + actions (desktop) ── */}
           <div className="flex items-center justify-between gap-3 md:grid md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center md:gap-4">
             {/* Hamburger — mobile only */}
