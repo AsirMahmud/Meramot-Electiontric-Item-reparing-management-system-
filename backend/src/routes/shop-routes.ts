@@ -9,6 +9,7 @@ import {
   createReview,
   getShopReviews,
   updateReview,
+  deleteReview,
   optionalAuth,
 } from "../controllers/review-controller.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -23,6 +24,7 @@ router.get("/:shopSlug/reviews", optionalAuth, getShopReviews);
 router.get("/:shopSlug/review-eligibility", requireAuth, canReviewShop);
 router.post("/:shopSlug/reviews", requireAuth, createReview);
 router.patch("/:shopSlug/reviews/:reviewId", requireAuth, updateReview);
+router.delete("/:shopSlug/reviews/:reviewId", requireAuth, deleteReview);
 
 // --- Shop detail ---
 router.get("/:slug", getShopBySlug);

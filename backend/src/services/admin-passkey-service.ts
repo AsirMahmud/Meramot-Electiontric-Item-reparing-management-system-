@@ -10,8 +10,16 @@ function generatePin(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+let lastPasskeyTime = 0;
 
 export async function generateAndSendAdminPasskey() {
+  const now = Date.now();
+  if (now - lastPasskeyTime < 5 * 60 * 1000) {
+    console.log("[AdminPasskey] Passkey generated recently. Skipping to prevent duplicate emails.");
+    return;
+  }
+  lastPasskeyTime = now;
+
   currentAdminPasskey = generatePin();
   console.log(`[AdminPasskey] New passkey generated: ${currentAdminPasskey}`);
 
@@ -63,6 +71,13 @@ export async function generateAndSendAdminPasskey() {
 
 export function startAdminPasskeyService() {
   if (passkeyTimer) return;
+
+  if (process.env.NODE_ENV !== "production" && !process.env.FORCE_PASSKEY_SERVICE) {
+    currentAdminPasskey = generatePin();
+    console.log(`[AdminPasskey] Skipping email service in non-production mode.`);
+    console.log(`[AdminPasskey] DEV ONLY PASSKEY: ${currentAdminPasskey}`);
+    return;
+  }
   
   // Generate first key immediately
   generateAndSendAdminPasskey();

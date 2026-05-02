@@ -326,3 +326,60 @@ export async function updateReview(req: AuthedRequest, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function deleteReview(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const shopSlug = req.params.shopSlug as string;
+    const reviewId = req.params.reviewId as string;
+
+    const shop = await prisma.shop.findUnique({
+      where: { slug: shopSlug },
+      select: { id: true },
+    });
+
+    if (!shop) return res.status(404).json({ message: "Shop not found" });
+
+    const existingReview = await prisma.rating.findFirst({
+      where: {
+        id: reviewId,
+        userId,
+        shopId: shop.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!existingReview) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.rating.delete({
+        where: { id: reviewId },
+      });
+
+      const aggregate = await tx.rating.aggregate({
+        where: { shopId: shop.id },
+        _avg: { score: true },
+        _count: { score: true },
+      });
+
+      await tx.shop.update({
+        where: { id: shop.id },
+        data: {
+          ratingAvg: aggregate._avg.score ?? 0,
+          reviewCount: aggregate._count.score,
+        },
+      });
+    });
+
+    return res.json({ message: "Review deleted successfully" });
+  } catch (error) {
+    console.error("deleteReview error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

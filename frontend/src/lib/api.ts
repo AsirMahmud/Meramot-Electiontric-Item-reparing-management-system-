@@ -909,6 +909,12 @@ export async function createReview(
   });
 }
 
+export async function deleteReview(slug: string, reviewId: string, token?: string) {
+  return authedRequest(`/shops/${slug}/reviews/${reviewId}`, token, {
+    method: "DELETE",
+  });
+}
+
 /* =========================================================
    PROFILE
 ========================================================= */

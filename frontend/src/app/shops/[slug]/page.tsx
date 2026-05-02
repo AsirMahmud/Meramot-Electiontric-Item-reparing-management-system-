@@ -10,6 +10,7 @@ import type { StoredLocation } from "@/components/location/types";
 import {
   addServiceToCart,
   createReview,
+  deleteReview,
   getReviewEligibility,
   getShopBySlug,
   getShopReviews,
@@ -292,10 +293,10 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   const [reviewToast, setReviewToast] = useState("");
   const [addingService, setAddingService] = useState<string | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(
-  null
-);
+  const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
+  const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(null);
   const { data: session } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
   const { selectedLocation, saveLocation } = useSelectedLocation(!!session?.user);
@@ -431,6 +432,24 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       setMessage(error instanceof Error ? error.message : "Could not save review.");
     } finally {
       setSubmittingReview(false);
+    }
+  }
+
+  async function handleDeleteReview(reviewId: string) {
+    if (!token || !shop) return;
+    if (!window.confirm("Are you sure you want to delete your review?")) return;
+
+    setDeletingReview(true);
+    try {
+      await deleteReview(shop.slug, reviewId, token);
+      setReviewToast("Review deleted successfully.");
+      await refreshReviewsAndEligibility();
+      setScore(5);
+      setReviewText("");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not delete review.");
+    } finally {
+      setDeletingReview(false);
     }
   }
 
@@ -684,42 +703,53 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             <span className="text-[var(--accent-dark)]">{shop.name}</span>
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
-            {shop.logoUrl ? (
-              <div className="h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)]">
-                <img src={shop.logoUrl} alt={shop.name} className="h-full w-full object-cover" />
+          <div className="mt-4 md:mt-5 grid gap-4 md:gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
+            
+            {/* Mobile: Logo + Title row. Desktop: Grid items */}
+            <div className="flex items-start gap-4 lg:contents">
+              {shop.logoUrl ? (
+                <div className="h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)]">
+                  <img src={shop.logoUrl} alt={shop.name} className="h-full w-full object-cover" />
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 items-center justify-center rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A]">
+                  <span className="text-3xl md:text-4xl font-bold text-[var(--accent-dark)] opacity-40">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm text-[var(--muted-foreground)] truncate">
+                  {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
+                </p>
+
+                <h1 className="mt-1 text-2xl md:text-4xl font-bold tracking-tight text-[var(--foreground)] leading-tight">
+                  {shop.name}
+                </h1>
+
+                <div className="mt-1.5 md:mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-[var(--foreground)]">
+                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
+                  <span className="text-[var(--muted-foreground)]">{shop.address}</span>
+                </div>
               </div>
-            ) : (
-              <div className="flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A]">
-                <span className="text-4xl font-bold text-[var(--accent-dark)] opacity-40">
-                  {shop.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+            </div>
 
-            <div>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
-              </p>
-
-              <h1 className="mt-2 text-4xl font-bold tracking-tight text-[var(--foreground)]">
-                {shop.name}
-              </h1>
-
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--foreground)]">
-                <span>⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
-                <span>{shop.address}</span>
-                {shop.phone ? <span>{shop.phone}</span> : null}
-                {shop.email ? <span>{shop.email}</span> : null}
-              </div>
-
-              <p className="mt-4 max-w-3xl text-[var(--muted-foreground)]">
+            {/* Description & Contact - spans full width on mobile, middle column on desktop */}
+            <div className="text-sm md:text-base text-[var(--muted-foreground)] lg:col-start-2">
+              <p>
                 {shop.description ||
                   "Professional device repair support with diagnostics, updates, and service handling from this shop."}
               </p>
+              {(shop.phone || shop.email) && (
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs md:text-sm">
+                  {shop.phone && <span>📞 {shop.phone}</span>}
+                  {shop.email && <span>✉️ {shop.email}</span>}
+                </div>
+              )}
             </div>
 
-            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm w-full">
               <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]">
                 Go to cart
               </Link>
@@ -734,52 +764,67 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0">
           <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-medium text-[var(--muted-foreground)]">
-            <span className="border-b-4 border-[var(--accent-dark)] pb-2 text-[var(--foreground)]">Services</span>
-            <span className="pb-2">Reviews</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab("services")}
+              className={`pb-2 outline-none font-semibold transition ${activeTab === "services" ? "border-b-4 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Services
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("reviews")}
+              className={`pb-2 outline-none font-semibold transition ${activeTab === "reviews" ? "border-b-4 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Reviews
+            </button>
           </div>
 
-          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
-              <p className="mt-2 text-[var(--muted-foreground)]">
-                Add services to cart first, then choose schedule, payment method, and address during checkout.
-              </p>
-            </div>
+          {activeTab === "services" && (
+            <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
+              <div className="mb-5">
+                <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
+                <p className="mt-2 text-[var(--muted-foreground)]">
+                  Add services to cart first, then choose schedule, payment method, and address during checkout.
+                </p>
+              </div>
 
-            <div className="space-y-4">
-              {serviceItems.map((item) => (
-                <article key={item.name} className="flex flex-col gap-4 rounded-[1.5rem] border border-[var(--border)] p-4 transition hover:shadow-sm md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className="text-xl font-semibold text-[var(--foreground)] capitalize">{item.name}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <div className="text-lg font-bold text-[var(--foreground)]">
-                          ৳{item.estimate.toLocaleString("en-BD")}
+              <div className="space-y-4">
+                {serviceItems.map((item) => (
+                  <article key={item.name} className="flex flex-col gap-4 rounded-[1.5rem] border border-[var(--border)] p-4 transition hover:shadow-sm md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h3 className="text-xl font-semibold text-[var(--foreground)] capitalize">{item.name}</h3>
+                          <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
                         </div>
-                        <div className="text-xs text-[var(--muted-foreground)]">starting estimate</div>
+
+                        <div className="shrink-0 text-right">
+                          <div className="text-lg font-bold text-[var(--foreground)]">
+                            ৳{item.estimate.toLocaleString("en-BD")}
+                          </div>
+                          <div className="text-xs text-[var(--muted-foreground)]">starting estimate</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 md:pl-4">
-                    <button
-                      type="button"
-                      onClick={() => void handleAddService(item)}
-                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-[var(--accent-foreground)]"
-                    >
-                      {addingService === item.name ? "Adding..." : "Add to cart"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    <div className="flex items-center gap-3 md:pl-4">
+                      <button
+                        type="button"
+                        onClick={() => void handleAddService(item)}
+                        className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-[var(--accent-foreground)]"
+                      >
+                        {addingService === item.name ? "Adding..." : "Add to cart"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <section className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+          {activeTab === "reviews" && (
+            <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
@@ -832,14 +877,24 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                     <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <p className="font-bold text-[var(--foreground)]">
                               {item.user?.name || item.user?.username || "Customer"}
                             </p>
                             {isMine && (
-                              <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
-                                Your review
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
+                                  Your review
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteReview(item.id)}
+                                  disabled={deletingReview}
+                                  className="text-xs font-medium text-red-500 underline hover:text-red-700 disabled:opacity-50"
+                                >
+                                  {deletingReview ? "Deleting..." : "Delete"}
+                                </button>
+                              </div>
                             )}
                           </div>
                           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
@@ -859,6 +914,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               </div>
             </div>
           </section>
+          )}
         </section>
 
         {locationModalOpen && (
@@ -872,8 +928,9 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           />
         )}
 
-        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        {activeTab === "reviews" && (
+          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
               {isEditingReview ? "Edit your review" : "Write a review"}
             </p>
@@ -927,6 +984,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
           </section>
         </aside>
+        )}
       </div>
     </main>
   );
