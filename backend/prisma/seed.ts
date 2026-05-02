@@ -285,7 +285,16 @@ async function main() {
     },
   });
 
-  const shopSeedData = [
+  type ShopSeed = {
+    name: string; slug: string; description?: string; address?: string;
+    area?: string; lat?: number; lng?: number; priceLevel?: number;
+    hasVoucher?: boolean; freeDelivery?: boolean; hasDeals?: boolean;
+    isFeatured?: boolean; inspectionFee?: number; baseLaborFee?: number;
+    pickupFee?: number; expressFee?: number; specialties?: string[];
+  };
+
+  const shopSeedData: ShopSeed[] = [
+    // ── 20 Original Shops ──
     { name: "Dhaka Device Doctors", slug: "dhaka-device-doctors" },
     { name: "Gulshan Gadget Care", slug: "gulshan-gadget-care" },
     { name: "Banani Tech Bench", slug: "banani-tech-bench" },
@@ -306,18 +315,31 @@ async function main() {
     { name: "Trusted Tech Service", slug: "trusted-tech-service" },
     { name: "CoreFix Bangladesh", slug: "corefix-bangladesh" },
     { name: "Laptop Harbor", slug: "laptop-harbor" },
+    // ── 12 Featured/Specialty Shops (formerly seed_mock_shops) ──
+    { name: "ProTech Solutions", slug: "protech-solutions", description: "OEM parts only. Certified Apple technicians. 12-month warranty included.", area: "Banani", lat: 23.7938, lng: 90.4048, priceLevel: 2, hasVoucher: true, isFeatured: true, inspectionFee: 300, baseLaborFee: 500, pickupFee: 100, expressFee: 400, specialties: ["battery replacement", "logic board repair", "laptop", "phone"] },
+    { name: "The Gadget Den", slug: "the-gadget-den", description: "Express service available. Premium repair center.", area: "Gulshan", lat: 23.7806, lng: 90.4168, priceLevel: 3, isFeatured: true, inspectionFee: 500, baseLaborFee: 800, pickupFee: 150, expressFee: 500, specialties: ["screen replacement", "keyboard repair", "tablet", "smartwatch"] },
+    { name: "Budget Fixer", slug: "budget-fixer", description: "Affordable high-quality generic replacement screens. 30-day warranty.", area: "Dhanmondi", lat: 23.7461, lng: 90.3742, priceLevel: 1, hasVoucher: true, hasDeals: true, isFeatured: true, inspectionFee: 100, baseLaborFee: 300, pickupFee: 50, expressFee: 200, specialties: ["display replacement", "screen repair", "console", "printer"] },
+    { name: "MacMaster Repairs", slug: "macmaster-repairs", description: "OEM parts only. Certified Apple replacement tools in stock.", area: "Mohakhali", lat: 23.7776, lng: 90.3995, priceLevel: 2, inspectionFee: 250, baseLaborFee: 600, pickupFee: 100, expressFee: 350, specialties: ["certified apple support", "MacBook repair"] },
+    { name: "The iDoc Garage", slug: "the-idoc-garage", description: "Premium repair with free delivery.", area: "Uttara", lat: 23.8759, lng: 90.3888, priceLevel: 3, freeDelivery: true, inspectionFee: 500, baseLaborFee: 700, pickupFee: 0, expressFee: 500, specialties: ["battery replacement", "water damage recovery"] },
+    { name: "ByteSize Repairs", slug: "bytesize-repairs", description: "Express screen replacement with quick turnaround.", area: "Mirpur", lat: 23.8373, lng: 90.3668, priceLevel: 3, inspectionFee: 400, baseLaborFee: 700, pickupFee: 120, expressFee: 450, specialties: ["screen replacement", "keyboard repair"] },
+    { name: "AppleCore Solutions", slug: "applecore-solutions", description: "Expert Apple device repair. Same-day service available.", area: "Badda", lat: 23.7805, lng: 90.4267, priceLevel: 3, inspectionFee: 450, baseLaborFee: 800, pickupFee: 100, expressFee: 500, specialties: ["logic board repair", "water damage recovery"] },
+    { name: "Main Street Tech", slug: "main-street-tech", description: "Reliable everyday repairs at fair prices. Walk-ins welcome.", area: "Tejgaon", lat: 23.7603, lng: 90.3905, priceLevel: 2, inspectionFee: 200, baseLaborFee: 400, pickupFee: 80, expressFee: 300, specialties: ["trackpad replacement", "battery replacement"] },
+    { name: "Precision Fix", slug: "precision-fix", description: "High-quality generic replacement battery. 90-day warranty.", area: "Rampura", lat: 23.7612, lng: 90.4208, priceLevel: 2, freeDelivery: true, inspectionFee: 200, baseLaborFee: 450, pickupFee: 0, expressFee: 300, specialties: ["battery replacement", "pickup service"] },
+    { name: "Micro-Maestro", slug: "micro-maestro", description: "Specialist in micro soldering and board-level repair. 30-day warranty.", area: "Mohammadpur", lat: 23.7658, lng: 90.3584, priceLevel: 2, inspectionFee: 350, baseLaborFee: 600, pickupFee: 100, expressFee: 400, specialties: ["micro soldering", "board repair"] },
+    { name: "Westside Computery", slug: "westside-computery", description: "CPU, storage, and keyboard replacement specialists. 30-day warranty.", area: "Wari", lat: 23.7174, lng: 90.4183, priceLevel: 2, inspectionFee: 150, baseLaborFee: 400, pickupFee: 80, expressFee: 250, specialties: ["storage replacement", "keyboard repair"] },
+    { name: "The Gear Lab", slug: "the-gear-lab", description: "Screen repair and genuine spare parts available. Warranty included.", area: "Bashundhara", lat: 23.8183, lng: 90.4328, priceLevel: 2, inspectionFee: 250, baseLaborFee: 500, pickupFee: 100, expressFee: 350, specialties: ["replacement parts", "screen repair"] },
   ];
   
   const shops: Shop[] = [];
   
   for (let i = 0; i < shopSeedData.length; i++) {
-    const { name, slug } = shopSeedData[i];
-    const areaInfo = areaCoords[i % areaCoords.length];
-    // Add slight jitter so shops in the same area aren't at identical coords
-    const jitterLat = (Math.random() - 0.5) * 0.006;
-    const jitterLng = (Math.random() - 0.5) * 0.006;
-    const shopLat = Number((areaInfo.lat + jitterLat).toFixed(6));
-    const shopLng = Number((areaInfo.lng + jitterLng).toFixed(6));
+    const s = shopSeedData[i];
+    const { name, slug } = s;
+    // Use explicit coords if provided, otherwise cycle through areaCoords
+    const areaInfo = areaCoords.find(a => a.name === s.area) || areaCoords[i % areaCoords.length];
+    const shopLat = s.lat ?? Number((areaInfo.lat + (Math.random() - 0.5) * 0.006).toFixed(6));
+    const shopLng = s.lng ?? Number((areaInfo.lng + (Math.random() - 0.5) * 0.006).toFixed(6));
+    const shopArea = s.area ?? areaInfo.name;
   
     const shopUserEmail = `vendor${i}@meramot.demo`;
     const shopUser = await prisma.user.upsert({
@@ -342,12 +364,12 @@ async function main() {
         businessEmail: shopUserEmail,
         phone: shopUser.phone!,
         shopName: name,
-        address: `${10 + i + 1} Main Road`,
+        address: s.address ?? `${10 + i + 1} Main Road`,
         city: "Dhaka",
-        area: areaInfo.name,
+        area: shopArea,
         lat: shopLat,
         lng: shopLng,
-        specialties: randomSubset(specialtiesPool, 3),
+        specialties: s.specialties ?? randomSubset(specialtiesPool, 3),
         courierPickup: true,
         inShopRepair: true,
         spareParts: false,
@@ -362,35 +384,41 @@ async function main() {
         vendorApplicationId: vendorApp.id,
         lat: shopLat,
         lng: shopLng,
-        area: areaInfo.name,
+        area: shopArea,
+        isFeatured: s.isFeatured ?? false,
+        inspectionFee: s.inspectionFee,
+        baseLaborFee: s.baseLaborFee,
+        pickupFee: s.pickupFee,
+        expressFee: s.expressFee,
       },
       create: {
         vendorApplicationId: vendorApp.id,
         name,
         slug,
-        description: "Professional electronics repair service.",
-        address: `${10 + i + 1} Main Road`,
+        description: s.description ?? "Professional electronics repair service.",
+        address: s.address ?? `${10 + i + 1} Main Road`,
         city: "Dhaka",
-        area: areaInfo.name,
+        area: shopArea,
         lat: shopLat,
         lng: shopLng,
         ratingAvg: Number((3.5 + Math.random() * 1.5).toFixed(1)),
         reviewCount: Math.floor(Math.random() * 200),
-        priceLevel: Math.floor(Math.random() * 3) + 1,
-        hasVoucher: (i + 1) % 2 === 0,
-        freeDelivery: (i + 1) % 4 === 0,
-        hasDeals: (i + 1) % 5 === 0,
-        inspectionFee: (() => { const pl = Math.floor(Math.random() * 3) + 1; return [100, 150, 200][pl - 1] + Math.floor(Math.random() * 3) * 50; })(), // 100-300 for budget, 150-350 for mid, 200-400 for premium
-        baseLaborFee: Math.floor(Math.random() * 6 + 3) * 100, // 300 to 800
-        pickupFee: Math.floor(Math.random() * 3) * 50 + 50, // 50, 100, or 150
-        expressFee: Math.floor(Math.random() * 4 + 2) * 100, // 200 to 500
+        priceLevel: s.priceLevel ?? (Math.floor(Math.random() * 3) + 1),
+        hasVoucher: s.hasVoucher ?? ((i + 1) % 2 === 0),
+        freeDelivery: s.freeDelivery ?? ((i + 1) % 4 === 0),
+        hasDeals: s.hasDeals ?? ((i + 1) % 5 === 0),
+        isFeatured: s.isFeatured ?? false,
+        inspectionFee: s.inspectionFee ?? ([100, 150, 200][Math.floor(Math.random() * 3)] + Math.floor(Math.random() * 3) * 50),
+        baseLaborFee: s.baseLaborFee ?? (Math.floor(Math.random() * 6 + 3) * 100),
+        pickupFee: s.pickupFee ?? (Math.floor(Math.random() * 3) * 50 + 50),
+        expressFee: s.expressFee ?? (Math.floor(Math.random() * 4 + 2) * 100),
         setupComplete: true,
         isPublic: true,
         categories: [
           ShopCategory.COURIER_PICKUP,
           ShopCategory.IN_SHOP_REPAIR,
         ],
-        specialties: randomSubset(specialtiesPool, 3),
+        specialties: s.specialties ?? randomSubset(specialtiesPool, 3),
       },
     });
 

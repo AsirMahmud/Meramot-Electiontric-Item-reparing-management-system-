@@ -20,8 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const seeds = [
-  { file: "seed.ts", label: "Core (admin, shops, reviewers, financial data)" },
-  { file: "seed_mock_shops.ts", label: "Mock shops with reviews" },
+  { file: "seed.ts", label: "Core (admin, 32 shops w/ vendors, 500 reviewers, reviews+payments)" },
   { file: "seed-delivery.ts", label: "Delivery workflow demo data" },
   { file: "seed_bidding_test.ts", label: "Bidding test data" },
   { file: "seed_bulk_users.ts", label: "Bulk users with tickets/disputes" },
@@ -58,7 +57,7 @@ async function main() {
   console.log("═".repeat(60));
 
   // Delete legacy/redundant seed files
-  const redundant = ["seed_comprehensive.ts", "seed.customers.ts", "seed.shops.ts"];
+  const redundant = ["seed_comprehensive.ts", "seed.customers.ts", "seed.shops.ts", "seed_mock_shops.ts"];
   const fs = await import("fs");
   for (const file of redundant) {
     const fp = path.join(__dirname, file);
