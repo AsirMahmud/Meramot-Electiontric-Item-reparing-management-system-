@@ -143,7 +143,7 @@ export default function AdminReviewsPage() {
                   </div>
                   {review.review ? (
                     <div
-                      className="mt-3 cursor-pointer rounded-xl bg-white p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
+                      className="mt-3 cursor-pointer rounded-xl bg-[var(--card)] p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
                       onClick={() => setSelectedReviewText(review.review!)}
                     >
                       <h3 className="line-clamp-3 text-lg font-medium text-[var(--accent-dark)] italic">

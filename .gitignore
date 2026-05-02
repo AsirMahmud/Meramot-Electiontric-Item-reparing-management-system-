@@ -96,3 +96,4 @@ build
 # ============== PRISMA ==============
 # Generated Prisma files
 prisma/seed-output.log
+.vercel

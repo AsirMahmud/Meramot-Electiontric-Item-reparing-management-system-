@@ -54,10 +54,11 @@ function ShopResultCard({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="group rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex flex-col rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:p-4"
     >
-      <div className="flex items-start gap-2.5 md:gap-3">
-        <div className="flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-xl md:text-2xl font-bold text-[var(--accent-dark)]">
+      {/* Top row: logo + name/rating */}
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-lg font-bold text-[var(--accent-dark)] md:h-14 md:w-14 md:text-2xl">
           {shop.logoUrl ? (
             <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
           ) : (
@@ -66,57 +67,63 @@ function ShopResultCard({ shop }: { shop: Shop }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-1.5 md:gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-base md:text-[1.15rem] font-bold text-[var(--foreground)]">
-                {shop.name}
-              </h3>
+          <h3 className="truncate text-[0.95rem] font-bold leading-tight text-[var(--foreground)] md:text-[1.15rem]">
+            {shop.name}
+          </h3>
 
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] md:text-xs text-[var(--muted-foreground)]">
-                <span>⭐ {(shop.ratingAvg ?? 0).toFixed(1)}</span>
-                <span>({shop.reviewCount})</span>
-                {typeof shop.distanceKm === "number" ? (
-                  <span>{shop.distanceKm.toFixed(1)} km away</span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="shrink-0 flex flex-col items-end text-right pl-1">
-              <span className="text-[9px] md:text-[10px] font-semibold text-[var(--muted-foreground)] uppercase">
-                {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
-              </span>
-              <div className="mt-0.5 text-[1.1rem] md:text-[1.25rem] font-extrabold leading-none tracking-tight text-[var(--accent-dark)]">
-                {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : "৳--"}
-              </div>
-              <div className="mt-1 text-[9px] md:text-[10px] font-semibold text-[var(--muted-foreground)]">
-                ETA: {etaLabel(shop.etaMinutes)}
-              </div>
-            </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-[var(--muted-foreground)] md:text-xs md:gap-x-2">
+            <span>⭐ {(shop.ratingAvg ?? 0).toFixed(1)}</span>
+            <span className="opacity-60">·</span>
+            <span>{shop.reviewCount} reviews</span>
+            {typeof shop.distanceKm === "number" ? (
+              <>
+                <span className="opacity-60">·</span>
+                <span>{shop.distanceKm.toFixed(1)} km</span>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-1 text-xs text-[var(--muted-foreground)]">
+      {/* Price + ETA row — stacks naturally below on mobile */}
+      <div className="mt-2.5 flex items-center justify-between rounded-xl bg-[var(--mint-50)] px-3 py-2 md:mt-3">
+        <div>
+          <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">
+            {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
+          </span>
+          <div className="text-[1.05rem] font-extrabold leading-tight tracking-tight text-[var(--accent-dark)] md:text-[1.25rem]">
+            {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : "৳--"}
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">ETA</span>
+          <div className="text-sm font-bold text-[var(--foreground)] md:text-base">{etaLabel(shop.etaMinutes)}</div>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="mt-2 line-clamp-1 text-[11px] text-[var(--muted-foreground)] md:mt-2.5 md:text-xs">
         {shop.description || shop.address}
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[var(--accent-dark)]">
+      {/* Badges */}
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-[var(--accent-dark)] md:mt-2.5 md:gap-2 md:text-[11px]">
         {shop.hasVoucher ? (
-          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+          <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 md:px-2.5 md:py-1">
             Voucher
           </span>
         ) : null}
         {shop.freeDelivery ? (
-          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+          <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 md:px-2.5 md:py-1">
             Free delivery
           </span>
         ) : null}
         {shop.hasDeals ? (
-          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+          <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 md:px-2.5 md:py-1">
             Deal
           </span>
         ) : null}
-        <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+        <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 md:px-2.5 md:py-1">
           {formatPriceLevel(shop.priceLevel ?? 1)}
         </span>
       </div>
@@ -264,15 +271,15 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
 
       <section className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-5">
         <div className="mb-4 md:mb-5">
-          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none flex items-center gap-2">
+          <h1 className="text-xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] md:text-[2.7rem] md:leading-none flex items-center gap-2">
             {localFeatured ? (
-              <>Featured Shops <span className="text-[var(--muted-foreground)] text-xl md:text-3xl font-medium">({visibleShops.length})</span></>
+              <>Featured Shops <span className="text-[var(--muted-foreground)] text-base md:text-3xl font-medium">({visibleShops.length})</span></>
             ) : (
               (!searchState.q && !searchState.category) ? `All Shops (${visibleShops.length})` : `${visibleShops.length} matches found`
             )}
           </h1>
 
-          <p className="mt-1 text-lg text-[var(--muted-foreground)] md:mt-2 md:text-[1.7rem]">
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] md:mt-2 md:text-[1.7rem]">
             {localFeatured ? "Discover the highest-rated and most reliable repair experts in your area." : (searchState.q || (searchState.category ? categoryLabels[searchState.category] : "Explore reliable repair experts in your area."))}
           </p>
 
