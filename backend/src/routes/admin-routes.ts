@@ -401,6 +401,99 @@ router.patch("/shops/:id/featured", async (req: Request, res: Response) => {
   }
 });
 
+// ─── Repair Requests Monitoring ───────────────────────────────────────────────
+// GET /api/admin/repair-requests
+// Returns all repair requests with status, user, jobs, bids, and vendor info.
+router.get("/repair-requests", async (req: Request, res: Response) => {
+  try {
+    const search = String(req.query.search || "").trim();
+
+    const where: Record<string, unknown> = {};
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { deviceType: { contains: search, mode: "insensitive" } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+      ];
+    }
+
+    const requests = await prisma.repairRequest.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        deviceType: true,
+        problem: true,
+        mode: true,
+        status: true,
+        quotedFinalAmount: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+          },
+        },
+        repairJobs: {
+          select: {
+            id: true,
+            status: true,
+            finalQuotedAmount: true,
+            startedAt: true,
+            completedAt: true,
+            createdAt: true,
+            shop: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                area: true,
+                city: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        bids: {
+          select: {
+            id: true,
+            amount: true,
+            message: true,
+            status: true,
+            createdAt: true,
+            shop: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                area: true,
+                city: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: requests,
+    });
+  } catch (error) {
+    console.error("GET /admin/repair-requests error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load repair requests",
+    });
+  }
+});
+
 import adminVendorRoutes from "./admin-vendor-application-routes.js";
 router.use("/vendors", adminVendorRoutes);
 export default router;
