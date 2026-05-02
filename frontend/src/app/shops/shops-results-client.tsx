@@ -371,22 +371,23 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
                   return (
                       <label
                         key={promo.key}
-                        className={`flex items-center gap-3 text-sm md:text-[1rem] ${
-                          isForcedFeatured ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                        }`}
+                        className="flex items-center gap-3 text-sm md:text-[1rem] cursor-pointer"
                       >
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={isForcedFeatured}
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            if (isForcedFeatured && !event.currentTarget.checked) {
+                              router.push("/shops");
+                              return;
+                            }
                             updateParams({
                               [promo.key]: event.currentTarget.checked
                                 ? "true"
                                 : null,
-                            })
-                          }
-                          className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-dark)] disabled:opacity-50"
+                            });
+                          }}
+                          className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent-dark)]"
                         />
                         <span>{promo.label}</span>
                       </label>
