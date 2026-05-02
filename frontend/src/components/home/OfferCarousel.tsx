@@ -24,7 +24,7 @@ export default function OfferCarousel() {
 
             <Link
               href={offer.href}
-              className="mt-3 inline-flex w-fit rounded-full bg-[var(--accent-dark)] px-3 py-2 text-xs font-semibold text-white md:mt-6 md:px-6 md:py-3 md:text-base lg:mt-8 lg:px-8 lg:py-3.5 lg:text-lg lg:font-bold"
+              className="mt-3 inline-flex w-fit rounded-full bg-[var(--accent-dark)] px-3 py-2 text-xs font-semibold text-[var(--accent-foreground)] md:mt-6 md:px-6 md:py-3 md:text-base lg:mt-8 lg:px-8 lg:py-3.5 lg:text-lg lg:font-bold"
             >
               Explore
               <span className="hidden md:inline">&nbsp;shops</span>
