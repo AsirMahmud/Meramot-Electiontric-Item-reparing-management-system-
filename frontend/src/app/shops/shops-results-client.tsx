@@ -135,43 +135,52 @@ function FeaturedShopTile({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="flex aspect-square flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-[0.97] active:bg-[var(--mint-100)]"
+      className="relative flex aspect-square flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-sm transition active:scale-95 active:bg-[var(--mint-50)]"
     >
-      <div className="min-w-0">
-        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
+      {/* Top Row: Logo & Rating */}
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-[14px] font-bold text-[var(--accent-dark)]">
           {shop.logoUrl ? (
-            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-lg object-cover" />
+            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
           ) : (
             shop.name.charAt(0).toUpperCase()
           )}
         </div>
-        <h3 className="line-clamp-2 text-[10px] font-bold leading-tight text-[var(--foreground)]">
+        <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--accent-dark)]">
+          ★ {(shop.ratingAvg ?? 0).toFixed(1)}
+        </div>
+      </div>
+
+      {/* Middle: Title */}
+      <div className="mt-1.5 min-w-0">
+        <h3 className="line-clamp-2 text-[11px] font-extrabold leading-[1.15] text-[var(--foreground)]">
           {shop.name}
         </h3>
-        <p className="mt-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
-          ★ {(shop.ratingAvg ?? 0).toFixed(1)}
-        </p>
+      </div>
+
+      {/* Bottom: Price & Badges */}
+      <div className="mt-auto pt-1">
         {shop.offerSummary && (
-          <p className="mt-0.5 text-[9px] font-bold text-[var(--foreground)]">
-            {shop.offerSummary}
-          </p>
+          <div className="text-[12px] font-black tracking-tighter text-[var(--accent-dark)]">
+            {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
+          </div>
+        )}
+        
+        {(shop.hasVoucher || shop.freeDelivery) && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {shop.hasVoucher && (
+              <span className="rounded bg-[var(--accent-dark)] px-1 py-[2px] text-[7px] font-bold uppercase tracking-wider text-white">
+                Voucher
+              </span>
+            )}
+            {shop.freeDelivery && (
+              <span className="rounded bg-[var(--mint-100)] px-1 py-[2px] text-[7px] font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+                Free
+              </span>
+            )}
+          </div>
         )}
       </div>
-      
-      {(shop.hasVoucher || shop.freeDelivery) && (
-        <div className="flex flex-wrap gap-0.5 mt-auto pt-1">
-          {shop.hasVoucher && (
-            <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
-              Voucher
-            </span>
-          )}
-          {shop.freeDelivery && (
-            <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
-              Free
-            </span>
-          )}
-        </div>
-      )}
     </Link>
   );
 }
