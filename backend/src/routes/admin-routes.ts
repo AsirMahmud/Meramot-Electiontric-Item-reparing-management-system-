@@ -21,7 +21,7 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
       pendingRefunds,
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.vendorApplication.count(),
+      prisma.user.count({ where: { role: "VENDOR" } }),
       prisma.user.count({ where: { role: "DELIVERY" } }),
       prisma.vendorApplication.count({ where: { status: "PENDING" } }),
       prisma.supportTicket.count({
