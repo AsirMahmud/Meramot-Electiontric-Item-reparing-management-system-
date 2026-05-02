@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
+import AdminTableControls from "@/components/admin/AdminTableControls";
+import { useAdminTableState } from "@/hooks/useAdminTableState";
 
 type Review = {
   id: string;
@@ -90,6 +92,8 @@ export default function AdminReviewsPage() {
     }
   };
 
+  const table = useAdminTableState(reviews, ["review", "user", "shop", "id"] as any);
+
   return (
     <section>
       <div className="mb-8">
@@ -125,65 +129,77 @@ export default function AdminReviewsPage() {
       {loading ? (
         <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading reviews...</div>
       ) : (
-        <div className="space-y-5">
-          {reviews.map((review) => (
-            <div
-              key={review.id}
-              className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6"
-            >
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <div className="flex items-center gap-3">
-                      <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
-                        {review.shop.name}
-                      </p>
-                      <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
-                          {review.score} / 5
-                      </span>
-                  </div>
-                  {review.review ? (
-                    <div
-                      className="mt-3 cursor-pointer rounded-xl bg-[var(--card)] p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
-                      onClick={() => setSelectedReviewText(review.review!)}
-                    >
-                      <h3 className="line-clamp-3 text-lg font-medium text-[var(--accent-dark)] italic">
-                        "{review.review}"
-                      </h3>
-                      <p className="mt-1 text-[11px] font-bold uppercase text-[var(--accent-dark)] opacity-80">
-                        Read full review
-                      </p>
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search reviews by text, user, shop name…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
+          <div className="space-y-5">
+            {table.paged.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)] p-6"
+              >
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
+                        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+                          {review.shop.name}
+                        </p>
+                        <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
+                            {review.score} / 5
+                        </span>
                     </div>
-                  ) : (
-                    <h3 className="mt-3 text-lg font-medium text-[var(--accent-dark)] italic">
-                      "No written review provided."
-                    </h3>
-                  )}
-                  <p className="mt-4 text-sm font-medium text-[var(--foreground)]">
-                    By: {review.user.name || review.user.username} ({review.user.email})
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                    Posted on: {new Date(review.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
+                    {review.review ? (
+                      <div
+                        className="mt-3 cursor-pointer rounded-xl bg-[var(--card)] p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
+                        onClick={() => setSelectedReviewText(review.review!)}
+                      >
+                        <h3 className="line-clamp-3 text-lg font-medium text-[var(--accent-dark)] italic">
+                          &quot;{review.review}&quot;
+                        </h3>
+                        <p className="mt-1 text-[11px] font-bold uppercase text-[var(--accent-dark)] opacity-80">
+                          Read full review
+                        </p>
+                      </div>
+                    ) : (
+                      <h3 className="mt-3 text-lg font-medium text-[var(--accent-dark)] italic">
+                        &quot;No written review provided.&quot;
+                      </h3>
+                    )}
+                    <p className="mt-4 text-sm font-medium text-[var(--foreground)]">
+                      By: {review.user.name || review.user.username} ({review.user.email})
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                      Posted on: {new Date(review.createdAt).toLocaleString()}
+                    </p>
+                  </div>
 
-                <div className="flex flex-wrap gap-3 mt-4 lg:mt-0">
-                  <button
-                    onClick={() => handleDeleteReview(review.id)}
-                    className="rounded-full border border-[#B8C8B5] px-5 py-3 text-sm font-semibold text-[#6A3F3F] transition hover:bg-[#F5ECEC]"
-                  >
-                    Delete Review
-                  </button>
+                  <div className="flex flex-wrap gap-3 mt-4 lg:mt-0">
+                    <button
+                      onClick={() => handleDeleteReview(review.id)}
+                      className="rounded-full border border-[#B8C8B5] px-5 py-3 text-sm font-semibold text-[#6A3F3F] transition hover:bg-[#F5ECEC]"
+                    >
+                      Delete Review
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {!reviews.length && (
-            <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">
-              No reviews found.
-            </div>
-          )}
-        </div>
+            {!reviews.length && (
+              <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">
+                No reviews found.
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {selectedReviewText && (
@@ -200,7 +216,7 @@ export default function AdminReviewsPage() {
             </div>
             <div className="max-h-[60vh] overflow-y-auto pr-2">
               <p className="leading-7 text-[var(--foreground)] whitespace-pre-wrap italic">
-                "{selectedReviewText}"
+                &quot;{selectedReviewText}&quot;
               </p>
             </div>
           </div>

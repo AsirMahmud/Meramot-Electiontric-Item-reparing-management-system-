@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getAuthHeaders } from "@/lib/api";
+import AdminTableControls from "@/components/admin/AdminTableControls";
+import { useAdminTableState } from "@/hooks/useAdminTableState";
 
 type User = {
   id: string;
@@ -22,7 +24,6 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
 
@@ -30,7 +31,6 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams();
-      if (search) queryParams.append("search", search);
       if (role) queryParams.append("role", role);
       if (status) queryParams.append("status", status);
 
@@ -54,11 +54,6 @@ export default function AdminUsersPage() {
       fetchUsers();
     }
   }, [role, status, token]); // Re-fetch on filter change or token load
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchUsers();
-  };
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
@@ -86,6 +81,8 @@ export default function AdminUsersPage() {
     }
   };
 
+  const table = useAdminTableState(users, ["name", "username", "email", "phone", "role", "id"] as any);
+
   return (
     <section>
       <div className="mb-8">
@@ -97,19 +94,6 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
-        <form onSubmit={handleSearchSubmit} className="flex flex-1 gap-2">
-            <input
-                type="text"
-                placeholder="Search by name, email, phone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E]"
-            />
-            <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90">
-                Search
-            </button>
-        </form>
-
         <div className="flex gap-4">
             <select
                 value={role}
@@ -139,64 +123,80 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading users...</div>
       ) : (
-        <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
-                <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b border-[var(--border)] last:border-b-0">
-                    <td className="px-6 py-5">
-                      <p className="font-semibold text-[var(--accent-dark)]">{user.name || user.username}</p>
-                      <p className="mt-1 text-sm text-[var(--muted-foreground)]">{user.email}</p>
-                      <p className="text-sm text-[var(--muted-foreground)]">{user.phone || "No phone"}</p>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-[var(--foreground)]">{user.role}</td>
-                    <td className="px-6 py-5 text-sm">
-                      <span
-                        className={`rounded-full px-3 py-1 font-semibold ${
-                          user.status === "ACTIVE"
-                            ? "bg-[var(--mint-100)] text-[var(--accent-dark)]"
-                            : user.status === "SUSPENDED"
-                              ? "bg-[#FEF3C7] text-[#92400E]"
-                              : "bg-[#FDEAEA] text-[#8A2A2A]"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      {user.status === "ACTIVE" ? (
-                        <button
-                          onClick={() => handleStatusUpdate(user.id, "SUSPENDED")}
-                          className="rounded-full border border-[#B8C8B5] px-4 py-2 text-sm font-semibold text-[#6A3F3F] transition hover:bg-[#F5ECEC]"
-                        >
-                          Suspend
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleStatusUpdate(user.id, "ACTIVE")}
-                          className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
-                        >
-                          Restore
-                        </button>
-                      )}
-                    </td>
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search by name, email, phone, role…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
+          <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
+                  <tr className="text-left text-sm uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
+                    <th className="px-6 py-4">User</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Joined</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {table.paged.map((user) => (
+                    <tr key={user.id} className="border-b border-[var(--border)] last:border-b-0">
+                      <td className="px-6 py-5">
+                        <p className="font-semibold text-[var(--accent-dark)]">{user.name || user.username}</p>
+                        <p className="mt-1 text-sm text-[var(--muted-foreground)]">{user.email}</p>
+                        <p className="text-sm text-[var(--muted-foreground)]">{user.phone || "No phone"}</p>
+                      </td>
+                      <td className="px-6 py-5 text-sm text-[var(--foreground)]">{user.role}</td>
+                      <td className="px-6 py-5 text-sm">
+                        <span
+                          className={`rounded-full px-3 py-1 font-semibold ${
+                            user.status === "ACTIVE"
+                              ? "bg-[var(--mint-100)] text-[var(--accent-dark)]"
+                              : user.status === "SUSPENDED"
+                                ? "bg-[#FEF3C7] text-[#92400E]"
+                                : "bg-[#FDEAEA] text-[#8A2A2A]"
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-xs text-[var(--muted-foreground)]">
+                        {new Date(user.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        {user.status === "ACTIVE" ? (
+                          <button
+                            onClick={() => handleStatusUpdate(user.id, "SUSPENDED")}
+                            className="rounded-full border border-[#B8C8B5] px-4 py-2 text-sm font-semibold text-[#6A3F3F] transition hover:bg-[#F5ECEC]"
+                          >
+                            Suspend
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStatusUpdate(user.id, "ACTIVE")}
+                            className="rounded-full bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
+                          >
+                            Restore
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-          {!users.length && <div className="p-6 text-[var(--muted-foreground)]">No users found matching criteria.</div>}
-        </div>
+            {!users.length && <div className="p-6 text-[var(--muted-foreground)]">No users found matching criteria.</div>}
+          </div>
+        </>
       )}
     </section>
   );

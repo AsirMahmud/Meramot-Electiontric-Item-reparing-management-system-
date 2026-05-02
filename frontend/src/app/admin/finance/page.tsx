@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { getAuthHeaders } from "@/lib/api";
+import AdminTableControls from "@/components/admin/AdminTableControls";
+import { useAdminTableState } from "@/hooks/useAdminTableState";
 import {
   LineChart,
   Line,
@@ -439,16 +441,48 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      <div className="rounded-[1.5rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:rounded-[2rem] md:p-8">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-[var(--accent-dark)] md:text-xl">Recent Ledger Activity</h3>
-          <button onClick={loadEntries} className="text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--accent-dark)] md:text-sm">Refresh</button>
-        </div>
+      <LedgerTable entries={entries} loading={loadingEntries} onRefresh={loadEntries} />
+    </section>
+  );
+}
 
-        {loadingEntries ? (
-          <p className="mt-4 text-xs text-[var(--muted-foreground)] md:mt-6 md:text-sm">Fetching latest entries...</p>
-        ) : entries.length ? (
-          <div className="mt-4 overflow-x-auto md:mt-6">
+/* ── Ledger Table with pagination / search / sort ───────────── */
+
+function LedgerTable({
+  entries,
+  loading,
+  onRefresh,
+}: {
+  entries: LedgerEntry[];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const table = useAdminTableState(entries, ["action", "paymentId", "amount", "vendor", "customer", "note"] as any);
+
+  return (
+    <div className="rounded-[1.5rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:rounded-[2rem] md:p-8">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-[var(--accent-dark)] md:text-xl">Recent Ledger Activity</h3>
+        <button onClick={onRefresh} className="text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--accent-dark)] md:text-sm">Refresh</button>
+      </div>
+
+      {loading ? (
+        <p className="mt-4 text-xs text-[var(--muted-foreground)] md:mt-6 md:text-sm">Fetching latest entries...</p>
+      ) : entries.length ? (
+        <>
+          <div className="mt-4 md:mt-6">
+            <AdminTableControls
+              searchPlaceholder="Search ledger by action, transaction ID, party…"
+              searchQuery={table.searchQuery}
+              onSearchChange={table.setSearchQuery}
+              sortOrder={table.sortOrder}
+              onSortToggle={table.toggleSort}
+              currentPage={table.currentPage}
+              totalPages={table.totalPages}
+              onPageChange={table.setCurrentPage}
+            />
+          </div>
+          <div className="overflow-x-auto">
             <table className="min-w-full text-[10px] md:text-sm">
               <thead>
                 <tr className="border-b border-[var(--border)] text-left uppercase tracking-wider text-[var(--muted-foreground)] md:tracking-[0.16em]">
@@ -460,7 +494,7 @@ export default function AdminFinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0F0F0] dark:divide-white/10">
-                {entries.map((entry) => (
+                {table.paged.map((entry) => (
                   <tr key={entry.id} className="text-[var(--foreground)] transition hover:bg-[#F9FBFA] dark:hover:bg-white/5">
                     <td className="px-2 py-3 md:px-3 md:py-4">
                       <span className="inline-block rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-[8px] font-bold text-[var(--accent-dark)] md:px-3 md:py-1 md:text-[10px]">
@@ -470,17 +504,16 @@ export default function AdminFinancePage() {
                     <td className="px-2 py-3 font-bold md:px-3 md:py-4">{formatMoney(entry.amount)}</td>
                     <td className="px-2 py-3 font-mono text-[9px] text-[var(--muted-foreground)] md:px-3 md:py-4 md:text-xs">{entry.paymentId || "System"}</td>
                     <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4">{entry.vendor?.name || entry.customer?.name || "N/A"}</td>
-                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4">{new Date(entry.createdAt).toLocaleDateString()}</td>
+                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4">{new Date(entry.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <p className="mt-4 text-xs text-[var(--muted-foreground)] md:mt-6 md:text-sm">No financial activity recorded yet.</p>
-        )}
-      </div>
-    </section>
+        </>
+      ) : (
+        <p className="mt-4 text-xs text-[var(--muted-foreground)] md:mt-6 md:text-sm">No financial activity recorded yet.</p>
+      )}
+    </div>
   );
 }
-

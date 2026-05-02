@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/api";
 import { useSession } from "next-auth/react";
+import AdminTableControls from "@/components/admin/AdminTableControls";
+import { useAdminTableState } from "@/hooks/useAdminTableState";
 
 type VendorApplication = {
   id: string;
@@ -278,13 +280,50 @@ export default function AdminVendorsPage() {
         </div>
       </div>
 
-      <section>
-        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({pendingVendors.length})</h3>
-        {pendingVendors.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
-            No pending vendor applications.
-          </div>
-        ) : (
+      <PendingSection vendors={pendingVendors} actionId={actionId} onAction={handleApplicationAction} />
+      <AllVendorsSection
+        vendors={allOtherVendors}
+        actionId={actionId}
+        onSuspendToggle={handleShopSuspendToggle}
+        onFeaturedToggle={handleShopFeaturedToggle}
+        onDelete={handleDeleteApplication}
+      />
+    </div>
+  );
+}
+
+/* ── Pending Vendors Sub-Section ─────────────────────────────────── */
+
+function PendingSection({
+  vendors,
+  actionId,
+  onAction,
+}: {
+  vendors: VendorApplication[];
+  actionId: string | null;
+  onAction: (id: string, action: "approve" | "reject" | "request-info") => void;
+}) {
+  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any);
+
+  return (
+    <section>
+      <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({vendors.length})</h3>
+      {vendors.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+          No pending vendor applications.
+        </div>
+      ) : (
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search pending vendors…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
@@ -296,7 +335,7 @@ export default function AdminVendorsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
-                {pendingVendors.map((vendor) => (
+                {table.paged.map((vendor) => (
                   <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{vendor.shopName}</p>
@@ -307,7 +346,8 @@ export default function AdminVendorsPage() {
                       <p className="text-[var(--muted-foreground)] line-clamp-1">{vendor.phone}</p>
                     </td>
                     <td className="px-4 py-3 text-[var(--muted-foreground)] md:px-6 md:py-4">
-                      {new Date(vendor.createdAt).toLocaleDateString()}
+                      <span className="md:hidden">{new Date(vendor.createdAt).toLocaleDateString()}</span>
+                      <span className="hidden md:inline">{new Date(vendor.createdAt).toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3 text-right md:px-6 md:py-4">
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
@@ -320,7 +360,7 @@ export default function AdminVendorsPage() {
                         <button
                           type="button"
                           disabled={actionId === vendor.id}
-                          onClick={() => handleApplicationAction(vendor.id, "approve")}
+                          onClick={() => onAction(vendor.id, "approve")}
                           className="inline-flex w-full items-center justify-center rounded-lg bg-[#244233] px-3 py-1.5 text-[10px] font-bold text-[#DCEAD7] transition hover:bg-[var(--accent-dark)] disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           Approve
@@ -328,7 +368,7 @@ export default function AdminVendorsPage() {
                         <button
                           type="button"
                           disabled={actionId === vendor.id}
-                          onClick={() => handleApplicationAction(vendor.id, "reject")}
+                          onClick={() => onAction(vendor.id, "reject")}
                           className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500 dark:bg-red-500/10 dark:text-red-400 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           Reject
@@ -340,16 +380,48 @@ export default function AdminVendorsPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
+        </>
+      )}
+    </section>
+  );
+}
 
-      <section>
-        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Vendors ({allOtherVendors.length})</h3>
-        {allOtherVendors.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
-            No verified vendors found.
-          </div>
-        ) : (
+/* ── All Vendors Sub-Section ─────────────────────────────────────── */
+
+function AllVendorsSection({
+  vendors,
+  actionId,
+  onSuspendToggle,
+  onFeaturedToggle,
+  onDelete,
+}: {
+  vendors: VendorApplication[];
+  actionId: string | null;
+  onSuspendToggle: (vendorId: string, shopId: string, isActive: boolean) => void;
+  onFeaturedToggle: (vendorId: string, shopId: string, isFeatured: boolean) => void;
+  onDelete: (id: string) => void;
+}) {
+  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any);
+
+  return (
+    <section>
+      <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Vendors ({vendors.length})</h3>
+      {vendors.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+          No verified vendors found.
+        </div>
+      ) : (
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search vendors by name, email, phone…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
@@ -363,7 +435,7 @@ export default function AdminVendorsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
-                {allOtherVendors.map((vendor) => (
+                {table.paged.map((vendor) => (
                   <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{vendor.shopName}</p>
@@ -400,7 +472,7 @@ export default function AdminVendorsPage() {
                         <button
                           type="button"
                           disabled={actionId === vendor.id}
-                          onClick={() => handleShopFeaturedToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isFeatured)}
+                          onClick={() => onFeaturedToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isFeatured)}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 md:h-6 md:w-11 ${
                             vendor.shop.isFeatured ? "bg-[var(--accent-dark)]" : "bg-gray-300 dark:bg-gray-700"
                           }`}
@@ -427,7 +499,7 @@ export default function AdminVendorsPage() {
                           <button
                             type="button"
                             disabled={actionId === vendor.id}
-                            onClick={() => handleShopSuspendToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isActive)}
+                            onClick={() => onSuspendToggle(vendor.id, vendor.shop!.id, !vendor.shop!.isActive)}
                             className={`inline-flex w-full items-center justify-center rounded-lg border px-3 py-1.5 text-[10px] font-bold transition disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs ${
                               vendor.shop.isActive 
                                 ? "border-[#8A2A2A] text-[#8A2A2A] hover:bg-[#FDEAEA] dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10" 
@@ -440,7 +512,7 @@ export default function AdminVendorsPage() {
                         <button
                           type="button"
                           disabled={actionId === vendor.id}
-                          onClick={() => handleDeleteApplication(vendor.id)}
+                          onClick={() => onDelete(vendor.id)}
                           className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           Delete
@@ -452,8 +524,8 @@ export default function AdminVendorsPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
-    </div>
+        </>
+      )}
+    </section>
   );
 }

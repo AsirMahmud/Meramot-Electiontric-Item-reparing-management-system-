@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { fetchAdminDeliveryRiders, updateAdminDeliveryRiderStatus, deleteAdminDeliveryRider, fetchAdminDeliveryStats, type AdminDeliveryRider, type AdminDeliveryStats } from "@/lib/api";
+import AdminTableControls from "@/components/admin/AdminTableControls";
+import { useAdminTableState } from "@/hooks/useAdminTableState";
 
 type SessionUser = {
   accessToken?: string;
@@ -123,13 +125,44 @@ export default function AdminDeliveryPage() {
         </div>
       )}
 
-      <section>
-        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({pendingRiders.length})</h3>
-        {pendingRiders.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
-            No pending delivery rider applications.
-          </div>
-        ) : (
+      <PendingRidersSection riders={pendingRiders} actionId={actionId} onStatusUpdate={handleStatusUpdate} />
+      <AllRidersSection riders={allOtherRiders} actionId={actionId} onDeleteRider={handleDeleteRider} />
+    </div>
+  );
+}
+
+/* ── Pending Riders ───────────────────────────────────────────── */
+
+function PendingRidersSection({
+  riders,
+  actionId,
+  onStatusUpdate,
+}: {
+  riders: AdminDeliveryRider[];
+  actionId: string | null;
+  onStatusUpdate: (userId: string, newStatus: "APPROVED" | "REJECTED") => void;
+}) {
+  const table = useAdminTableState(riders, ["name", "email", "phone", "id"] as any);
+
+  return (
+    <section>
+      <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({riders.length})</h3>
+      {riders.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+          No pending delivery rider applications.
+        </div>
+      ) : (
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search pending riders…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
@@ -141,7 +174,7 @@ export default function AdminDeliveryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
-                {pendingRiders.map((rider) => (
+                {table.paged.map((rider) => (
                   <tr key={rider.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{rider.name || "Unknown"}</p>
@@ -152,14 +185,15 @@ export default function AdminDeliveryPage() {
                       <p className="text-[var(--muted-foreground)] line-clamp-1">{rider.phone || "—"}</p>
                     </td>
                     <td className="px-4 py-3 text-[var(--muted-foreground)] md:px-6 md:py-4">
-                      {new Date(rider.createdAt).toLocaleDateString()}
+                      <span className="md:hidden">{new Date(rider.createdAt).toLocaleDateString()}</span>
+                      <span className="hidden md:inline">{new Date(rider.createdAt).toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3 text-right md:px-6 md:py-4">
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <button
                           type="button"
                           disabled={actionId === rider.id}
-                          onClick={() => handleStatusUpdate(rider.id, "APPROVED")}
+                          onClick={() => onStatusUpdate(rider.id, "APPROVED")}
                           className="inline-flex w-full items-center justify-center rounded-lg bg-[#244233] px-3 py-1.5 text-[10px] font-bold text-[#DCEAD7] transition hover:bg-[var(--accent-dark)] disabled:opacity-50 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           Approve
@@ -167,7 +201,7 @@ export default function AdminDeliveryPage() {
                         <button
                           type="button"
                           disabled={actionId === rider.id}
-                          onClick={() => handleStatusUpdate(rider.id, "REJECTED")}
+                          onClick={() => onStatusUpdate(rider.id, "REJECTED")}
                           className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500 dark:bg-red-500/10 dark:text-red-400 md:w-auto md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           Reject
@@ -179,16 +213,44 @@ export default function AdminDeliveryPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
+        </>
+      )}
+    </section>
+  );
+}
 
-      <section>
-        <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Delivery Riders ({allOtherRiders.length})</h3>
-        {allOtherRiders.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
-            No verified delivery riders found.
-          </div>
-        ) : (
+/* ── All Riders ───────────────────────────────────────────────── */
+
+function AllRidersSection({
+  riders,
+  actionId,
+  onDeleteRider,
+}: {
+  riders: AdminDeliveryRider[];
+  actionId: string | null;
+  onDeleteRider: (userId: string) => void;
+}) {
+  const table = useAdminTableState(riders, ["name", "email", "phone", "id"] as any);
+
+  return (
+    <section>
+      <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Delivery Riders ({riders.length})</h3>
+      {riders.length === 0 ? (
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+          No verified delivery riders found.
+        </div>
+      ) : (
+        <>
+          <AdminTableControls
+            searchPlaceholder="Search riders by name, email, phone, ID…"
+            searchQuery={table.searchQuery}
+            onSearchChange={table.setSearchQuery}
+            sortOrder={table.sortOrder}
+            onSortToggle={table.toggleSort}
+            currentPage={table.currentPage}
+            totalPages={table.totalPages}
+            onPageChange={table.setCurrentPage}
+          />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
@@ -201,7 +263,7 @@ export default function AdminDeliveryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
-                {allOtherRiders.map((rider) => (
+                {table.paged.map((rider) => (
                   <tr key={rider.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{rider.name || "Unknown"}</p>
@@ -231,7 +293,7 @@ export default function AdminDeliveryPage() {
                         <button
                           type="button"
                           disabled={actionId === rider.id}
-                          onClick={() => handleDeleteRider(rider.id)}
+                          onClick={() => onDeleteRider(rider.id)}
                           className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           Delete
@@ -242,8 +304,8 @@ export default function AdminDeliveryPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </section>
-    </div>
+        </>
+      )}
+    </section>
   );
 }
