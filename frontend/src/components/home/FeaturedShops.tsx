@@ -46,8 +46,8 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
         Featured shops
       </h2>
 
-      {/* Desktop Grid — 2 cols on md, 3 on lg */}
-      <div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Desktop Grid — 2 cols */}
+      <div className="hidden md:grid gap-4 md:grid-cols-2">
         {displayShops.slice(0, 6).map((shop) => (
           <div key={shop.id} className="h-full">
             <ShopCard shop={shop} href={`/shops/${shop.slug}`} compact={false} />
