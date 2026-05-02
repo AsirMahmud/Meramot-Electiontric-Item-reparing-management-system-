@@ -7,11 +7,14 @@ import { useMemo, useState } from "react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/finance", label: "Finance Ledger" },
-  { href: "/admin/tickets", label: "Support Tickets" },
-  { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/vendors", label: "Vendors" },
   { href: "/admin/delivery", label: "Delivery Riders" },
+  { href: "/admin/tickets", label: "Support Tickets" },
+  { href: "/admin/disputes", label: "Disputes" },
+  { href: "/admin/payments", label: "Payments" },
+  { href: "/admin/reviews", label: "Reviews" },
+  { href: "/admin/finance", label: "Finance Ledger" },
 ];
 
 export default function AdminSidebarNav({ onNavClick }: { onNavClick?: () => void }) {
