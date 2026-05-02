@@ -55,43 +55,43 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
         ))}
       </div>
 
-      {/* Mobile Grid — 3 cols, aspect-square compact tiles */}
-      <div className="grid grid-cols-3 gap-2 md:hidden">
+      {/* Mobile Grid — 2 cols, natural height tiles */}
+      <div className="grid grid-cols-2 gap-3 md:hidden">
         {displayShops.slice(0, 6).map((shop) => (
           <Link
             key={shop.id}
             href={`/shops/${shop.slug}`}
-            className="relative flex aspect-square flex-col justify-between overflow-hidden rounded-[1rem] border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-95 active:bg-[var(--mint-50)]"
+            className="relative flex flex-col justify-between overflow-hidden rounded-[1rem] border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition active:scale-95 active:bg-[var(--mint-50)] min-h-[140px]"
           >
             {/* Top Row: Logo & Rating */}
-            <div className="flex items-start justify-between gap-1">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.6rem] bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.75rem] bg-[var(--mint-100)] text-sm font-bold text-[var(--accent-dark)]">
                 {shop.logoUrl ? (
-                  <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-[0.6rem] object-cover" />
+                  <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-[0.75rem] object-cover" />
                 ) : (
                   shop.name.charAt(0).toUpperCase()
                 )}
               </div>
-              <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-1 py-0.5 text-[8.5px] font-bold text-[var(--accent-dark)]">
+              <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--accent-dark)]">
                 ★ {(shop.ratingAvg ?? 0).toFixed(1)}
               </div>
             </div>
 
             {/* Title */}
-            <div className="mt-1 min-w-0">
-              <h3 className="line-clamp-2 text-[9px] font-bold leading-[1.15] tracking-tight text-[var(--foreground)]">
+            <div className="mt-2 min-w-0">
+              <h3 className="line-clamp-2 text-xs font-bold leading-tight tracking-tight text-[var(--foreground)]">
                 {shop.name}
               </h3>
             </div>
 
             {/* Bottom: Price & Badges */}
-            <div className="mt-auto pt-1 flex items-end justify-between gap-1">
+            <div className="mt-auto pt-2 flex items-end justify-between gap-1">
               {shop.offerSummary ? (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[8px] font-bold uppercase text-[var(--muted-foreground)] leading-none truncate">
+                  <span className="text-[9px] font-bold uppercase text-[var(--muted-foreground)] leading-none truncate">
                     Starting from
                   </span>
-                  <div className="text-[13px] font-black tracking-tight text-[var(--accent-dark)] leading-none mt-1 truncate">
+                  <div className="text-sm font-black tracking-tight text-[var(--accent-dark)] leading-none mt-1.5 truncate">
                     {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
                   </div>
                 </div>
@@ -99,13 +99,13 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
               
               <div className="flex flex-col items-end gap-1 shrink-0">
                 {shop.hasVoucher && (
-                  <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-[var(--accent-foreground)] leading-none">
+                  <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[3px] text-[7px] font-bold uppercase tracking-widest text-[var(--accent-foreground)] leading-none">
                     VOUCHER
                   </span>
                 )}
                 {shop.freeDelivery && (
-                  <span className="rounded bg-[var(--mint-100)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
-                    FREE DELIVERY
+                  <span className="rounded bg-[var(--mint-100)] px-1.5 py-[3px] text-[7px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
+                    FREE
                   </span>
                 )}
               </div>
