@@ -135,49 +135,51 @@ function FeaturedShopTile({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm transition active:scale-[0.97] active:bg-[var(--mint-50)]"
+      className="relative flex aspect-square flex-col justify-between overflow-hidden rounded-[1rem] border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-95 active:bg-[var(--mint-50)]"
     >
       {/* Top Row: Logo & Rating */}
       <div className="flex items-start justify-between gap-1">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--mint-100)] text-[15px] font-bold text-[var(--accent-dark)]">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.6rem] bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
           {shop.logoUrl ? (
-            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-xl object-cover" />
+            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-[0.6rem] object-cover" />
           ) : (
             shop.name.charAt(0).toUpperCase()
           )}
         </div>
-        <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent-dark)]">
+        <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-1 py-0.5 text-[8.5px] font-bold text-[var(--accent-dark)]">
           ★ {(shop.ratingAvg ?? 0).toFixed(1)}
         </div>
       </div>
 
       {/* Title */}
-      <div className="mt-2 min-w-0">
-        <h3 className="line-clamp-2 text-[13px] font-extrabold leading-tight text-[var(--foreground)]">
+      <div className="mt-1 min-w-0">
+        <h3 className="line-clamp-2 text-[10.5px] font-extrabold leading-[1.1] tracking-tight text-[var(--foreground)]">
           {shop.name}
         </h3>
-        <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
-          {shop.reviewCount ?? 0} ratings
-        </p>
       </div>
 
       {/* Bottom: Price & Badges */}
-      <div className="mt-2 pt-1">
+      <div className="mt-auto pt-0.5">
         {shop.offerSummary && (
-          <div className="text-[12px] font-black tracking-tight text-[var(--accent-dark)]">
-            {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
+          <div className="flex flex-col">
+            <span className="text-[7.5px] font-bold uppercase text-[var(--muted-foreground)] leading-[1]">
+              {shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee"}
+            </span>
+            <div className="text-[10px] font-black tracking-tighter text-[var(--accent-dark)] leading-none mt-[2px]">
+              {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
+            </div>
           </div>
         )}
         
         {(shop.hasVoucher || shop.freeDelivery) && (
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="mt-1 flex flex-wrap gap-0.5">
             {shop.hasVoucher && (
-              <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[2px] text-[8px] font-bold uppercase tracking-wider text-white">
+              <span className="rounded bg-[var(--accent-dark)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-white leading-none">
                 Voucher
               </span>
             )}
             {shop.freeDelivery && (
-              <span className="rounded bg-[var(--mint-100)] px-1.5 py-[2px] text-[8px] font-bold uppercase tracking-wider text-[var(--accent-dark)]">
+              <span className="rounded bg-[var(--mint-100)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
                 Free
               </span>
             )}
@@ -487,7 +489,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
             {localFeatured ? (
               <>
                 {/* Mobile: 3-col aspect-square compact tiles */}
-                <div className="grid grid-cols-2 gap-3 md:hidden">
+                <div className="grid grid-cols-3 gap-2 md:hidden">
                   {visibleShops.map((shop) => (
                     <FeaturedShopTile key={shop.id} shop={shop} />
                   ))}

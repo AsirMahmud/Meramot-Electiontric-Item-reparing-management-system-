@@ -87,8 +87,13 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
             {/* Bottom: Price & Badges */}
             <div className="mt-auto pt-0.5">
               {shop.offerSummary && (
-                <div className="text-[10px] font-black tracking-tighter text-[var(--accent-dark)] leading-none">
-                  {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
+                <div className="flex flex-col">
+                  <span className="text-[7.5px] font-bold uppercase text-[var(--muted-foreground)] leading-[1]">
+                    {shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee"}
+                  </span>
+                  <div className="text-[10px] font-black tracking-tighter text-[var(--accent-dark)] leading-none mt-[2px]">
+                    {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
+                  </div>
                 </div>
               )}
               
