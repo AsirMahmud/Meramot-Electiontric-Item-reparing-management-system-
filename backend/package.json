@@ -11,7 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/master-seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
