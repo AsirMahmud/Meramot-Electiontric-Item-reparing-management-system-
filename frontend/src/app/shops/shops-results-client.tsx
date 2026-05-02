@@ -131,6 +131,46 @@ function ShopResultCard({ shop }: { shop: Shop }) {
   );
 }
 
+function FeaturedShopTile({ shop }: { shop: Shop }) {
+  return (
+    <Link
+      href={`/shops/${shop.slug}`}
+      className="flex aspect-square flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-[0.97] active:bg-[var(--mint-100)]"
+    >
+      <div className="min-w-0">
+        <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
+          {shop.logoUrl ? (
+            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-lg object-cover" />
+          ) : (
+            shop.name.charAt(0).toUpperCase()
+          )}
+        </div>
+        <h3 className="line-clamp-2 text-[10px] font-bold leading-tight text-[var(--foreground)]">
+          {shop.name}
+        </h3>
+        <p className="mt-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
+          ★ {(shop.ratingAvg ?? 0).toFixed(1)}
+        </p>
+      </div>
+      
+      {(shop.hasVoucher || shop.freeDelivery) && (
+        <div className="flex flex-wrap gap-0.5 mt-auto pt-1">
+          {shop.hasVoucher && (
+            <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
+              Voucher
+            </span>
+          )}
+          {shop.freeDelivery && (
+            <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
+              Free
+            </span>
+          )}
+        </div>
+      )}
+    </Link>
+  );
+}
+
 function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean }) {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
@@ -426,11 +466,29 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
               })}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleShops.map((shop) => (
-                <ShopResultCard key={shop.id} shop={shop} />
-              ))}
-            </div>
+            {/* Featured shops: separate mobile (3-col square tiles) and desktop (regular cards) grids */}
+            {localFeatured ? (
+              <>
+                {/* Mobile: 3-col aspect-square compact tiles */}
+                <div className="grid grid-cols-3 gap-2 md:hidden">
+                  {visibleShops.map((shop) => (
+                    <FeaturedShopTile key={shop.id} shop={shop} />
+                  ))}
+                </div>
+                {/* Desktop: regular card grid */}
+                <div className="hidden md:grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleShops.map((shop) => (
+                    <ShopResultCard key={shop.id} shop={shop} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {visibleShops.map((shop) => (
+                  <ShopResultCard key={shop.id} shop={shop} />
+                ))}
+              </div>
+            )}
 
             {!loading && visibleShops.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-[var(--muted-foreground)]">
