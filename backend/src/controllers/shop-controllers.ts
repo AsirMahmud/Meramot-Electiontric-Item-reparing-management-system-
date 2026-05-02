@@ -137,7 +137,7 @@ export async function getShops(req: Request, res: Response) {
             ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
             : shop.baseLaborFee
             ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
-            : `Starting from ৳${(shop.priceLevel || 1) * 1000}`,
+            : `Starting from ৳${(shop.priceLevel || 1) * 150}`,
           resultTag: resultTag({
             priceLevel: shop.priceLevel,
             distanceKm,
@@ -151,7 +151,7 @@ export async function getShops(req: Request, res: Response) {
 
     const sorted = enriched.sort((a, b) => {
       if (sort === "price") {
-        const getPrice = (s: any) => s.inspectionFee ?? ((s.priceLevel || 1) * 1000);
+        const getPrice = (s: any) => s.inspectionFee ?? ((s.priceLevel || 1) * 150);
         const priceA = getPrice(a);
         const priceB = getPrice(b);
         
@@ -228,7 +228,7 @@ export async function getFeaturedShops(_req: Request, res: Response) {
         ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
         : shop.baseLaborFee
         ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
-        : `Starting from ৳${(shop.priceLevel || 1) * 1000}`,
+        : `Starting from ৳${(shop.priceLevel || 1) * 150}`,
     }));
 
     return res.json(enriched);

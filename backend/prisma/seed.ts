@@ -380,10 +380,10 @@ async function main() {
         hasVoucher: (i + 1) % 2 === 0,
         freeDelivery: (i + 1) % 4 === 0,
         hasDeals: (i + 1) % 5 === 0,
-        inspectionFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
-        baseLaborFee: Math.floor(Math.random() * 6 + 5) * 100, // 500 to 1000
-        pickupFee: Math.floor(Math.random() * 2 + 1) * 100, // 100 to 200
-        expressFee: Math.floor(Math.random() * 3 + 3) * 100, // 300, 400, 500
+        inspectionFee: (() => { const pl = Math.floor(Math.random() * 3) + 1; return [100, 150, 200][pl - 1] + Math.floor(Math.random() * 3) * 50; })(), // 100-300 for budget, 150-350 for mid, 200-400 for premium
+        baseLaborFee: Math.floor(Math.random() * 6 + 3) * 100, // 300 to 800
+        pickupFee: Math.floor(Math.random() * 3) * 50 + 50, // 50, 100, or 150
+        expressFee: Math.floor(Math.random() * 4 + 2) * 100, // 200 to 500
         setupComplete: true,
         isPublic: true,
         categories: [

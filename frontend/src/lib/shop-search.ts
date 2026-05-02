@@ -109,7 +109,7 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
           const parsed = parseInt(s.offerSummary.replace(/\D/g, ""), 10);
           if (!isNaN(parsed)) return parsed;
         }
-        return s.inspectionFee ?? ((s.priceLevel || 1) * 1000);
+        return s.inspectionFee ?? ((s.priceLevel || 1) * 150);
       };
       
       const priceA = getPrice(a);
