@@ -31,7 +31,7 @@ export default function ShopCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className={`truncate font-bold text-[var(--foreground)] ${!compact ? 'text-base md:text-lg' : 'text-sm md:text-base'}`}>
+                <h3 className={`line-clamp-2 font-bold text-[var(--foreground)] ${!compact ? 'text-base md:text-lg' : 'text-sm md:text-base'}`}>
                   {shop.name}
                 </h3>
                 <p className={`mt-0.5 text-[var(--muted-foreground)] line-clamp-1 ${!compact ? 'text-xs md:text-sm' : 'text-[11px] md:text-xs'}`}>
