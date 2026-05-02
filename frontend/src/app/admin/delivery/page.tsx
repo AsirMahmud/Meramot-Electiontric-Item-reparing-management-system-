@@ -164,7 +164,13 @@ function PendingRidersSection({
             onPageChange={table.setCurrentPage}
           />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
-            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "25%" }} />
+                <col style={{ width: "25%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "28%" }} />
+              </colgroup>
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">User</th>
@@ -252,7 +258,14 @@ function AllRidersSection({
             onPageChange={table.setCurrentPage}
           />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
-            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "24%" }} />
+              </colgroup>
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">User</th>

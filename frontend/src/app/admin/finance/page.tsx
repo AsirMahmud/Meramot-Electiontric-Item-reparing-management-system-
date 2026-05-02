@@ -483,7 +483,14 @@ function LedgerTable({
             />
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-[10px] md:text-sm">
+            <table className="min-w-full text-[10px] md:text-sm" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "25%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "18%" }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-[var(--border)] text-left uppercase tracking-wider text-[var(--muted-foreground)] md:tracking-[0.16em]">
                   <th className="px-2 py-3 md:px-3 md:py-4">Event Type</th>
@@ -497,14 +504,14 @@ function LedgerTable({
                 {table.paged.map((entry) => (
                   <tr key={entry.id} className="text-[var(--foreground)] transition hover:bg-[#F9FBFA] dark:hover:bg-white/5">
                     <td className="px-2 py-3 md:px-3 md:py-4">
-                      <span className="inline-block rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-[8px] font-bold text-[var(--accent-dark)] md:px-3 md:py-1 md:text-[10px]">
+                      <span className="inline-block rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-[8px] font-bold text-[var(--accent-dark)] md:px-3 md:py-1 md:text-[10px] whitespace-nowrap">
                         {entry.action.replace(/_/g, " ")}
                       </span>
                     </td>
-                    <td className="px-2 py-3 font-bold md:px-3 md:py-4">{formatMoney(entry.amount)}</td>
-                    <td className="px-2 py-3 font-mono text-[9px] text-[var(--muted-foreground)] md:px-3 md:py-4 md:text-xs">{entry.paymentId || "System"}</td>
-                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4">{entry.vendor?.name || entry.customer?.name || "N/A"}</td>
-                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4">{new Date(entry.createdAt).toLocaleString()}</td>
+                    <td className="px-2 py-3 font-bold md:px-3 md:py-4 whitespace-nowrap">{formatMoney(entry.amount)}</td>
+                    <td className="px-2 py-3 font-mono text-[9px] text-[var(--muted-foreground)] md:px-3 md:py-4 md:text-xs truncate">{entry.paymentId || "System"}</td>
+                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4 truncate">{entry.vendor?.name || entry.customer?.name || "N/A"}</td>
+                    <td className="px-2 py-3 text-[var(--muted-foreground)] md:px-3 md:py-4 whitespace-nowrap">{new Date(entry.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

@@ -168,7 +168,7 @@ export default function AdminVendorDetailPage() {
 
   const handleShopSuspendToggle = async (isActive: boolean) => {
       if (!application?.shop) return;
-      if (!window.confirm(`Are you sure you want to ${isActive ? 'reinstate' : 'suspend'} this shop?`)) {
+      if (!window.confirm(`Are you sure you want to ${isActive ? 'restore' : 'suspend'} this shop?`)) {
           return;
       }
 
@@ -420,9 +420,9 @@ export default function AdminVendorDetailPage() {
                                 disabled={isProcessing}
                                 className="w-full rounded-xl bg-[var(--accent-dark)] px-4 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50"
                             >
-                                Reinstate Shop
+                                Restore Shop
                             </button>
-                            <p className="mt-2 text-xs text-[var(--muted-foreground)]">Reinstating the shop makes it active for customers again.</p>
+                            <p className="mt-2 text-xs text-[var(--muted-foreground)]">Restoring the shop makes it active for customers again.</p>
                         </div>
                     )}
 

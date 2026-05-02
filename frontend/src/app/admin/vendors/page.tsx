@@ -110,7 +110,7 @@ export default function AdminVendorsPage() {
   };
 
   const handleShopSuspendToggle = async (vendorId: string, shopId: string, isActive: boolean) => {
-    if (!window.confirm(`Are you sure you want to ${isActive ? 'reinstate' : 'suspend'} this shop?`)) {
+    if (!window.confirm(`Are you sure you want to ${isActive ? 'restore' : 'suspend'} this shop?`)) {
       return;
     }
 
@@ -325,7 +325,13 @@ function PendingSection({
             onPageChange={table.setCurrentPage}
           />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
-            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "28%" }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "28%" }} />
+              </colgroup>
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
@@ -423,7 +429,15 @@ function AllVendorsSection({
             onPageChange={table.setCurrentPage}
           />
           <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
-            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
+            <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "28%" }} />
+              </colgroup>
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
@@ -506,7 +520,7 @@ function AllVendorsSection({
                                 : "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white hover:opacity-90"
                             }`}
                           >
-                            {vendor.shop.isActive ? "Suspend" : "Reinstate"}
+                            {vendor.shop.isActive ? "Suspend" : "Restore"}
                           </button>
                         )}
                         <button

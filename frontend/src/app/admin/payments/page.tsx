@@ -86,7 +86,15 @@ export default function AdminPaymentsPage() {
           />
           <div className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--mint-50)]">
             <div className="overflow-x-auto">
-              <table className="min-w-full">
+              <table className="min-w-full" style={{ tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "14%" }} />
+                  <col style={{ width: "18%" }} />
+                </colgroup>
                 <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
                   <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
                     <th className="px-5 py-4">Transaction</th>
@@ -101,16 +109,16 @@ export default function AdminPaymentsPage() {
                   {table.paged.map((payment) => (
                     <tr key={payment.id} className="border-b border-[var(--border)] last:border-b-0">
                       <td className="px-5 py-4 text-sm text-[var(--foreground)]">
-                        <p className="font-semibold text-[var(--accent-dark)]">
+                        <p className="font-semibold text-[var(--accent-dark)] truncate">
                           {payment.transactionRef || "N/A"}
                         </p>
-                        <p className="mt-1 text-xs text-[var(--muted-foreground)]">{payment.id}</p>
+                        <p className="mt-1 text-xs text-[var(--muted-foreground)] truncate">{payment.id}</p>
                       </td>
                       <td className="px-5 py-4 text-sm text-[var(--foreground)]">
-                        <p>{payment.user.name || payment.user.username}</p>
-                        <p className="text-xs text-[var(--muted-foreground)]">{payment.user.email}</p>
+                        <p className="truncate">{payment.user.name || payment.user.username}</p>
+                        <p className="text-xs text-[var(--muted-foreground)] truncate">{payment.user.email}</p>
                       </td>
-                      <td className="px-5 py-4 text-sm font-semibold text-[var(--accent-dark)]">
+                      <td className="px-5 py-4 text-sm font-semibold text-[var(--accent-dark)] whitespace-nowrap">
                         {String(payment.amount)} {payment.currency}
                       </td>
                       <td className="px-5 py-4 text-sm text-[var(--foreground)]">{payment.method || "N/A"}</td>
@@ -119,7 +127,7 @@ export default function AdminPaymentsPage() {
                           {payment.status}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-xs text-[var(--muted-foreground)]">
+                      <td className="px-5 py-4 text-xs text-[var(--muted-foreground)] whitespace-nowrap">
                         {new Date(payment.createdAt).toLocaleString()}
                       </td>
                     </tr>

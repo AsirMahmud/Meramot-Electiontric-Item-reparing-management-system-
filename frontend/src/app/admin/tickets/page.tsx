@@ -77,7 +77,14 @@ export default function AdminTicketsPage() {
           />
           <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-50)] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:rounded-[28px]">
             <div className="overflow-x-auto">
-              <table className="min-w-full">
+              <table className="min-w-full" style={{ tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: "30%" }} />
+                  <col style={{ width: "25%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "13%" }} />
+                  <col style={{ width: "20%" }} />
+                </colgroup>
                 <thead className="border-b border-[var(--border)] bg-[var(--mint-100)]">
                   <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--muted-foreground)] md:text-sm md:tracking-[0.18em]">
                     <th className="px-3 py-3 md:px-6 md:py-4">Subject</th>

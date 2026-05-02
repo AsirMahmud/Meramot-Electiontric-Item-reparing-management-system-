@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Link from "next/link";
 
 import { useSession } from "next-auth/react";
 
@@ -45,13 +46,13 @@ export default function AdminDashboardPage() {
 
   const cards = stats
     ? [
-        { label: "Total Users", value: stats.totalUsers },
-        { label: "Vendors", value: stats.totalVendors },
-        { label: "Delivery Users", value: stats.totalDeliveryUsers },
-        { label: "Pending Vendor Review", value: stats.pendingVendorApplications },
-        { label: "Open Tickets", value: stats.openTickets },
-        { label: "Active Disputes", value: stats.activeDisputes },
-        { label: "Pending Refunds", value: stats.pendingRefunds },
+        { label: "Total Users", value: stats.totalUsers, href: "/admin/users" },
+        { label: "Vendors", value: stats.totalVendors, href: "/admin/vendors" },
+        { label: "Delivery Users", value: stats.totalDeliveryUsers, href: "/admin/delivery" },
+        { label: "Pending Vendor Review", value: stats.pendingVendorApplications, href: "/admin/vendors" },
+        { label: "Open Tickets", value: stats.openTickets, href: "/admin/tickets" },
+        { label: "Active Disputes", value: stats.activeDisputes, href: "/admin/disputes" },
+        { label: "Pending Refunds", value: stats.pendingRefunds, href: "/admin/payments" },
       ]
     : [];
 
@@ -72,17 +73,18 @@ export default function AdminDashboardPage() {
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
           {cards.map((card) => (
-            <div
+            <Link
               key={card.label}
-              className="flex aspect-square flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-2 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:block sm:aspect-auto sm:text-left md:rounded-[28px] md:p-6"
+              href={card.href}
+              className="group flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-2 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md hover:border-[var(--accent-dark)]/30 sm:block sm:aspect-auto sm:text-left md:rounded-[28px] md:p-6"
             >
-              <p className="mb-1 text-[10px] font-bold uppercase leading-tight tracking-wider text-[var(--muted-foreground)] sm:mb-0 sm:text-xs sm:font-semibold sm:tracking-[0.22em]">
+              <p className="mb-1 text-[10px] font-bold uppercase leading-tight tracking-wider text-[var(--muted-foreground)] transition-colors group-hover:text-[var(--accent-dark)] sm:mb-0 sm:text-xs sm:font-semibold sm:tracking-[0.22em]">
                 {card.label}
               </p>
               <p className="text-2xl font-extrabold leading-none text-[var(--accent-dark)] sm:mt-2 sm:font-bold md:mt-4 md:text-4xl">
                 {card.value}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}

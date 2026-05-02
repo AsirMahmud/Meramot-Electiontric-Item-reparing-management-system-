@@ -299,7 +299,7 @@ export default function AdminUsersPage() {
       newStatus === "DELETED"
         ? "Are you sure you want to DELETE this user? This will soft-delete their account and they won't be able to log in."
         : newStatus === "SUSPENDED"
-          ? "Are you sure you want to BAN (suspend) this user? They won't be able to access the platform until restored."
+          ? "Are you sure you want to SUSPEND this user? They won't be able to access the platform until restored."
           : `Are you sure you want to ${label} this user?`;
 
     if (!window.confirm(confirmMessage)) return;
@@ -346,7 +346,7 @@ export default function AdminUsersPage() {
       <div>
         <h2 className="text-xl font-bold text-[var(--accent-dark)] md:text-2xl">Users</h2>
         <p className="mt-1 text-xs text-[var(--muted-foreground)] md:text-sm">
-          View profiles, ban, or delete user accounts on the platform.
+          View profiles, suspend, or delete user accounts on the platform.
         </p>
       </div>
 
@@ -354,7 +354,7 @@ export default function AdminUsersPage() {
       <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
         <StatCard label="Total Users" value={totalUsers} />
         <StatCard label="Active" value={activeUsers} color="text-emerald-600" />
-        <StatCard label="Banned" value={suspendedUsers} color="text-amber-600" />
+        <StatCard label="Suspended" value={suspendedUsers} color="text-amber-600" />
         <StatCard label="Deleted" value={deletedUsers} color="text-rose-600" />
       </div>
 
@@ -379,7 +379,7 @@ export default function AdminUsersPage() {
         >
           <option value="">All Statuses</option>
           <option value="ACTIVE">Active</option>
-          <option value="SUSPENDED">Banned</option>
+          <option value="SUSPENDED">Suspended</option>
           <option value="DELETED">Deleted</option>
         </select>
       </div>
@@ -404,7 +404,14 @@ export default function AdminUsersPage() {
 
           <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm">
+              <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
+                <colgroup>
+                  <col style={{ width: "30%" }} />
+                  <col style={{ width: "12%" }} />
+                  <col style={{ width: "13%" }} />
+                  <col className="hidden md:table-column" style={{ width: "20%" }} />
+                  <col style={{ width: "25%" }} />
+                </colgroup>
                 <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                   <tr>
                     <th className="px-4 py-3 font-semibold md:px-6 md:py-4">User</th>
@@ -458,30 +465,30 @@ export default function AdminUsersPage() {
                             View
                           </button>
 
-                          {/* Ban / Unban */}
+                          {/* Suspend / Restore */}
                           {user.status === "ACTIVE" ? (
                             <button
                               type="button"
                               disabled={actionId === user.id}
-                              onClick={() => handleStatusUpdate(user.id, "SUSPENDED", "Ban")}
+                              onClick={() => handleStatusUpdate(user.id, "SUSPENDED", "Suspend")}
                               className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-amber-400 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50 dark:border-amber-500 dark:bg-amber-500/10 dark:text-amber-400 md:w-auto md:rounded-xl md:px-3 md:py-1.5 md:text-xs"
                             >
                               <svg className="h-3 w-3 md:h-3.5 md:w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                               </svg>
-                              Ban
+                              Suspend
                             </button>
                           ) : user.status === "SUSPENDED" ? (
                             <button
                               type="button"
                               disabled={actionId === user.id}
-                              onClick={() => handleStatusUpdate(user.id, "ACTIVE", "Unban")}
+                              onClick={() => handleStatusUpdate(user.id, "ACTIVE", "Restore")}
                               className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[var(--accent-dark)] px-2.5 py-1 text-[10px] font-bold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1.5 md:text-xs"
                             >
                               <svg className="h-3 w-3 md:h-3.5 md:w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              Unban
+                              Restore
                             </button>
                           ) : null}
 
