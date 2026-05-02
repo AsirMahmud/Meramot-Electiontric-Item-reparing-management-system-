@@ -133,9 +133,11 @@ export async function getShops(req: Request, res: Response) {
           ...shop,
           distanceKm,
           etaMinutes,
-          offerSummary: shop.baseLaborFee 
-            ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}` 
-            : `Inspection ৳${(shop.inspectionFee ?? 0).toLocaleString("en-BD")}`,
+          offerSummary: shop.inspectionFee != null
+            ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
+            : shop.baseLaborFee
+            ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
+            : `Starting from ৳${(shop.priceLevel || 1) * 1000}`,
           resultTag: resultTag({
             priceLevel: shop.priceLevel,
             distanceKm,
@@ -149,11 +151,16 @@ export async function getShops(req: Request, res: Response) {
 
     const sorted = enriched.sort((a, b) => {
       if (sort === "price") {
-        const getPrice = (s: any) => s.baseLaborFee ? s.baseLaborFee : (s.inspectionFee ?? ((s.priceLevel || 1) * 1000));
+        const getPrice = (s: any) => s.inspectionFee ?? ((s.priceLevel || 1) * 1000);
         const priceA = getPrice(a);
         const priceB = getPrice(b);
         
         if (priceA !== priceB) return priceA - priceB;
+
+        const laborA = a.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
+        const laborB = b.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
+        if (laborA !== laborB) return laborA - laborB;
+
         if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
         return (b.ratingAvg || 0) - (a.ratingAvg || 0);
       }
@@ -250,9 +257,11 @@ export async function getFeaturedShops(_req: Request, res: Response) {
 
     const enriched = shops.map((shop) => ({
       ...shop,
-      offerSummary: shop.baseLaborFee 
-        ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}` 
-        : `Inspection ৳${(shop.inspectionFee ?? 0).toLocaleString("en-BD")}`,
+      offerSummary: shop.inspectionFee != null
+        ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
+        : shop.baseLaborFee
+        ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
+        : `Starting from ৳${(shop.priceLevel || 1) * 1000}`,
     }));
 
     return res.json(enriched);

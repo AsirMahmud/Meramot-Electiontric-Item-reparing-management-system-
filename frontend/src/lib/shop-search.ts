@@ -104,11 +104,23 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
     }
 
     if (state.sort === "price") {
-      const getPrice = (s: any) => s.baseLaborFee ? s.baseLaborFee : (s.inspectionFee ?? ((s.priceLevel || 1) * 1000));
+      const getPrice = (s: any) => {
+        if (s.offerSummary) {
+          const parsed = parseInt(s.offerSummary.replace(/\D/g, ""), 10);
+          if (!isNaN(parsed)) return parsed;
+        }
+        return s.inspectionFee ?? ((s.priceLevel || 1) * 1000);
+      };
+      
       const priceA = getPrice(a);
       const priceB = getPrice(b);
       
       if (priceA !== priceB) return priceA - priceB;
+      
+      const laborA = a.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
+      const laborB = b.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
+      if (laborA !== laborB) return laborA - laborB;
+
       if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
       return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
     }
