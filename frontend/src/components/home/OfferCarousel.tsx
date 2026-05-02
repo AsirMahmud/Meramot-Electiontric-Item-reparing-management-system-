@@ -7,9 +7,9 @@ export default function OfferCarousel() {
       {offerCards.map((offer) => (
         <article
           key={offer.title}
-          className="flex flex-col justify-center rounded-[1.4rem] bg-[var(--mint-100)] p-4 shadow-sm md:min-h-[260px] md:rounded-[2rem] md:p-10 lg:min-h-[280px]"
+          className="flex flex-col rounded-[1.4rem] bg-[var(--mint-100)] p-4 shadow-sm md:min-h-[260px] md:justify-center md:rounded-[2rem] md:p-10 lg:min-h-[280px]"
         >
-          <div>
+          <div className="flex flex-1 flex-col justify-center">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--foreground)] md:mb-2 md:text-sm md:tracking-[0.2em] lg:text-base">
             Offer available
           </p>

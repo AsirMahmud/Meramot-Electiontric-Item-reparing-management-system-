@@ -79,7 +79,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
 
             {/* Title */}
             <div className="mt-1 min-w-0">
-              <h3 className="line-clamp-2 text-[10.5px] font-extrabold leading-[1.1] tracking-tight text-[var(--foreground)]">
+              <h3 className="line-clamp-2 text-[9px] font-bold leading-[1.15] tracking-tight text-[var(--foreground)]">
                 {shop.name}
               </h3>
             </div>
