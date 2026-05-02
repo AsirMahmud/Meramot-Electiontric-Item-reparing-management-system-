@@ -371,11 +371,40 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
             </div>
 
             <div>
-              <div className="mb-2 text-sm font-semibold text-[var(--foreground)] md:mb-3 md:text-lg">
-                Distance
+              <div className="mb-2 flex items-center justify-between md:mb-3">
+                <span className="text-sm font-semibold text-[var(--foreground)] md:text-lg">
+                  Distance
+                </span>
+                {/* Toggle to enable/disable distance filtering */}
+                <button
+                  type="button"
+                  aria-label="Toggle distance filter"
+                  onClick={() => {
+                    if (localDistance === 9999) {
+                      // Re-enable with default 25km
+                      setLocalDistance(25);
+                      updateParams({ maxDistanceKm: "25" });
+                    } else {
+                      // Disable — show all shops
+                      setLocalDistance(9999);
+                      updateParams({ maxDistanceKm: "9999" });
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    localDistance !== 9999
+                      ? "bg-[var(--accent-dark)]"
+                      : "bg-[var(--mint-200)]"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out ${
+                      localDistance !== 9999 ? "translate-x-5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
               </div>
 
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm md:p-4">
+              <div className={`rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-sm md:p-4 transition-opacity ${localDistance === 9999 ? "opacity-40 pointer-events-none" : ""}`}>
                 <div className="mb-2 flex items-center justify-between text-xs text-[var(--muted-foreground)] md:text-sm">
                   <span>Nearby only</span>
                   <span>{localDistance === 9999 ? "Anywhere" : `${localDistance} km`}</span>
@@ -386,7 +415,7 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
                   min={1}
                   max={25}
                   step={1}
-                  value={localDistance}
+                  value={localDistance === 9999 ? 25 : localDistance}
                   onChange={(event) => {
                     setLocalDistance(Number(event.currentTarget.value));
                   }}
