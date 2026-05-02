@@ -131,64 +131,6 @@ function ShopResultCard({ shop }: { shop: Shop }) {
   );
 }
 
-function FeaturedShopTile({ shop }: { shop: Shop }) {
-  return (
-    <Link
-      href={`/shops/${shop.slug}`}
-      className="relative flex aspect-square flex-col justify-between overflow-hidden rounded-[1rem] border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-95 active:bg-[var(--mint-50)]"
-    >
-      {/* Top Row: Logo & Rating */}
-      <div className="flex items-start justify-between gap-1">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.6rem] bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
-          {shop.logoUrl ? (
-            <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-[0.6rem] object-cover" />
-          ) : (
-            shop.name.charAt(0).toUpperCase()
-          )}
-        </div>
-        <div className="flex shrink-0 items-center rounded-full bg-[var(--mint-50)] px-1 py-0.5 text-[8.5px] font-bold text-[var(--accent-dark)]">
-          ★ {(shop.ratingAvg ?? 0).toFixed(1)}
-        </div>
-      </div>
-
-      {/* Title */}
-      <div className="mt-1 min-w-0">
-        <h3 className="line-clamp-2 text-[10.5px] font-extrabold leading-[1.1] tracking-tight text-[var(--foreground)]">
-          {shop.name}
-        </h3>
-      </div>
-
-      {/* Bottom: Price & Badges */}
-      <div className="mt-auto pt-0.5">
-        {shop.offerSummary && (
-          <div className="flex flex-col">
-            <span className="text-[7.5px] font-bold uppercase text-[var(--muted-foreground)] leading-[1]">
-              {shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee"}
-            </span>
-            <div className="text-[10px] font-black tracking-tighter text-[var(--accent-dark)] leading-none mt-[2px]">
-              {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
-            </div>
-          </div>
-        )}
-        
-        {(shop.hasVoucher || shop.freeDelivery) && (
-          <div className="mt-1 flex flex-wrap gap-0.5">
-            {shop.hasVoucher && (
-              <span className="rounded bg-[var(--accent-dark)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-white leading-none">
-                Voucher
-              </span>
-            )}
-            {shop.freeDelivery && (
-              <span className="rounded bg-[var(--mint-100)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
-                Free
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}
 
 function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean }) {
   const { data: session } = useSession();
@@ -485,29 +427,11 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
               })}
             </div>
 
-            {/* Featured shops: separate mobile (3-col square tiles) and desktop (regular cards) grids */}
-            {localFeatured ? (
-              <>
-                {/* Mobile: 3-col aspect-square compact tiles */}
-                <div className="grid grid-cols-3 gap-2 md:hidden">
-                  {visibleShops.map((shop) => (
-                    <FeaturedShopTile key={shop.id} shop={shop} />
-                  ))}
-                </div>
-                {/* Desktop: regular card grid */}
-                <div className="hidden md:grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {visibleShops.map((shop) => (
-                    <ShopResultCard key={shop.id} shop={shop} />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {visibleShops.map((shop) => (
-                  <ShopResultCard key={shop.id} shop={shop} />
-                ))}
-              </div>
-            )}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleShops.map((shop) => (
+                <ShopResultCard key={shop.id} shop={shop} />
+              ))}
+            </div>
 
             {!loading && visibleShops.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-[var(--muted-foreground)]">
