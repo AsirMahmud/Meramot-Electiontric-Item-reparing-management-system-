@@ -9,7 +9,7 @@ export default function OfferCarousel() {
           key={offer.title}
           className="flex flex-col rounded-[1.4rem] bg-[var(--mint-100)] p-4 shadow-sm md:min-h-[260px] md:justify-center md:rounded-[2rem] md:p-10 lg:min-h-[280px]"
         >
-          <div className="flex flex-1 flex-col justify-center">
+          <div className="flex flex-1 flex-col">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--foreground)] md:mb-2 md:text-sm md:tracking-[0.2em] lg:text-base">
             Offer available
           </p>
@@ -22,13 +22,15 @@ export default function OfferCarousel() {
             {offer.subtitle}
           </p>
 
-            <Link
-              href={offer.href}
-              className="mt-4 self-start inline-flex rounded-full bg-[var(--accent-dark)] px-4 py-1.5 text-xs font-semibold text-[var(--accent-foreground)] md:mt-5 md:px-5 md:py-2 md:text-sm lg:mt-6 lg:px-6 lg:py-2.5 lg:text-base"
-            >
-              Explore
-              <span className="hidden md:inline">&nbsp;shops</span>
-            </Link>
+            <div className="mt-auto pt-4 md:pt-5 lg:pt-6">
+              <Link
+                href={offer.href}
+                className="self-start inline-flex rounded-full bg-[var(--accent-dark)] px-4 py-1.5 text-xs font-semibold text-[var(--accent-foreground)] md:px-5 md:py-2 md:text-sm lg:px-6 lg:py-2.5 lg:text-base"
+              >
+                Explore
+                <span className="hidden md:inline">&nbsp;shops</span>
+              </Link>
+            </div>
           </div>
         </article>
       ))}
