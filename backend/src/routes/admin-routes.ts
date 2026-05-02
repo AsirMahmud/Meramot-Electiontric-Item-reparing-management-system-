@@ -462,8 +462,10 @@ router.get("/repair-requests", async (req: Request, res: Response) => {
         bids: {
           select: {
             id: true,
-            amount: true,
-            message: true,
+            totalCost: true,
+            partsCost: true,
+            laborCost: true,
+            notes: true,
             status: true,
             createdAt: true,
             shop: {

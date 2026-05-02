@@ -8,8 +8,10 @@ import { useAdminTableState } from "@/hooks/useAdminTableState";
 
 type RepairBid = {
   id: string;
-  amount: number;
-  message: string | null;
+  totalCost: number;
+  partsCost: number;
+  laborCost: number;
+  notes: string | null;
   status: string;
   createdAt: string;
   shop: { id: string; name: string; slug: string; area: string; city: string };
@@ -314,9 +316,9 @@ export default function AdminRepairRequestsPage() {
                                   <p className="text-[10px] text-[var(--muted-foreground)] md:text-xs">
                                     {bid.shop.area}, {bid.shop.city}
                                   </p>
-                                  {bid.message && (
+                                  {bid.notes && (
                                     <p className="mt-1 text-[10px] italic text-[var(--muted-foreground)] md:text-xs">
-                                      &ldquo;{bid.message}&rdquo;
+                                      &ldquo;{bid.notes}&rdquo;
                                     </p>
                                   )}
                                 </div>
@@ -325,7 +327,7 @@ export default function AdminRepairRequestsPage() {
                                     {bid.status.replace(/_/g, " ")}
                                   </span>
                                   <span className="text-xs font-bold text-[var(--accent-dark)]">
-                                    ৳{bid.amount.toLocaleString()}
+                                    ৳{bid.totalCost.toLocaleString()}
                                   </span>
                                   <span className="text-[9px] text-[var(--muted-foreground)] md:text-[10px]">
                                     {new Date(bid.createdAt).toLocaleDateString()}
