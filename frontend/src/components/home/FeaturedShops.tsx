@@ -114,19 +114,17 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
         ))}
       </div>
 
-      {displayShops.length > 6 && (
-        <div className="mt-6 flex justify-center md:mt-8">
-          <Link
-            href="/featured-shops"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent-dark)] bg-transparent px-6 py-2.5 text-sm font-bold text-[var(--accent-dark)] transition-colors hover:bg-[var(--mint-50)] md:px-8 md:py-3 md:text-base"
-          >
-            Explore More Featured Shops
-            <svg className="h-4 w-4 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </Link>
-        </div>
-      )}
+      <div className="mt-6 flex justify-center md:mt-8">
+        <Link
+          href="/featured-shops"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent-dark)] bg-transparent px-6 py-2.5 text-sm font-bold text-[var(--accent-dark)] transition-colors hover:bg-[var(--mint-50)] md:px-8 md:py-3 md:text-base"
+        >
+          Explore More Featured Shops
+          <svg className="h-4 w-4 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </Link>
+      </div>
     </section>
   );
 }
