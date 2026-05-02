@@ -708,18 +708,18 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             {/* Mobile: Logo + Title row. Desktop: Grid items */}
             <div className="flex items-start gap-4 lg:contents">
               {shop.logoUrl ? (
-                <div className="h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)]">
+                <div className="h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] lg:row-span-2">
                   <img src={shop.logoUrl} alt={shop.name} className="h-full w-full object-cover" />
                 </div>
               ) : (
-                <div className="flex h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 items-center justify-center rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A]">
+                <div className="flex h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 items-center justify-center rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A] lg:row-span-2">
                   <span className="text-3xl md:text-4xl font-bold text-[var(--accent-dark)] opacity-40">
                     {shop.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 lg:col-start-2 lg:row-start-1">
                 <p className="text-xs md:text-sm text-[var(--muted-foreground)] truncate">
                   {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
                 </p>
@@ -736,7 +736,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             </div>
 
             {/* Description & Contact - spans full width on mobile, middle column on desktop */}
-            <div className="text-sm md:text-base text-[var(--muted-foreground)] lg:col-start-2">
+            <div className="text-sm md:text-base text-[var(--muted-foreground)] lg:col-start-2 lg:row-start-2">
               <p>
                 {shop.description ||
                   "Professional device repair support with diagnostics, updates, and service handling from this shop."}
@@ -749,7 +749,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               )}
             </div>
 
-            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm w-full">
+            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm w-full lg:col-start-3 lg:row-start-1 lg:row-span-2">
               <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)]">
                 Go to cart
               </Link>
