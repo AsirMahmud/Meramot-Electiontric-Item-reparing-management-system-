@@ -85,8 +85,9 @@ function ShopResultCard({ shop }: { shop: Shop }) {
         </div>
       </div>
 
-      {/* Price + ETA row — stacks naturally below on mobile */}
+      {/* Price + Labor + ETA row */}
       <div className="mt-2.5 flex items-center justify-between rounded-xl bg-[var(--mint-50)] px-3 py-2 md:mt-3">
+        {/* Left: Inspection / Starting From */}
         <div>
           <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">
             {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
@@ -95,6 +96,16 @@ function ShopResultCard({ shop }: { shop: Shop }) {
             {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : "৳--"}
           </div>
         </div>
+
+        {/* Middle: Base Labor Fee */}
+        <div className="text-center border-x border-[var(--border)]/50 px-3 md:px-6 mx-2">
+          <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">Labor Fee</span>
+          <div className="text-[1.05rem] font-extrabold leading-tight tracking-tight text-[var(--accent-dark)] md:text-[1.25rem]">
+            {shop.baseLaborFee ? `৳${shop.baseLaborFee.toLocaleString("en-BD")}` : "৳--"}
+          </div>
+        </div>
+
+        {/* Right: ETA */}
         <div className="text-right">
           <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">ETA</span>
           <div className="text-sm font-bold text-[var(--foreground)] md:text-base">{etaLabel(shop.etaMinutes)}</div>
