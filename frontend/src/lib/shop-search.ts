@@ -44,7 +44,7 @@ export function toShopQuery(state: SearchState): ShopQuery {
     sort: state.sort,
     featured: state.featured || undefined,
     maxDistanceKm: state.maxDistanceKm,
-    take: 100,
+    take: 500,
     lat: state.lat,
     lng: state.lng,
   };
