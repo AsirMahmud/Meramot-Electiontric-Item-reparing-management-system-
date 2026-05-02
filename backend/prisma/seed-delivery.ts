@@ -191,7 +191,7 @@ async function main() {
 
   const deliveryVendorApp = await prisma.vendorApplication.upsert({
     where: { businessEmail: "vendor.delivery.demo@meeramoot.test" },
-    update: {},
+    update: { status: "APPROVED", reviewedAt: new Date() },
     create: {
       userId: deliveryShopVendor.id,
       ownerName: "Delivery Demo Shop Owner",
