@@ -38,7 +38,7 @@ type RepairRequest = {
   createdAt: string;
   updatedAt: string;
   user: { id: string; name?: string | null; username: string; email: string };
-  repairJobs: RepairJob[];
+  repairJob: RepairJob | null;
   bids: RepairBid[];
 };
 
@@ -142,7 +142,7 @@ export default function AdminRepairRequestsPage() {
             {[
               { label: "Total", value: requests.length, color: "var(--accent-dark)" },
               { label: "Bidding", value: requests.filter(r => r.mode === "BIDDING" && r.status !== "COMPLETED").length, color: "#9333ea" },
-              { label: "In Progress", value: requests.filter(r => r.repairJobs.some(j => j.status === "IN_PROGRESS")).length, color: "#f97316" },
+              { label: "In Progress", value: requests.filter(r => r.repairJob?.status === "IN_PROGRESS").length, color: "#f97316" },
               { label: "Completed", value: requests.filter(r => r.status === "COMPLETED").length, color: "#22c55e" },
               { label: "Cancelled", value: requests.filter(r => r.status === "CANCELLED").length, color: "#ef4444" },
             ].map((stat) => (
@@ -164,7 +164,7 @@ export default function AdminRepairRequestsPage() {
           <div className="space-y-3 md:space-y-4">
             {table.paged.map((req) => {
               const isOpen = expanded.has(req.id);
-              const hasJobs = req.repairJobs.length > 0;
+              const hasJob = !!req.repairJob;
               const hasBids = req.bids.length > 0;
 
               return (
@@ -219,9 +219,9 @@ export default function AdminRepairRequestsPage() {
 
                       {/* Counts row */}
                       <div className="mt-1.5 flex gap-3 text-[9px] md:text-xs">
-                        {hasJobs && (
+                        {hasJob && (
                           <span className="rounded-lg bg-[var(--mint-50)] px-2 py-0.5 font-medium text-[var(--accent-dark)]">
-                            {req.repairJobs.length} job{req.repairJobs.length > 1 ? "s" : ""}
+                            1 job
                           </span>
                         )}
                         {hasBids && (
@@ -256,43 +256,38 @@ export default function AdminRepairRequestsPage() {
                         </div>
                       )}
 
-                      {/* Repair Jobs */}
-                      {hasJobs && (
+                      {/* Repair Job */}
+                      {hasJob && req.repairJob && (
                         <div className="mb-4">
                           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] md:text-xs">
-                            Repair Jobs ({req.repairJobs.length})
+                            Repair Job
                           </p>
-                          <div className="space-y-2">
-                            {req.repairJobs.map((job) => (
-                              <div
-                                key={job.id}
-                                className="flex flex-col gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 md:flex-row md:items-center md:justify-between md:gap-4"
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-semibold text-[var(--foreground)] md:text-sm">
-                                    {job.shop.name}
-                                  </p>
-                                  <p className="text-[10px] text-[var(--muted-foreground)] md:text-xs">
-                                    {job.shop.area}, {job.shop.city}
-                                  </p>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className={`rounded-full px-2 py-0.5 text-[8px] font-bold uppercase md:text-[10px] ${statusColors[job.status] || "bg-gray-100 text-gray-700"}`}>
-                                    {jobStatusLabels[job.status] || job.status.replace(/_/g, " ")}
-                                  </span>
-                                  {job.finalQuotedAmount && (
-                                    <span className="text-xs font-semibold text-[var(--accent-dark)]">
-                                      ৳{job.finalQuotedAmount.toLocaleString()}
-                                    </span>
-                                  )}
-                                  {job.completedAt && (
-                                    <span className="text-[9px] text-[var(--muted-foreground)] md:text-[10px]">
-                                      Done: {new Date(job.completedAt).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                          <div
+                            className="flex flex-col gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 md:flex-row md:items-center md:justify-between md:gap-4"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-[var(--foreground)] md:text-sm">
+                                {req.repairJob.shop.name}
+                              </p>
+                              <p className="text-[10px] text-[var(--muted-foreground)] md:text-xs">
+                                {req.repairJob.shop.area}, {req.repairJob.shop.city}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`rounded-full px-2 py-0.5 text-[8px] font-bold uppercase md:text-[10px] ${statusColors[req.repairJob.status] || "bg-gray-100 text-gray-700"}`}>
+                                {jobStatusLabels[req.repairJob.status] || req.repairJob.status.replace(/_/g, " ")}
+                              </span>
+                              {req.repairJob.finalQuotedAmount && (
+                                <span className="text-xs font-semibold text-[var(--accent-dark)]">
+                                  ৳{req.repairJob.finalQuotedAmount.toLocaleString()}
+                                </span>
+                              )}
+                              {req.repairJob.completedAt && (
+                                <span className="text-[9px] text-[var(--muted-foreground)] md:text-[10px]">
+                                  Done: {new Date(req.repairJob.completedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -339,7 +334,7 @@ export default function AdminRepairRequestsPage() {
                         </div>
                       )}
 
-                      {!hasJobs && !hasBids && (
+                      {!hasJob && !hasBids && (
                         <p className="text-xs text-[var(--muted-foreground)] md:text-sm">
                           No jobs or bids associated with this request yet.
                         </p>

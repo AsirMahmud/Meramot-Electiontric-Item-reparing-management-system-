@@ -439,7 +439,7 @@ router.get("/repair-requests", async (req: Request, res: Response) => {
             email: true,
           },
         },
-        repairJobs: {
+        repairJob: {
           select: {
             id: true,
             status: true,
@@ -457,7 +457,6 @@ router.get("/repair-requests", async (req: Request, res: Response) => {
               },
             },
           },
-          orderBy: { createdAt: "desc" },
         },
         bids: {
           select: {
