@@ -77,6 +77,11 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
               <p className="mt-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
                 ★ {(shop.ratingAvg ?? 0).toFixed(1)}
               </p>
+              {shop.offerSummary && (
+                <p className="mt-0.5 text-[9px] font-bold text-[var(--foreground)]">
+                  {shop.offerSummary}
+                </p>
+              )}
             </div>
             
             {(shop.hasVoucher || shop.freeDelivery) && (
