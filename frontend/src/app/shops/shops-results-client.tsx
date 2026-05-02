@@ -200,6 +200,19 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
   const [apiFailed, setApiFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth < 768 ? 10 : 12);
+    };
+    handleResize(); // set initially
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const apiQueryKey = JSON.stringify({
     q: searchState.q,
     category: searchState.category,
@@ -239,6 +252,14 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
     const source = remoteShops.length > 0 ? remoteShops : (fallbackShops as Shop[]);
     return filterAndSortShops(source, searchState);
   }, [remoteShops, searchState]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchState, visibleShops.length]);
+
+  const totalPages = Math.ceil(visibleShops.length / itemsPerPage);
+  const paginatedShops = visibleShops.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const updateParams = (updates: Record<string, string | null>) => {
     // Update local state immediately for instant visual feedback
@@ -428,10 +449,53 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleShops.map((shop) => (
+              {paginatedShops.map((shop) => (
                 <ShopResultCard key={shop.id} shop={shop} />
               ))}
             </div>
+
+            {totalPages > 1 && (
+              <div className="mt-6 md:mt-8 flex flex-wrap justify-center items-center gap-2 pb-8">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    setCurrentPage((p) => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="flex items-center justify-center rounded-xl border border-[var(--border)] p-2.5 text-[var(--foreground)] hover:bg-[var(--mint-50)] disabled:opacity-30 disabled:hover:bg-transparent transition active:scale-95"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCurrentPage(i + 1);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl font-bold text-sm transition active:scale-95 ${
+                      currentPage === i + 1 
+                        ? "bg-[var(--accent-dark)] text-white shadow-sm" 
+                        : "border border-[var(--border)] hover:bg-[var(--mint-50)] text-[var(--foreground)]"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="flex items-center justify-center rounded-xl border border-[var(--border)] p-2.5 text-[var(--foreground)] hover:bg-[var(--mint-50)] disabled:opacity-30 disabled:hover:bg-transparent transition active:scale-95"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            )}
 
             {!loading && visibleShops.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-[var(--muted-foreground)]">
