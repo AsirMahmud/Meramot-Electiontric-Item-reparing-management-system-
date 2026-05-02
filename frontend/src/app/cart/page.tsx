@@ -814,11 +814,7 @@ export default function CartPage() {
               {currentStep < totalSteps ? (
                 <button 
                   type="button" 
-                  onClick={() => setCurrentStep(prev => {
-                    const next = Math.min(totalSteps, prev + 1);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return next;
-                  })}
+                  onClick={() => setCurrentStep(prev => Math.min(totalSteps, prev + 1))}
                   className="rounded-full bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-95 active:scale-95"
                 >
                   Next
