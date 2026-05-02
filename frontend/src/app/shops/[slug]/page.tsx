@@ -380,7 +380,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   }, [shop]);
 
   const ratingSummary = useMemo(() => {
-    if (!reviews.length) return { average: shop?.ratingAvg || 0, counts: [0, 0, 0, 0, 0] };
+    if (!reviews.length) return { average: 0, counts: [0, 0, 0, 0, 0] };
 
     const counts = [1, 2, 3, 4, 5].map(
       (star) => reviews.filter((review) => review.score === star).length,
@@ -729,7 +729,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                 </h1>
 
                 <div className="mt-1.5 md:mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-[var(--foreground)]">
-                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
+                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {ratingSummary.average.toFixed(1)} ({reviews.length})</span>
                   <span className="text-[var(--muted-foreground)]">{shop.address}</span>
                 </div>
               </div>
@@ -928,9 +928,8 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           />
         )}
 
-        {activeTab === "reviews" && (
-          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-            <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
               {isEditingReview ? "Edit your review" : "Write a review"}
             </p>
@@ -984,7 +983,6 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
           </section>
         </aside>
-        )}
       </div>
     </main>
   );
