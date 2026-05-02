@@ -470,18 +470,49 @@ async function main() {
     },
   });
 
-  // Create 500 dummy users efficiently
+  // Create 500 dummy users with realistic Bangladeshi names
+  const firstNames = [
+    "Rahim", "Karim", "Jamal", "Hasan", "Hussain", "Arif", "Shakib", "Tamim",
+    "Rafiq", "Sohel", "Imran", "Farhan", "Nabil", "Tanvir", "Mahfuz", "Ashiq",
+    "Sabbir", "Rakib", "Saiful", "Nazmul", "Mehedi", "Jubayer", "Fahim", "Shafiq",
+    "Rayhan", "Anik", "Siam", "Rashed", "Minhaj", "Tahmid", "Zubair", "Rimon",
+    "Nusrat", "Fatima", "Ayesha", "Tasnim", "Lamia", "Sadia", "Rafia", "Maliha",
+    "Sumaiya", "Nahida", "Jannatul", "Mariam", "Tabassum", "Farhana", "Sharmin",
+    "Nasreen", "Rumana", "Tania", "Afsana", "Israt", "Laboni", "Mitu", "Rima",
+    "Shapla", "Shirin", "Kamrun", "Sabina", "Habiba", "Dilruba", "Moushumi",
+  ];
+  const lastNames = [
+    "Ahmed", "Hossain", "Rahman", "Islam", "Uddin", "Alam", "Khan", "Miah",
+    "Chowdhury", "Sarker", "Das", "Bhuiyan", "Siddique", "Haque", "Talukder",
+    "Begum", "Khatun", "Sultana", "Akter", "Mahmud", "Kabir", "Rashid",
+    "Kamal", "Faruk", "Hasan", "Ali", "Sheikh", "Molla", "Biswas", "Roy",
+  ];
+
   await prisma.user.createMany({
-    data: Array.from({ length: 500 }).map((_, i) => ({
-      username: `reviewer_${i}`,
-      email: `dummy_reviewer_${i}@meramot.demo`,
-      passwordHash,
-      name: `Reviewer ${i}`,
-      phone: `+8801900${i.toString().padStart(4, '0')}`,
-      role: "CUSTOMER",
-    })),
+    data: Array.from({ length: 500 }).map((_, i) => {
+      const first = firstNames[i % firstNames.length];
+      const last = lastNames[Math.floor(i / firstNames.length) % lastNames.length];
+      return {
+        username: `reviewer_${i}`,
+        email: `dummy_reviewer_${i}@meramot.demo`,
+        passwordHash,
+        name: `${first} ${last}`,
+        phone: `+8801900${i.toString().padStart(4, '0')}`,
+        role: "CUSTOMER",
+      };
+    }),
     skipDuplicates: true,
   });
+
+  // Update names for any existing dummy users (skipDuplicates won't update them)
+  for (let i = 0; i < 500; i++) {
+    const first = firstNames[i % firstNames.length];
+    const last = lastNames[Math.floor(i / firstNames.length) % lastNames.length];
+    await prisma.user.updateMany({
+      where: { email: `dummy_reviewer_${i}@meramot.demo` },
+      data: { name: `${first} ${last}` },
+    });
+  }
 
   const dummyUsers = await prisma.user.findMany({
     where: { email: { startsWith: 'dummy_reviewer_' } },

@@ -942,13 +942,13 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               )}
 
               <div className="space-y-4">
-                {reviews.length === 0 && !showAllReviews && (
+                {reviews.filter(r => r.review).length === 0 && !showAllReviews && (
                   <p className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
-                    No written reviews.
+                    No written reviews yet.
                   </p>
                 )}
 
-                {(showAllReviews ? reviews : reviews.slice(0, 3)).map((item) => {
+                {(showAllReviews ? reviews.filter(r => r.review || existingReview?.id === r.id) : reviews.filter(r => r.review || existingReview?.id === r.id).slice(0, 3)).map((item) => {
                   const isMine = existingReview?.id === item.id;
                   return (
                     <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
@@ -999,12 +999,12 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                   );
                 })}
 
-                {!showAllReviews && reviews.length > 3 && (
+                {!showAllReviews && reviews.filter(r => r.review).length > 3 && (
                   <button
                     onClick={() => setShowAllReviews(true)}
                     className="mt-2 w-full rounded-[1.5rem] border-2 border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                   >
-                    See all {reviews.length} written reviews
+                    See all {reviews.filter(r => r.review).length} written reviews
                   </button>
                 )}
               </div>
