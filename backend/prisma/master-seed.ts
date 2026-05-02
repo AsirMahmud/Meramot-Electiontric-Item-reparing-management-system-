@@ -5,11 +5,11 @@
  * Requires env: ADMIN_PASSWORD
  * 
  * Execution order:
- *   1. seed.ts           → Admin, 20 shops w/ vendors, 500 reviewers, reviews+payments
- *   2. seed_mock_shops.ts → 12 additional shops with reviews
- *   3. seed-delivery.ts  → Delivery riders, zones, demo deliveries
- *   4. seed_bidding_test.ts → 2 test vendors + 8 bidding requests
- *   5. seed_bulk_users.ts → 10 test users with tickets/disputes
+ *   1. seed.ts                 → Admin, 32 shops w/ vendors, 500 reviewers, reviews+payments
+ *   2. seed-delivery.ts        → Delivery riders, zones, demo deliveries
+ *   3. seed_bidding_test.ts    → 2 test vendors + 8 bidding requests
+ *   4. seed_bulk_users.ts      → 10 test users with tickets/disputes
+ *   5. seed_nationwide_shops.ts → 100 shops across all 8 divisions of Bangladesh
  */
 
 import { execSync } from "child_process";
@@ -24,6 +24,7 @@ const seeds = [
   { file: "seed-delivery.ts", label: "Delivery workflow demo data" },
   { file: "seed_bidding_test.ts", label: "Bidding test data" },
   { file: "seed_bulk_users.ts", label: "Bulk users with tickets/disputes" },
+  { file: "seed_nationwide_shops.ts", label: "100 nationwide shops (all 8 divisions) with reviews+transactions" },
 ];
 
 async function main() {
