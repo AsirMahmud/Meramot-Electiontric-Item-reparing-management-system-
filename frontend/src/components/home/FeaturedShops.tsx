@@ -100,7 +100,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
               {(shop.hasVoucher || shop.freeDelivery) && (
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   {shop.hasVoucher && (
-                    <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-white leading-none">
+                    <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-[var(--accent-foreground)] leading-none">
                       VOUCHER
                     </span>
                   )}
