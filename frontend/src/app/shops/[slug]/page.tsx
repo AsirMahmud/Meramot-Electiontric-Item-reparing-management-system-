@@ -763,13 +763,31 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0">
-          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
-              <p className="mt-2 text-[var(--muted-foreground)]">
-                Add services to cart first, then choose schedule, payment method, and address during checkout.
-              </p>
-            </div>
+          <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-medium text-[var(--muted-foreground)]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("services")}
+              className={`pb-2 outline-none font-semibold transition ${activeTab === "services" ? "border-b-4 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Services
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("reviews")}
+              className={`pb-2 outline-none font-semibold transition ${activeTab === "reviews" ? "border-b-4 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Reviews
+            </button>
+          </div>
+
+          {activeTab === "services" && (
+            <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
+              <div className="mb-5">
+                <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
+                <p className="mt-2 text-[var(--muted-foreground)]">
+                  Add services to cart first, then choose schedule, payment method, and address during checkout.
+                </p>
+              </div>
 
               <div className="space-y-4">
                 {serviceItems.map((item) => (
@@ -803,8 +821,10 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                 ))}
               </div>
             </div>
+          )}
 
-            <section className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+          {activeTab === "reviews" && (
+            <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
@@ -894,6 +914,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               </div>
             </div>
           </section>
+          )}
         </section>
 
         {locationModalOpen && (
@@ -907,8 +928,9 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           />
         )}
 
-        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        {activeTab === "reviews" && (
+          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
               {isEditingReview ? "Edit your review" : "Write a review"}
             </p>
@@ -962,6 +984,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
           </section>
         </aside>
+        )}
       </div>
     </main>
   );
