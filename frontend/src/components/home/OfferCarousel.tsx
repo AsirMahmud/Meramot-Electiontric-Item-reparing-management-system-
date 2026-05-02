@@ -3,7 +3,7 @@ import { offerCards } from "@/lib/mock-data";
 
 export default function OfferCarousel() {
   return (
-    <section className="grid grid-cols-2 gap-3 md:gap-4 lg:max-w-[928px]">
+    <section className="grid grid-cols-2 gap-3 md:gap-4">
       {offerCards.map((offer) => (
         <article
           key={offer.title}
