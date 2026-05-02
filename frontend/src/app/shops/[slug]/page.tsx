@@ -783,7 +783,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               )}
 
               <div className="min-w-0 flex-1 lg:col-start-2 lg:row-start-1">
-                <p className="text-xs md:text-sm text-[var(--muted-foreground)] truncate">
+                <p className="text-xs md:text-sm text-[var(--muted-foreground)] line-clamp-2">
                   {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
                 </p>
 
