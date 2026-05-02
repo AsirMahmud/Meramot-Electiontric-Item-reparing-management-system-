@@ -86,7 +86,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
       </div>
 
       {/* Price + Labor + ETA row */}
-      <div className="mt-2.5 flex items-center justify-between rounded-xl bg-[var(--mint-50)] px-3 py-2 md:mt-3">
+      <div className="mt-2.5 grid grid-cols-3 items-center rounded-xl bg-[var(--mint-50)] px-3 py-2 md:mt-3">
         {/* Left: Inspection / Starting From */}
         <div>
           <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">
@@ -98,7 +98,7 @@ function ShopResultCard({ shop }: { shop: Shop }) {
         </div>
 
         {/* Middle: Base Labor Fee */}
-        <div className="text-center border-x border-[var(--border)]/50 px-3 md:px-6 mx-2">
+        <div className="text-center border-x border-[var(--border)]/50 px-3 md:px-6">
           <span className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-[11px]">Labor Fee</span>
           <div className="text-[1.05rem] font-extrabold leading-tight tracking-tight text-[var(--accent-dark)] md:text-[1.25rem]">
             {shop.baseLaborFee ? `৳${shop.baseLaborFee.toLocaleString("en-BD")}` : "৳--"}
