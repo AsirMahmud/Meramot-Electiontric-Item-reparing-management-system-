@@ -68,8 +68,8 @@ async function main() {
         "Power supply",
       ],
       inspectionFee: 500,
-      baseLaborFee: 1200,
-      pickupFee: 200,
+      baseLaborFee: 800,
+      pickupFee: 150,
       expressFee: 500,
     },
   ];

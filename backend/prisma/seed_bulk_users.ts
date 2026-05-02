@@ -1,4 +1,4 @@
-﻿import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import {
   PrismaClient,
   RequestMode,
@@ -15,10 +15,10 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("password123", 10);
   
-  // Find a shop to associate requests with
-  const shop = await prisma.shop.findFirst();
+  // Use a deterministic shop (first by slug alphabetically) for consistent data
+  const shop = await prisma.shop.findFirst({ orderBy: { slug: "asc" } });
   if (!shop) {
-    console.error("Γ¥î Error: No shops found. Please run comprehensive seed first.");
+    console.error("Error: No shops found. Please run main seed first.");
     return;
   }
 
