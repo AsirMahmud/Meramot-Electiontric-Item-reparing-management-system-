@@ -13,12 +13,12 @@ export default function PopularCategories() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-3 lg:gap-6 lg:px-12 xl:px-24">
         {popularCategories.map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className="flex aspect-square flex-col items-center justify-center gap-2 rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:gap-3 md:rounded-[1.75rem] md:p-4"
+            className="flex aspect-square md:aspect-[4/3] flex-col items-center justify-center gap-2 rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:gap-3 md:rounded-[1.75rem] md:p-4"
           >
             <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[1rem] bg-[var(--mint-200)] text-3xl shadow-inner md:h-20 md:w-20 md:rounded-[1.25rem] md:text-4xl lg:h-24 lg:w-24 lg:text-5xl">
               {item.sprite}
