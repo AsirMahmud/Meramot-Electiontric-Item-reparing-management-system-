@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import {
   PrismaClient,
@@ -8,7 +9,6 @@ import {
   type Shop,
   type User,
 } from "@prisma/client";
-
 
 const prisma = new PrismaClient();
 
@@ -48,62 +48,176 @@ const reviewTexts = [
 ];
 
 async function seedShopReviews(shops: Shop[], users: User[]) {
-  for (let shopIndex = 0; shopIndex < shops.length; shopIndex++) {
-    const shop = shops[shopIndex];
+  const userIds = users.map(u => u.id);
 
-    const reviewCount = 8 + (shopIndex % 8); 
-    const selectedUsers = users.slice(0, reviewCount);
+  // ── FULL CLEANUP: Delete ALL seed-generated financial + review data ──
+  // Order matters due to foreign key constraints: children first, parents last.
+  console.log("  Cleaning up previous seed data...");
+  await prisma.escrowLedger.deleteMany({ where: { customerUserId: { in: userIds } } });
+  await prisma.ledgerEntry.deleteMany({ where: { payment: { userId: { in: userIds } } } });
+  await prisma.payment.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.rating.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.repairJob.deleteMany({ where: { repairRequest: { userId: { in: userIds } } } });
+  await prisma.repairRequest.deleteMany({ where: { userId: { in: userIds } } });
 
-    for (let reviewIndex = 0; reviewIndex < selectedUsers.length; reviewIndex++) {
-      const user = selectedUsers[reviewIndex];
+  const ratingData: any[] = [];
+  const requestData: any[] = [];
+  const jobData: any[] = [];
+  const paymentData: any[] = [];
+  const ledgerData: any[] = [];
+  const escrowLedgerData: any[] = [];
 
-      const scorePattern = [5, 5, 4, 5, 4, 3, 5, 4, 5, 4, 3, 5, 4, 5, 5];
-      const score = scorePattern[(shopIndex + reviewIndex) % scorePattern.length];
+  // Track which users have already rated which shops to enforce uniqueness
+  const usedPairs = new Set<string>();
 
-      await prisma.rating.upsert({
-        where: {
-          userId_shopId: {
-            userId: user.id,
-            shopId: shop.id,
-          },
-        },
-        update: {
-          score,
-          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
-        },
-        create: {
-          userId: user.id,
-          shopId: shop.id,
-          score,
-          review: reviewTexts[(shopIndex + reviewIndex) % reviewTexts.length],
-          createdAt: new Date(Date.now() - (reviewIndex + 10) * 24 * 60 * 60 * 1000),
-        },
+  for (const shop of shops) {
+    // Each shop gets 30–80 reviews (well under 500 user cap)
+    const reviewCount = Math.floor(Math.random() * 50) + 30;
+    const selectedUsers = randomSubset(users, reviewCount);
+
+    for (const user of selectedUsers) {
+      const pairKey = `${user.id}::${shop.id}`;
+      if (usedPairs.has(pairKey)) continue; // enforce @@unique([userId, shopId])
+      usedPairs.add(pairKey);
+
+      // ── Realistic star distribution ──
+      // Target average: ~4.0-4.3 per shop (typical for repair services)
+      // 5★: 35%  4★: 25%  3★: 20%  2★: 12%  1★: 8%
+      const r = Math.random();
+      let score: number;
+      if      (r < 0.08) score = 1;
+      else if (r < 0.20) score = 2;
+      else if (r < 0.40) score = 3;
+      else if (r < 0.65) score = 4;
+      else               score = 5;
+
+      // ~30% of ratings include a written review
+      const hasText = Math.random() < 0.30;
+      const reviewText = hasText ? randomFrom(reviewTexts) : null;
+
+      // Timeline: request → job start → job complete → payment → review
+      const reviewDate = new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000);
+      const requestDate = new Date(reviewDate.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const jobStartDate = new Date(reviewDate.getTime() - 10 * 24 * 60 * 60 * 1000);
+      const jobCompleteDate = new Date(reviewDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+      const paymentDate = new Date(reviewDate.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+      // Realistic repair amount: 800–8000 BDT
+      const amount = Math.floor(Math.random() * 7200) + 800;
+
+      // ── 1. RepairRequest ──
+      const requestId = crypto.randomUUID();
+      requestData.push({
+        id: requestId,
+        userId: user.id,
+        title: randomFrom(["Screen Repair", "Battery Replacement", "Keyboard Fix", "Charging Port", "General Checkup", "Motherboard Repair", "Water Damage Recovery", "SSD Upgrade"]),
+        deviceType: randomFrom(["Laptop", "Phone", "Tablet", "Desktop"]),
+        problem: "Device issue requiring professional repair",
+        mode: RequestMode.DIRECT_REPAIR,
+        status: RequestStatus.COMPLETED,
+        quotedFinalAmount: amount,
+        createdAt: requestDate,
+      });
+
+      // ── 2. RepairJob (linked to request + shop) ──
+      const jobId = crypto.randomUUID();
+      jobData.push({
+        id: jobId,
+        repairRequestId: requestId,
+        shopId: shop.id,
+        status: RepairJobStatus.COMPLETED,
+        customerApproved: true,
+        finalQuotedAmount: amount,
+        startedAt: jobStartDate,
+        completedAt: jobCompleteDate,
+        createdAt: requestDate,
+      });
+
+      // ── 3. Payment (PAID + escrow HELD) ──
+      const paymentId = crypto.randomUUID();
+      const transactionRef = `MMT-SEED-${paymentId.slice(0, 8).toUpperCase()}`;
+      paymentData.push({
+        id: paymentId,
+        userId: user.id,
+        repairRequestId: requestId,
+        amount,
+        currency: "BDT",
+        method: "SSLCOMMERZ",
+        status: "PAID",
+        escrowStatus: "HELD",
+        transactionRef,
+        paidAt: paymentDate,
+        createdAt: paymentDate,
+      });
+
+      // ── 4. LedgerEntry (financial audit trail) ──
+      ledgerData.push({
+        id: crypto.randomUUID(),
+        paymentId,
+        amount,
+        type: "CUSTOMER_PAYMENT",
+        direction: "CREDIT",
+        description: `Customer payment for repair job`,
+        createdAt: paymentDate,
+      });
+
+      // ── 5. EscrowLedger (escrow hold for admin dashboard) ──
+      escrowLedgerData.push({
+        id: crypto.randomUUID(),
+        paymentId,
+        repairRequestId: requestId,
+        customerUserId: user.id,
+        shopId: shop.id,
+        amount,
+        grossAmount: amount,
+        action: "PAYMENT_HELD",
+        note: "Payment held in escrow after successful transaction",
+        createdAt: paymentDate,
+      });
+
+      // ── 6. Rating ──
+      ratingData.push({
+        userId: user.id,
+        shopId: shop.id,
+        score,
+        review: reviewText,
+        createdAt: reviewDate,
       });
     }
+  }
 
+  // ── Bulk insert in dependency order ──
+  console.log(`  Inserting ${requestData.length} repair requests...`);
+  await prisma.repairRequest.createMany({ data: requestData, skipDuplicates: true });
+  console.log(`  Inserting ${jobData.length} repair jobs...`);
+  await prisma.repairJob.createMany({ data: jobData, skipDuplicates: true });
+  console.log(`  Inserting ${paymentData.length} payments...`);
+  await prisma.payment.createMany({ data: paymentData, skipDuplicates: true });
+  console.log(`  Inserting ${ledgerData.length} ledger entries...`);
+  await prisma.ledgerEntry.createMany({ data: ledgerData, skipDuplicates: true });
+  console.log(`  Inserting ${escrowLedgerData.length} escrow ledger entries...`);
+  await prisma.escrowLedger.createMany({ data: escrowLedgerData, skipDuplicates: true });
+  console.log(`  Inserting ${ratingData.length} ratings...`);
+  await prisma.rating.createMany({ data: ratingData, skipDuplicates: true });
+
+  // ── Sync shop aggregate fields from actual DB data ──
+  console.log("  Syncing shop rating aggregates...");
+  for (const shop of shops) {
     const aggregate = await prisma.rating.aggregate({
-      where: {
-        shopId: shop.id,
-        isHidden: false,
-      },
-      _avg: {
-        score: true,
-      },
-      _count: {
-        score: true,
-      },
+      where: { shopId: shop.id, isHidden: false },
+      _avg: { score: true },
+      _count: { score: true },
     });
 
     await prisma.shop.update({
-      where: {
-        id: shop.id,
-      },
+      where: { id: shop.id },
       data: {
         ratingAvg: Number((aggregate._avg.score ?? 0).toFixed(1)),
         reviewCount: aggregate._count.score,
       },
     });
   }
+  console.log("  ✓ Shop reviews and financial data seeded successfully.");
 }
 
 function randomFrom<T>(arr: T[]) {
@@ -351,6 +465,25 @@ async function main() {
     },
   });
 
+  // Create 500 dummy users efficiently
+  await prisma.user.createMany({
+    data: Array.from({ length: 500 }).map((_, i) => ({
+      username: `reviewer_${i}`,
+      email: `dummy_reviewer_${i}@meramot.demo`,
+      passwordHash,
+      name: `Reviewer ${i}`,
+      phone: `+8801900${i.toString().padStart(4, '0')}`,
+      role: "CUSTOMER",
+    })),
+    skipDuplicates: true,
+  });
+
+  const dummyUsers = await prisma.user.findMany({
+    where: { email: { startsWith: 'dummy_reviewer_' } },
+  });
+
+  // Generate review distribution
+  await seedShopReviews(shops, dummyUsers);
 }
 
 main()
