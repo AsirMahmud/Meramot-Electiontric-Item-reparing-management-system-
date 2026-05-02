@@ -380,7 +380,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   }, [shop]);
 
   const ratingSummary = useMemo(() => {
-    if (!reviews.length) return { average: 0, counts: [0, 0, 0, 0, 0] };
+    if (!reviews.length) return { average: shop?.ratingAvg || 0, counts: [0, 0, 0, 0, 0] };
 
     const counts = [1, 2, 3, 4, 5].map(
       (star) => reviews.filter((review) => review.score === star).length,
@@ -729,7 +729,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                 </h1>
 
                 <div className="mt-1.5 md:mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-[var(--foreground)]">
-                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {ratingSummary.average.toFixed(1)} ({reviews.length})</span>
+                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
                   <span className="text-[var(--muted-foreground)]">{shop.address}</span>
                 </div>
               </div>
@@ -841,7 +841,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                 </div>
                 <StarDisplay value={Math.round(ratingSummary.average)} />
                 <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                  {shop?.reviewCount ?? 0} review{(shop?.reviewCount ?? 0) === 1 ? "" : "s"}
                 </p>
               </div>
             </div>
