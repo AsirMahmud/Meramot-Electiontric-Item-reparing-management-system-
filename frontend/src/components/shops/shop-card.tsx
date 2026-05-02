@@ -63,17 +63,17 @@ export default function ShopCard({
 
       <div className={`mt-3 flex flex-wrap gap-2 ${!compact ? 'md:mt-5' : ''}`}>
         {shop.hasVoucher && (
-          <span className={`rounded-full bg-[var(--accent-dark)] px-3 py-1 text-[var(--accent-foreground)] font-semibold ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
+          <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
             Voucher
           </span>
         )}
         {shop.freeDelivery && (
-          <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] font-semibold ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
+          <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
             Free delivery
           </span>
         )}
         {shop.hasDeals && (
-          <span className={`rounded-full bg-[var(--accent-dark)] px-3 py-1 text-[var(--accent-foreground)] font-semibold ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
+          <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
             Deal
           </span>
         )}
