@@ -77,9 +77,6 @@ export default function ShopCard({
             Deal
           </span>
         )}
-        <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
-          {formatPriceLevel(shop.priceLevel ?? 1)}
-        </span>
       </div>
 
       {!compact && shop.specialties?.length ? (

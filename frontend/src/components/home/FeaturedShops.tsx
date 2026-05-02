@@ -5,7 +5,6 @@ import Link from "next/link";
 import { type Shop, getFeaturedShops } from "@/lib/api";
 import ShopCard from "@/components/shops/shop-card";
 import { fallbackShops } from "@/lib/mock-data";
-import { formatPriceLevel } from "@/lib/shop-search";
 
 type FeaturedShopsProps = {
   shops?: Shop[];
@@ -109,9 +108,6 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
                     FREE DELIVERY
                   </span>
                 )}
-                <span className="rounded bg-[var(--mint-100)] px-1.5 py-[2.5px] text-[8px] font-bold tracking-widest text-[var(--accent-dark)] leading-none">
-                  {formatPriceLevel(shop.priceLevel ?? 1)}
-                </span>
               </div>
             </div>
           </Link>
