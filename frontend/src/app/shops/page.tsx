@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import ShopsResultsClient from "./shops-results-client";
 
 export default function ShopsPage() {
-  redirect("/featured-shops");
+  return <ShopsResultsClient />;
 }

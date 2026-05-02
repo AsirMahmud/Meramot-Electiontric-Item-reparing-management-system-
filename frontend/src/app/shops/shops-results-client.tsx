@@ -34,6 +34,7 @@ const promoToggles = [
   { label: "Vouchers", key: "voucher" },
   { label: "Free Delivery", key: "freeDelivery" },
   { label: "Deals", key: "deals" },
+  { label: "Featured", key: "featured" },
 ] as const;
 
 const categoryLabels: Record<string, string> = {
@@ -364,6 +365,8 @@ function ShopsResultsClientInner({ forceFeatured }: { forceFeatured?: boolean })
 
               <div className="space-y-2 text-[var(--foreground)] md:space-y-4">
                 {promoToggles.map((promo) => {
+                  if (promo.key === "featured" && forceFeatured) return null;
+                  
                   const checked = searchState[promo.key];
 
                   return (
