@@ -867,7 +867,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               <div className="space-y-4">
                 {reviews.length === 0 && (
                   <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-[var(--muted-foreground)]">
-                    No reviews yet.
+                    No written reviews.
                   </p>
                 )}
 

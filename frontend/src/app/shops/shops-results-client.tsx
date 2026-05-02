@@ -34,7 +34,6 @@ const promoToggles = [
   { label: "Vouchers", key: "voucher" },
   { label: "Free Delivery", key: "freeDelivery" },
   { label: "Deals", key: "deals" },
-  { label: "Featured", key: "featured" },
 ] as const;
 
 const categoryLabels: Record<string, string> = {
