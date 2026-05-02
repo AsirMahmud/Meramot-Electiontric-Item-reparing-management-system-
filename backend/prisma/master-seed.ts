@@ -25,6 +25,7 @@ const seeds = [
   { file: "seed_bidding_test.ts", label: "Bidding test data" },
   { file: "seed_bulk_users.ts", label: "Bulk users with tickets/disputes" },
   { file: "seed_nationwide_shops.ts", label: "100 nationwide shops (all 8 divisions) with reviews+transactions" },
+  { file: "_diversify.ts", label: "Diversify repair request statuses" },
 ];
 
 async function main() {

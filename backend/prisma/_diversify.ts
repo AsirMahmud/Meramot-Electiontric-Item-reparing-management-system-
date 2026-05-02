@@ -13,20 +13,8 @@ async function diversify() {
   console.log("  🔄 Diversifying repair request statuses");
   console.log("═".repeat(60));
 
-  // ── Step 1: Fix orphan requests that aren't COMPLETED ──
-  const orphans = await p.repairRequest.findMany({
-    where: { status: { notIn: ["COMPLETED", "CANCELLED"] } },
-    select: { id: true, status: true, title: true },
-  });
-  console.log(`\n📌 Found ${orphans.length} non-completed requests to fix first`);
-
-  if (orphans.length > 0) {
-    await p.repairRequest.updateMany({
-      where: { status: { notIn: ["COMPLETED", "CANCELLED"] } },
-      data: { status: "COMPLETED" },
-    });
-    console.log(`  ✅ Set ${orphans.length} orphan requests → COMPLETED`);
-  }
+  // ── Step 1: Disabled to prevent conflict with seed_bidding_test.ts ──
+  console.log("  Step 1 skipped to avoid overwriting intentionally active test requests.");
 
   // ── Step 2: Pick ~80 completed requests and diversify ──
   const completed = await p.repairRequest.findMany({

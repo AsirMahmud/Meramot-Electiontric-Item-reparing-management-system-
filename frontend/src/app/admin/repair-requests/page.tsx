@@ -141,10 +141,10 @@ export default function AdminRepairRequestsPage() {
           <div className="mb-4 grid grid-cols-2 gap-2 md:mb-6 md:grid-cols-5 md:gap-3">
             {[
               { label: "Total", value: requests.length, color: "var(--accent-dark)" },
-              { label: "Bidding", value: requests.filter(r => r.mode === "BIDDING" && r.status !== "COMPLETED").length, color: "#9333ea" },
-              { label: "In Progress", value: requests.filter(r => r.repairJob?.status === "IN_PROGRESS").length, color: "#f97316" },
+              { label: "Pending", value: requests.filter(r => ["DRAFT", "PENDING", "BIDDING"].includes(r.status)).length, color: "#9333ea" },
+              { label: "In Progress", value: requests.filter(r => ["ASSIGNED", "PICKUP_SCHEDULED", "PICKED_UP", "AT_SHOP", "DIAGNOSING", "WAITING_APPROVAL", "REPAIRING", "RETURN_SCHEDULED", "RETURNING"].includes(r.status)).length, color: "#f97316" },
               { label: "Completed", value: requests.filter(r => r.status === "COMPLETED").length, color: "#22c55e" },
-              { label: "Cancelled", value: requests.filter(r => r.status === "CANCELLED").length, color: "#ef4444" },
+              { label: "Cancelled", value: requests.filter(r => ["CANCELLED", "REJECTED"].includes(r.status)).length, color: "#ef4444" },
             ].map((stat) => (
               <div
                 key={stat.label}
