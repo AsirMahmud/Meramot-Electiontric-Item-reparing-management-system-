@@ -106,7 +106,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
                   )}
                   {shop.freeDelivery && (
                     <span className="rounded bg-[var(--mint-100)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
-                      FREE
+                      FREE DELIVERY
                     </span>
                   )}
                 </div>
