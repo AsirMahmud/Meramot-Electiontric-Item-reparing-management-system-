@@ -47,7 +47,10 @@ const reviewTexts = [
   "Quick turnaround and good quality parts.",
 ];
 
-async function seedShopReviews(shops: Shop[], users: User[]) {
+async function seedShopReviews(users: User[]) {
+  // Fetch ALL shops from DB — not just seeded ones — to ensure every shop gets reviews
+  const shops = await prisma.shop.findMany();
+  console.log(`  Found ${shops.length} total shops in database.`);
   const userIds = users.map(u => u.id);
 
   // ── FULL CLEANUP: Delete ALL seed-generated financial + review data ──
@@ -200,17 +203,19 @@ async function seedShopReviews(shops: Shop[], users: User[]) {
   console.log(`  Inserting ${ratingData.length} ratings...`);
   await prisma.rating.createMany({ data: ratingData, skipDuplicates: true });
 
-  // ── Sync shop aggregate fields from actual DB data ──
-  console.log("  Syncing shop rating aggregates...");
-  for (const shop of shops) {
+  // ── Sync aggregate fields for EVERY shop in DB ──
+  // This ensures non-seeded shops also get their stale ratingAvg/reviewCount reset
+  const allShops = await prisma.shop.findMany({ select: { id: true } });
+  console.log(`  Syncing rating aggregates for all ${allShops.length} shops...`);
+  for (const s of allShops) {
     const aggregate = await prisma.rating.aggregate({
-      where: { shopId: shop.id, isHidden: false },
+      where: { shopId: s.id, isHidden: false },
       _avg: { score: true },
       _count: { score: true },
     });
 
     await prisma.shop.update({
-      where: { id: shop.id },
+      where: { id: s.id },
       data: {
         ratingAvg: Number((aggregate._avg.score ?? 0).toFixed(1)),
         reviewCount: aggregate._count.score,
@@ -483,7 +488,7 @@ async function main() {
   });
 
   // Generate review distribution
-  await seedShopReviews(shops, dummyUsers);
+  await seedShopReviews(dummyUsers);
 }
 
 main()
