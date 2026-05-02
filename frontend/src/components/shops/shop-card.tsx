@@ -50,7 +50,7 @@ export default function ShopCard({
 
               <div className="flex shrink-0 flex-col items-end pl-2 text-right">
                 <span className={`font-semibold text-[var(--muted-foreground)] uppercase tracking-wider ${!compact ? 'text-[10px] md:text-[11px]' : 'text-[9px] md:text-[10px]'}`}>
-                  {shop.offerSummary ? (shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee") : "From"}
+                  {shop.offerSummary ? "Starting from" : "From"}
                 </span>
                 <span className={`font-extrabold tracking-tight text-[var(--accent-dark)] leading-tight ${!compact ? 'text-base md:text-xl' : 'text-sm md:text-base'}`}>
                   {shop.offerSummary ? shop.offerSummary.replace(/Starting from |Inspection /i, "") : formatPriceLevel(shop.priceLevel ?? 1)}
@@ -77,6 +77,9 @@ export default function ShopCard({
             Deal
           </span>
         )}
+        <span className={`rounded-full bg-[var(--mint-100)] px-3 py-1 text-[var(--accent-dark)] ${!compact ? 'text-xs md:text-sm' : 'text-[10px] md:text-xs'}`}>
+          {formatPriceLevel(shop.priceLevel ?? 1)}
+        </span>
       </div>
 
       {!compact && shop.specialties?.length ? (
