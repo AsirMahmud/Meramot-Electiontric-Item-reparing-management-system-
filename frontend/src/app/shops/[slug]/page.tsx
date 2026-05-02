@@ -297,6 +297,8 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
   const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [selectedReviewText, setSelectedReviewText] = useState<string | null>(null);
   const { data: session } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
   const { selectedLocation, saveLocation } = useSelectedLocation(!!session?.user);
@@ -829,13 +831,13 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
         <section className="min-w-0">
           <div className="mb-4 md:mb-6 flex overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--muted-foreground)] scrollbar-hide">
             <button
-              onClick={() => setActiveTab("services")}
+              onClick={() => { setActiveTab("services"); setShowAllReviews(false); }}
               className={`px-5 py-3.5 transition ${activeTab === "services" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
             >
               Services
             </button>
             <button
-              onClick={() => setActiveTab("reviews")}
+              onClick={() => { setActiveTab("reviews"); setShowAllReviews(false); }}
               className={`px-5 py-3.5 transition ${activeTab === "reviews" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
             >
               Reviews ({shop.reviewCount ?? 0})
@@ -893,54 +895,60 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             </section>
           ) : (
             <section className="space-y-6">
-              <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-                <h2 className="mb-4 text-3xl font-bold text-[var(--foreground)]">Customer reviews</h2>
-                <div className="flex flex-col gap-6 md:flex-row md:items-center">
-                  <div className="flex shrink-0 flex-col items-center justify-center md:w-32">
-                    <div className="text-5xl font-extrabold tracking-tighter text-[var(--foreground)]">
-                      {ratingSummary.average.toFixed(1)}
+              {showAllReviews ? (
+                <div className="mb-6 flex flex-col-reverse items-start justify-between gap-4 border-b border-[var(--border)] pb-4 md:flex-row md:items-center">
+                  <button onClick={() => setShowAllReviews(false)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] shadow-sm transition hover:bg-[var(--mint-50)]">
+                    <svg className="h-5 w-5 text-[var(--accent-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    Back to shop profile
+                  </button>
+                  <h2 className="text-2xl font-bold text-[var(--foreground)]">All Reviews</h2>
+                </div>
+              ) : (
+                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
+                  <h2 className="mb-4 text-3xl font-bold text-[var(--foreground)]">Customer reviews</h2>
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                    <div className="flex shrink-0 flex-col items-center justify-center md:w-32">
+                      <div className="text-5xl font-extrabold tracking-tighter text-[var(--foreground)]">
+                        {ratingSummary.average.toFixed(1)}
+                      </div>
+                      <StarDisplay value={Math.round(ratingSummary.average)} />
+                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                        {shop?.reviewCount ?? 0} review{(shop?.reviewCount ?? 0) === 1 ? "" : "s"}
+                      </p>
                     </div>
-                    <StarDisplay value={Math.round(ratingSummary.average)} />
-                    <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                      {shop?.reviewCount ?? 0} review{(shop?.reviewCount ?? 0) === 1 ? "" : "s"}
-                    </p>
-                  </div>
 
-                  <div className="flex-1 space-y-1.5">
-                    {[5, 4, 3, 2, 1].map((star, idx) => {
-                      const count = ratingSummary.counts[4 - idx] || 0;
-                      const total = reviews.length || 1;
-                      const percentage = (count / total) * 100;
+                    <div className="flex-1 space-y-1.5">
+                      {[5, 4, 3, 2, 1].map((star, idx) => {
+                        const count = ratingSummary.counts[4 - idx] || 0;
+                        const total = reviews.length || 1;
+                        const percentage = (count / total) * 100;
 
-                      return (
-                        <div key={star} className="flex items-center gap-3">
-                          <span className="w-12 text-sm font-semibold text-[var(--muted-foreground)]">{star} stars</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
-                            <div
-                              className="h-full bg-yellow-500"
-                              style={{ width: `${percentage}%` }}
-                            />
+                        return (
+                          <div key={star} className="flex items-center gap-3">
+                            <span className="w-12 text-sm font-semibold text-[var(--muted-foreground)]">{star} stars</span>
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
+                              <div
+                                className="h-full bg-yellow-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="w-6 text-right text-xs text-[var(--muted-foreground)]">{count}</span>
                           </div>
-                          <span className="w-6 text-right text-xs text-[var(--muted-foreground)]">{count}</span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="xl:hidden">
-                {WriteReviewForm}
-              </div>
+              )}
 
               <div className="space-y-4">
-                {reviews.length === 0 && (
+                {reviews.length === 0 && !showAllReviews && (
                   <p className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
                     No written reviews.
                   </p>
                 )}
 
-                {reviews.map((item) => {
+                {(showAllReviews ? reviews : reviews.slice(0, 3)).map((item) => {
                   const isMine = existingReview?.id === item.id;
                   return (
                     <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
@@ -975,12 +983,37 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                       </div>
 
                       {item.review ? (
-                        <p className="mt-4 leading-7 text-[var(--muted-foreground)]">{item.review}</p>
+                        <div
+                          className="mt-4 cursor-pointer rounded-xl bg-[var(--mint-50)] p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
+                          onClick={() => setSelectedReviewText(item.review!)}
+                        >
+                          <p className="line-clamp-3 leading-7 text-[var(--muted-foreground)]">
+                            {item.review}
+                          </p>
+                          <p className="mt-1 text-[11px] font-bold uppercase text-[var(--accent-dark)] opacity-80">
+                            Read full review
+                          </p>
+                        </div>
                       ) : null}
                     </article>
                   );
                 })}
+
+                {!showAllReviews && reviews.length > 3 && (
+                  <button
+                    onClick={() => setShowAllReviews(true)}
+                    className="mt-2 w-full rounded-[1.5rem] border-2 border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                  >
+                    See all {reviews.length} written reviews
+                  </button>
+                )}
               </div>
+
+              {!showAllReviews && (
+                <div className="xl:hidden pt-2">
+                  {WriteReviewForm}
+                </div>
+              )}
             </section>
           )}
         </section>
@@ -999,6 +1032,26 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
         <aside className="hidden xl:block space-y-6 xl:sticky xl:top-6 xl:self-start">
           {WriteReviewForm}
         </aside>
+        {selectedReviewText && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setSelectedReviewText(null)}>
+            <div className="w-full max-w-md rounded-3xl bg-[var(--background)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <h3 className="text-xl font-bold text-[var(--foreground)]">Review Details</h3>
+                <button
+                  onClick={() => setSelectedReviewText(null)}
+                  className="rounded-full bg-[var(--mint-100)] p-2 text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
+                <p className="leading-7 text-[var(--foreground)] whitespace-pre-wrap">
+                  {selectedReviewText}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

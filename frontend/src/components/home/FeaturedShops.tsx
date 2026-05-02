@@ -46,7 +46,7 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
         Featured shops
       </h2>
 
-      <div className="grid gap-3 grid-cols-2 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {displayShops.slice(0, 6).map((shop) => (
           <div key={shop.id} className="h-full">
             {/* Desktop Card */}

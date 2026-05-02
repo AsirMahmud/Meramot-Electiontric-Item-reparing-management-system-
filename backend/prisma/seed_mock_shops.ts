@@ -11,8 +11,6 @@ const mockShops = [
     address: "Banani DOHS, Dhaka",
     city: "Dhaka",
     area: "Banani",
-    ratingAvg: 4.9,
-    reviewCount: 1216,
     priceLevel: 2,
     hasVoucher: true,
     freeDelivery: false,
@@ -22,6 +20,7 @@ const mockShops = [
     lat: 23.7938,
     lng: 90.4048,
     isFeatured: true,
+    reviewsToGenerate: { 5: 12, 4: 3, 3: 1, 2: 0, 1: 0 } // Total 16, avg 4.68
   },
   {
     id: "shop-2",
@@ -31,8 +30,6 @@ const mockShops = [
     address: "Gulshan 1, Dhaka",
     city: "Dhaka",
     area: "Gulshan",
-    ratingAvg: 4.7,
-    reviewCount: 84,
     priceLevel: 3,
     hasVoucher: false,
     freeDelivery: false,
@@ -42,6 +39,7 @@ const mockShops = [
     lat: 23.7806,
     lng: 90.4168,
     isFeatured: true,
+    reviewsToGenerate: { 5: 8, 4: 5, 3: 2, 2: 1, 1: 0 } // Total 16, avg 4.25
   },
   {
     id: "shop-3",
@@ -51,8 +49,6 @@ const mockShops = [
     address: "Dhanmondi, Dhaka",
     city: "Dhaka",
     area: "Dhanmondi",
-    ratingAvg: 4.2,
-    reviewCount: 210,
     priceLevel: 1,
     hasVoucher: true,
     freeDelivery: false,
@@ -62,6 +58,7 @@ const mockShops = [
     lat: 23.7461,
     lng: 90.3742,
     isFeatured: true,
+    reviewsToGenerate: { 5: 5, 4: 7, 3: 3, 2: 1, 1: 1 } // Total 17, avg 3.82
   },
   {
     id: "shop-4",
@@ -71,8 +68,6 @@ const mockShops = [
     address: "Mohakhali, Dhaka",
     city: "Dhaka",
     area: "Mohakhali",
-    ratingAvg: 4.9,
-    reviewCount: 4,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: false,
@@ -81,6 +76,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "certified apple support"],
     lat: 23.7776,
     lng: 90.3995,
+    reviewsToGenerate: { 5: 4, 4: 0, 3: 0, 2: 0, 1: 0 }
   },
   {
     id: "shop-5",
@@ -90,8 +86,6 @@ const mockShops = [
     address: "Uttara Sector 11, Dhaka",
     city: "Dhaka",
     area: "Uttara",
-    ratingAvg: 4.7,
-    reviewCount: 4,
     priceLevel: 3,
     hasVoucher: false,
     freeDelivery: true,
@@ -100,6 +94,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "battery replacement"],
     lat: 23.8759,
     lng: 90.3888,
+    reviewsToGenerate: { 5: 3, 4: 1, 3: 0, 2: 0, 1: 0 }
   },
   {
     id: "shop-6",
@@ -109,8 +104,6 @@ const mockShops = [
     address: "Mirpur DOHS, Dhaka",
     city: "Dhaka",
     area: "Mirpur",
-    ratingAvg: 4.9,
-    reviewCount: 84,
     priceLevel: 3,
     hasVoucher: false,
     freeDelivery: false,
@@ -119,6 +112,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "screen replacement", "keyboard repair"],
     lat: 23.8373,
     lng: 90.3668,
+    reviewsToGenerate: { 5: 15, 4: 2, 3: 0, 2: 0, 1: 0 }
   },
   {
     id: "shop-7",
@@ -128,8 +122,6 @@ const mockShops = [
     address: "Badda, Dhaka",
     city: "Dhaka",
     area: "Badda",
-    ratingAvg: 4.7,
-    reviewCount: 134,
     priceLevel: 3,
     hasVoucher: false,
     freeDelivery: false,
@@ -138,6 +130,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "logic board repair", "water damage"],
     lat: 23.7805,
     lng: 90.4267,
+    reviewsToGenerate: { 5: 6, 4: 5, 3: 1, 2: 0, 1: 0 }
   },
   {
     id: "shop-8",
@@ -147,8 +140,6 @@ const mockShops = [
     address: "Tejgaon, Dhaka",
     city: "Dhaka",
     area: "Tejgaon",
-    ratingAvg: 4.9,
-    reviewCount: 171,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: false,
@@ -157,6 +148,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "trackpad replacement", "battery replacement"],
     lat: 23.7603,
     lng: 90.3905,
+    reviewsToGenerate: { 5: 20, 4: 2, 3: 0, 2: 0, 1: 1 }
   },
   {
     id: "shop-9",
@@ -166,8 +158,6 @@ const mockShops = [
     address: "Rampura, Dhaka",
     city: "Dhaka",
     area: "Rampura",
-    ratingAvg: 4.3,
-    reviewCount: 210,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: true,
@@ -176,6 +166,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "battery replacement", "pickup service"],
     lat: 23.7612,
     lng: 90.4208,
+    reviewsToGenerate: { 5: 8, 4: 6, 3: 4, 2: 2, 1: 1 }
   },
   {
     id: "shop-10",
@@ -185,8 +176,6 @@ const mockShops = [
     address: "Mohammadpur, Dhaka",
     city: "Dhaka",
     area: "Mohammadpur",
-    ratingAvg: 4.2,
-    reviewCount: 2116,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: false,
@@ -195,6 +184,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "micro soldering", "board repair"],
     lat: 23.7658,
     lng: 90.3584,
+    reviewsToGenerate: { 5: 2, 4: 4, 3: 5, 2: 3, 1: 2 }
   },
   {
     id: "shop-11",
@@ -204,8 +194,6 @@ const mockShops = [
     address: "Wari, Dhaka",
     city: "Dhaka",
     area: "Wari",
-    ratingAvg: 4.7,
-    reviewCount: 25,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: false,
@@ -214,6 +202,7 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "storage replacement", "keyboard repair"],
     lat: 23.7174,
     lng: 90.4183,
+    reviewsToGenerate: { 5: 10, 4: 8, 3: 2, 2: 0, 1: 0 }
   },
   {
     id: "shop-12",
@@ -223,8 +212,6 @@ const mockShops = [
     address: "Bashundhara, Dhaka",
     city: "Dhaka",
     area: "Bashundhara",
-    ratingAvg: 4.2,
-    reviewCount: 25,
     priceLevel: 2,
     hasVoucher: false,
     freeDelivery: false,
@@ -233,13 +220,74 @@ const mockShops = [
     specialties: ["MacBook Air M2 repair", "replacement parts", "screen repair"],
     lat: 23.8183,
     lng: 90.4328,
+    reviewsToGenerate: { 5: 5, 4: 5, 3: 5, 2: 1, 1: 1 }
   },
 ];
 
+const mockReviewTexts = {
+  5: ["Excellent service!", "Very fast and professional.", "Highly recommend this shop.", "Perfect repair, works like new.", "Great communication and fair price.", "Will definitely come back!"],
+  4: ["Good service, took a bit longer than expected.", "Solid repair, no issues.", "Friendly staff, fair pricing.", "Satisfied with the result."],
+  3: ["Okay service, but could be faster.", "Repair was fine, but communication was lacking.", "Average experience."],
+  2: ["Not very happy with the repair time.", "Price was higher than quoted.", "Had to return to fix a small issue."],
+  1: ["Terrible experience.", "Would not recommend.", "Very unprofessional.", "My device is still broken."]
+};
+
+async function createDummyUsers(count: number) {
+  const users = [];
+  for (let i = 0; i < count; i++) {
+    const user = await prisma.user.upsert({
+      where: { email: `dummy${i}@example.com` },
+      update: {},
+      create: {
+        email: `dummy${i}@example.com`,
+        name: `Customer ${i + 1}`,
+        username: `customer_${i + 1}`,
+        passwordHash: "dummy_hash_123",
+      }
+    });
+    users.push(user);
+  }
+  return users;
+}
+
 async function main() {
   console.log("Seeding mock shops...");
+  
+  // Create 30 dummy users to leave reviews
+  const users = await createDummyUsers(30);
+
   for (const shop of mockShops) {
-    await prisma.shop.upsert({
+    // Calculate total review count and average
+    let totalScore = 0;
+    let reviewCount = 0;
+    
+    const reviewData: any[] = [];
+    
+    Object.entries(shop.reviewsToGenerate).forEach(([scoreStr, count]) => {
+      const score = parseInt(scoreStr);
+      for (let i = 0; i < count; i++) {
+        totalScore += score;
+        reviewCount++;
+        
+        // Pick a random user
+        const randomUser = users[Math.floor(Math.random() * users.length)];
+        // Pick a random review text based on score
+        const texts = mockReviewTexts[score as keyof typeof mockReviewTexts];
+        const reviewText = Math.random() > 0.3 ? texts[Math.floor(Math.random() * texts.length)] : null; // 70% chance to have text
+        
+        reviewData.push({
+          userId: randomUser.id,
+          score,
+          review: reviewText,
+          // Random date within the last 30 days
+          createdAt: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000))
+        });
+      }
+    });
+    
+    const ratingAvg = reviewCount > 0 ? Number((totalScore / reviewCount).toFixed(1)) : 0;
+
+    const createdShop = await prisma.shop.upsert({
       where: { id: shop.id },
       update: {
         name: shop.name,
@@ -250,8 +298,8 @@ async function main() {
         area: shop.area,
         lat: shop.lat,
         lng: shop.lng,
-        ratingAvg: shop.ratingAvg,
-        reviewCount: shop.reviewCount,
+        ratingAvg,
+        reviewCount,
         priceLevel: shop.priceLevel,
         hasVoucher: shop.hasVoucher,
         freeDelivery: shop.freeDelivery,
@@ -277,8 +325,8 @@ async function main() {
         area: shop.area,
         lat: shop.lat,
         lng: shop.lng,
-        ratingAvg: shop.ratingAvg,
-        reviewCount: shop.reviewCount,
+        ratingAvg,
+        reviewCount,
         priceLevel: shop.priceLevel,
         hasVoucher: shop.hasVoucher,
         freeDelivery: shop.freeDelivery,
@@ -295,8 +343,36 @@ async function main() {
         expressFee: 300,
       },
     });
+    
+    console.log(`Created shop ${shop.name} with ${reviewCount} reviews (Avg: ${ratingAvg})`);
+    
+    // Clear existing reviews for this shop to avoid unique constraint violations
+    await prisma.rating.deleteMany({
+      where: { shopId: createdShop.id }
+    });
+    
+    // Create the new reviews
+    // We can't use createMany because of SQLite limitations, or if we want to ensure userId_shopId unique constraint
+    // We'll just create them sequentially and ignore duplicates if a user accidentally gets picked twice
+    const userIdsUsed = new Set();
+    
+    for (const r of reviewData) {
+      if (userIdsUsed.has(r.userId)) continue; // Ensure one review per user per shop
+      userIdsUsed.add(r.userId);
+      
+      await prisma.rating.create({
+        data: {
+          shopId: createdShop.id,
+          userId: r.userId,
+          score: r.score,
+          review: r.review,
+          createdAt: r.createdAt,
+          updatedAt: r.createdAt
+        }
+      });
+    }
   }
-  console.log("Done seeding mock shops.");
+  console.log("Done seeding mock shops and reviews.");
 }
 
 main().finally(() => prisma.$disconnect());

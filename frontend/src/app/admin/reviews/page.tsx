@@ -27,6 +27,7 @@ export default function AdminReviewsPage() {
   const token = (session?.user as any)?.accessToken;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReviewText, setSelectedReviewText] = useState<string | null>(null);
 
   // Filters
   const [shopId, setShopId] = useState("");
@@ -140,9 +141,23 @@ export default function AdminReviewsPage() {
                           {review.score} / 5
                       </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-medium text-[var(--accent-dark)] italic">
-                      "{review.review || "No written review provided."}"
-                  </h3>
+                  {review.review ? (
+                    <div
+                      className="mt-3 cursor-pointer rounded-xl bg-white p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
+                      onClick={() => setSelectedReviewText(review.review!)}
+                    >
+                      <h3 className="line-clamp-3 text-lg font-medium text-[var(--accent-dark)] italic">
+                        "{review.review}"
+                      </h3>
+                      <p className="mt-1 text-[11px] font-bold uppercase text-[var(--accent-dark)] opacity-80">
+                        Read full review
+                      </p>
+                    </div>
+                  ) : (
+                    <h3 className="mt-3 text-lg font-medium text-[var(--accent-dark)] italic">
+                      "No written review provided."
+                    </h3>
+                  )}
                   <p className="mt-4 text-sm font-medium text-[var(--foreground)]">
                     By: {review.user.name || review.user.username} ({review.user.email})
                   </p>
@@ -168,6 +183,27 @@ export default function AdminReviewsPage() {
               No reviews found.
             </div>
           )}
+        </div>
+      )}
+
+      {selectedReviewText && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setSelectedReviewText(null)}>
+          <div className="w-full max-w-md rounded-3xl bg-[var(--background)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <h3 className="text-xl font-bold text-[var(--foreground)]">Review Details</h3>
+              <button
+                onClick={() => setSelectedReviewText(null)}
+                className="rounded-full bg-[var(--mint-100)] p-2 text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto pr-2">
+              <p className="leading-7 text-[var(--foreground)] whitespace-pre-wrap italic">
+                "{selectedReviewText}"
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </section>
