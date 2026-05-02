@@ -85,28 +85,28 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
             </div>
 
             {/* Bottom: Price & Badges */}
-            <div className="mt-auto pt-0.5">
-              {shop.offerSummary && (
-                <div className="flex flex-col">
-                  <span className="text-[7.5px] font-bold uppercase text-[var(--muted-foreground)] leading-[1]">
+            <div className="mt-auto pt-1 flex items-end justify-between gap-1">
+              {shop.offerSummary ? (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] font-bold uppercase text-[var(--muted-foreground)] leading-none truncate">
                     {shop.offerSummary.toLowerCase().includes("starting from") ? "Starting from" : "Inspection fee"}
                   </span>
-                  <div className="text-[10px] font-black tracking-tighter text-[var(--accent-dark)] leading-none mt-[2px]">
+                  <div className="text-[13px] font-black tracking-tight text-[var(--accent-dark)] leading-none mt-1 truncate">
                     {shop.offerSummary.replace(/Starting from |Inspection /i, "")}
                   </div>
                 </div>
-              )}
+              ) : <div />}
               
               {(shop.hasVoucher || shop.freeDelivery) && (
-                <div className="mt-1 flex flex-wrap gap-0.5">
+                <div className="flex flex-col items-end gap-1 shrink-0">
                   {shop.hasVoucher && (
-                    <span className="rounded bg-[var(--accent-dark)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-white leading-none">
-                      Voucher
+                    <span className="rounded bg-[var(--accent-dark)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-white leading-none">
+                      VOUCHER
                     </span>
                   )}
                   {shop.freeDelivery && (
-                    <span className="rounded bg-[var(--mint-100)] px-1 py-[1.5px] text-[6.5px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
-                      Free
+                    <span className="rounded bg-[var(--mint-100)] px-1.5 py-[2.5px] text-[6px] font-bold uppercase tracking-widest text-[var(--accent-dark)] leading-none">
+                      FREE
                     </span>
                   )}
                 </div>
