@@ -298,6 +298,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
   const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(null);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
   const [selectedReviewText, setSelectedReviewText] = useState<string | null>(null);
   const { data: session } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
@@ -837,7 +838,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
               Services
             </button>
             <button
-              onClick={() => { setActiveTab("reviews"); setShowAllReviews(false); }}
+              onClick={() => { setActiveTab("reviews"); setShowAllReviews(false); setReviewPage(1); }}
               className={`px-5 py-3.5 transition ${activeTab === "reviews" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
             >
               Reviews ({shop.reviewCount ?? 0})
@@ -948,7 +949,19 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                   </p>
                 )}
 
-                {(showAllReviews ? reviews.filter(r => r.review || existingReview?.id === r.id) : reviews.filter(r => r.review || existingReview?.id === r.id).slice(0, 3)).map((item) => {
+                {(() => {
+                  const filteredReviews = showAllReviews
+                    ? reviews.filter(r => r.review || existingReview?.id === r.id)
+                    : reviews.filter(r => r.review || existingReview?.id === r.id).slice(0, 3);
+                  const reviewsPerPage = 5;
+                  const totalReviewPages = Math.ceil(filteredReviews.length / reviewsPerPage);
+                  const pagedReviews = showAllReviews
+                    ? filteredReviews.slice((reviewPage - 1) * reviewsPerPage, reviewPage * reviewsPerPage)
+                    : filteredReviews;
+
+                  return (
+                    <>
+                {pagedReviews.map((item) => {
                   const isMine = existingReview?.id === item.id;
                   return (
                     <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
@@ -999,9 +1012,63 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                   );
                 })}
 
+                {/* Pagination controls for All Reviews */}
+                {showAllReviews && totalReviewPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <button
+                      onClick={() => setReviewPage((p) => Math.max(1, p - 1))}
+                      disabled={reviewPage === 1}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)] disabled:opacity-40"
+                    >
+                      ← Prev
+                    </button>
+                    {Array.from({ length: Math.min(totalReviewPages, 5) }, (_, i) => {
+                      let page: number;
+                      if (totalReviewPages <= 5) {
+                        page = i + 1;
+                      } else if (reviewPage <= 3) {
+                        page = i + 1;
+                      } else if (reviewPage >= totalReviewPages - 2) {
+                        page = totalReviewPages - 4 + i;
+                      } else {
+                        page = reviewPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setReviewPage(page)}
+                          className={`h-9 w-9 rounded-xl text-sm font-bold transition ${
+                            reviewPage === page
+                              ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
+                              : "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setReviewPage((p) => Math.min(totalReviewPages, p + 1))}
+                      disabled={reviewPage === totalReviewPages}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)] disabled:opacity-40"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+
+                {showAllReviews && (
+                  <p className="text-center text-xs text-[var(--muted-foreground)] pt-1">
+                    Page {reviewPage} of {totalReviewPages} · {filteredReviews.length} reviews
+                  </p>
+                )}
+                    </>
+                  );
+                })()}
+
                 {!showAllReviews && reviews.filter(r => r.review).length > 3 && (
                   <button
-                    onClick={() => setShowAllReviews(true)}
+                    onClick={() => { setShowAllReviews(true); setReviewPage(1); }}
                     className="mt-2 w-full rounded-[1.5rem] border-2 border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                   >
                     See all {reviews.filter(r => r.review).length} written reviews
