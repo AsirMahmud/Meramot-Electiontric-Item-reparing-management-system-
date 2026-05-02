@@ -46,56 +46,54 @@ export default function FeaturedShops({ shops: initialShops }: FeaturedShopsProp
         Featured shops
       </h2>
 
-      <div className="grid gap-3 grid-cols-3 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Desktop Grid — 2 cols on md, 3 on lg */}
+      <div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {displayShops.slice(0, 6).map((shop) => (
           <div key={shop.id} className="h-full">
-            {/* Desktop Card */}
-            <div className="hidden h-full md:block">
-              <ShopCard shop={shop} href={`/shops/${shop.slug}`} compact={false} />
-            </div>
-            
-            {/* Mobile Compact Tile */}
-            <Link
-              href={`/shops/${shop.slug}`}
-              className="flex min-h-[130px] flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-sm transition active:bg-[var(--mint-100)] md:hidden"
-            >
-              <div className="min-w-0">
-                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--mint-100)] text-[15px] font-bold text-[var(--accent-dark)]">
-                  {shop.logoUrl ? (
-                    <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-lg object-cover" />
-                  ) : (
-                    shop.name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <h3 className="line-clamp-2 text-xs font-bold leading-tight text-[var(--foreground)]">
-                  {shop.name}
-                </h3>
-                <p className="mt-1 text-[11px] font-medium text-[var(--accent-dark)]">
-                  ★ {(shop.ratingAvg ?? 0).toFixed(1)}
-                </p>
-                {typeof shop.distanceKm === "number" && (
-                  <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
-                    {shop.distanceKm.toFixed(1)} km
-                  </p>
+            <ShopCard shop={shop} href={`/shops/${shop.slug}`} compact={false} />
+          </div>
+        ))}
+      </div>
+
+      {/* Mobile Grid — 3 cols, aspect-square compact tiles */}
+      <div className="grid grid-cols-3 gap-2 md:hidden">
+        {displayShops.slice(0, 6).map((shop) => (
+          <Link
+            key={shop.id}
+            href={`/shops/${shop.slug}`}
+            className="flex aspect-square flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-sm transition active:scale-[0.97] active:bg-[var(--mint-100)]"
+          >
+            <div className="min-w-0">
+              <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--mint-100)] text-[13px] font-bold text-[var(--accent-dark)]">
+                {shop.logoUrl ? (
+                  <img src={shop.logoUrl} alt={shop.name} className="h-full w-full rounded-lg object-cover" />
+                ) : (
+                  shop.name.charAt(0).toUpperCase()
                 )}
               </div>
-              
-              {(shop.hasVoucher || shop.freeDelivery) && (
-                <div className="flex flex-wrap gap-1 pt-1.5 mt-auto">
-                  {shop.hasVoucher && (
-                    <span className="rounded bg-[var(--mint-100)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
-                      Voucher
-                    </span>
-                  )}
-                  {shop.freeDelivery && (
-                    <span className="rounded bg-[var(--mint-100)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
-                      Free
-                    </span>
-                  )}
-                </div>
-              )}
-            </Link>
-          </div>
+              <h3 className="line-clamp-2 text-[10px] font-bold leading-tight text-[var(--foreground)]">
+                {shop.name}
+              </h3>
+              <p className="mt-0.5 text-[9px] font-medium text-[var(--accent-dark)]">
+                ★ {(shop.ratingAvg ?? 0).toFixed(1)}
+              </p>
+            </div>
+            
+            {(shop.hasVoucher || shop.freeDelivery) && (
+              <div className="flex flex-wrap gap-0.5 mt-auto pt-1">
+                {shop.hasVoucher && (
+                  <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
+                    Voucher
+                  </span>
+                )}
+                {shop.freeDelivery && (
+                  <span className="rounded bg-[var(--mint-100)] px-1 py-[1px] text-[7px] font-medium text-[var(--accent-dark)]">
+                    Free
+                  </span>
+                )}
+              </div>
+            )}
+          </Link>
         ))}
       </div>
 
