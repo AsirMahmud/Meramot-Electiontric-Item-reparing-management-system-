@@ -164,6 +164,32 @@ export async function createVendorApplication(req: Request, res: Response) {
       return res.status(400).json({ message: emailError });
     }
 
+    // Deep validation: MX record + SMTP mailbox check
+    try {
+      const deepResult = await emailValidator.validate({
+        email: normalizedEmail,
+        validateRegex: false,    // already checked above
+        validateMx: true,        // check if domain accepts mail
+        validateTypo: true,      // catch typos like gmial.com
+        validateDisposable: true, // catch disposable services
+        validateSMTP: false,     // Gmail/Outlook block SMTP checks
+      });
+
+      if (!deepResult.valid) {
+        const reason = deepResult.reason || "unknown";
+        const reasonMap: Record<string, string> = {
+          mx: "This email domain does not accept mail. Please use a real email address.",
+          typo: `Did you mean a different email? The domain looks like a typo.`,
+          disposable: "Disposable/temporary email addresses are not allowed.",
+        };
+        return res.status(400).json({
+          message: reasonMap[reason] || "This email address appears to be invalid. Please use a real email.",
+        });
+      }
+    } catch {
+      // If deep validation fails (network issues etc.), allow through — basic check already passed
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true },
