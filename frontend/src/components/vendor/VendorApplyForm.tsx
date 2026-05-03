@@ -12,8 +12,9 @@ import {
 import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
-import { ImagePlus, MapPin, X } from "lucide-react";
+import { ImagePlus, MapPin, Upload, X } from "lucide-react";
 import { validateEmail } from "@/lib/validate-email";
+import { UploadDropzone } from "@/lib/uploadthing";
 import type { StoredLocation } from "@/components/location/types";
 
 const LocationPickerModal = dynamic(
@@ -309,16 +310,7 @@ export default function VendorApplyForm() {
     }
   }
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm((prev) => ({ ...prev, logoUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   if (status === "loading" || loadingExisting) {
     return (
@@ -362,18 +354,39 @@ export default function VendorApplyForm() {
                 </button>
               </>
             ) : (
-              <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-[var(--muted-foreground)] transition-colors hover:text-[var(--accent-dark)]">
+              <div className="flex h-full w-full flex-col items-center justify-center text-[var(--muted-foreground)]">
                 <ImagePlus size={24} className="mb-1" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Logo</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-              </label>
+              </div>
             )}
           </div>
-          <div className="text-center sm:text-left">
+          <div className="flex-1 text-center sm:text-left">
             <p className="text-sm font-bold text-[var(--foreground)] md:text-lg">Shop Logo</p>
             <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--muted-foreground)] md:text-sm">
               Upload an optional logo or photo to make your shop stand out. A square image works best.
             </p>
+            {!form.logoUrl && (
+              <div className="mt-3">
+                <UploadDropzone
+                  endpoint="shopLogoUploader"
+                  onClientUploadComplete={(res) => {
+                    if (res?.[0]?.ufsUrl) {
+                      setForm((prev) => ({ ...prev, logoUrl: res[0].ufsUrl }));
+                    }
+                  }}
+                  onUploadError={(err) => {
+                    setError(`Logo upload failed: ${err.message}`);
+                  }}
+                  config={{ mode: "auto" }}
+                  appearance={{
+                    container: "border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--mint-50)] p-3 dark:bg-[#1a2e22] cursor-pointer hover:border-[var(--accent-dark)] transition",
+                    label: "text-xs font-semibold text-[var(--accent-dark)]",
+                    allowedContent: "text-[10px] text-muted-foreground",
+                    button: "bg-[var(--accent-dark)] text-white text-xs font-bold rounded-xl px-3 py-1.5 ut-uploading:bg-[var(--accent-dark)]/60",
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
