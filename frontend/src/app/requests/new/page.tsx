@@ -147,7 +147,7 @@ function NewRequestPageInner() {
       const brand = form.brand.trim();
       const model = form.model.trim();
       
-      if (model.length > 2) {
+      if (brand.length > 2 || model.length > 2) {
         setCheckingModel(true);
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/suggest-model`, {
@@ -329,7 +329,10 @@ function NewRequestPageInner() {
 
             <input
               value={form.brand}
-              onChange={(e) => setForm((prev) => ({ ...prev, brand: e.target.value }))}
+              onChange={(e) => {
+                setForm((prev) => ({ ...prev, brand: e.target.value }));
+                setDeeperSearch(false);
+              }}
               className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
               placeholder="Brand"
             />
