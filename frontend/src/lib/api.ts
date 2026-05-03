@@ -582,6 +582,7 @@ export type OrderItem = {
   model?: string | null;
   issueCategory?: string | null;
   problem: string;
+  aiSummary?: string | null;
   mode: string;
   source?: string;
   status: string;
@@ -681,7 +682,9 @@ export type VendorDashboardData = {
     deviceType: string;
     brand?: string | null;
     model?: string | null;
+    issueCategory?: string | null;
     problem: string;
+    aiSummary?: string | null;
     mode: string;
     source?: string;
     quotedFinalAmount?: number | null;
@@ -698,6 +701,7 @@ export type VendorDashboardData = {
     model?: string | null;
     issueCategory?: string | null;
     problem: string;
+    aiSummary?: string | null;
     mode: string;
     preferredPickup: boolean;
     deliveryType?: string | null;
@@ -730,6 +734,7 @@ export type VendorDashboardData = {
       model?: string | null;
       issueCategory?: string | null;
       problem: string;
+      aiSummary?: string | null;
       mode: string;
       preferredPickup: boolean;
       deliveryType?: string | null;

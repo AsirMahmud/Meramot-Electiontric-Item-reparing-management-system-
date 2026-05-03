@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import AiSummary from "@/components/shared/AiSummary";
 import {
   acceptBid,
   declineBid,
@@ -442,6 +443,16 @@ function OrdersPageInner() {
                       {order.issueCategory ? ` • ${order.issueCategory}` : ""}
                     </p>
                     <p className="mt-3 text-sm text-[var(--muted-foreground)]">{order.problem}</p>
+                    
+                    <AiSummary 
+                      orderId={order.id}
+                      deviceType={order.deviceType}
+                      brand={order.brand}
+                      model={order.model}
+                      issueCategory={order.issueCategory}
+                      problem={order.problem}
+                      initialSummary={order.aiSummary}
+                    />
                     
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <button 

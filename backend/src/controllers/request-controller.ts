@@ -223,6 +223,7 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
         preferredPickup: true,
         deliveryType: true,
         quotedFinalAmount: true,
+        aiSummary: true,
         approvedAt: true,
         rejectedAt: true,
         createdAt: true,

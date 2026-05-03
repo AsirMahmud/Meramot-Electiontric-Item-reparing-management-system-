@@ -413,6 +413,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         preferredPickup: true,
         deliveryType: true,
         status: true,
+        aiSummary: true,
         createdAt: true,
         requestedShopId: true,
         _count: { select: { bids: true } },
@@ -599,6 +600,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         preferredPickup: true,
         deliveryType: true,
         quotedFinalAmount: true,
+        aiSummary: true,
         createdAt: true,
         user: {
           select: { name: true, email: true, phone: true },
@@ -1283,6 +1285,7 @@ export async function getVendorMyBids(req: AuthedRequest, res: Response) {
         problem: true,
         mode: true,
         status: true,
+        aiSummary: true,
         createdAt: true,
         bids: {
           orderBy: { totalCost: "asc" },

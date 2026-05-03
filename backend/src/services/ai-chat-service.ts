@@ -158,3 +158,47 @@ Format: { "isAppliance": false, "isRubbish": false, "suggestions": [ { "brand": 
     return { ok: false, suggestions: [], isAppliance: false, isRubbish: false };
   }
 }
+
+export async function summarizeDeviceIssue(input: {
+  deviceType: string;
+  brand: string;
+  model: string;
+  issueCategory: string;
+  problem: string;
+}) {
+  const systemContent = `You are a technical repair assistant. A user has submitted a repair request, sometimes in a mix of Bengali and English (Banglish) or pure Bengali.
+Your task is to generate a highly professional, perfectly formatted, easy-to-read English summary of the issue for a repair technician.
+Do not include any pleasantries. Output ONLY the summary.
+
+Structure the summary like this:
+**Device:** [Brand] [Model] ([Device Type])
+**Category:** [Issue Category]
+**Reported Problem:** [1-2 clear, professional sentences explaining the issue in English based on the user's description]
+`;
+
+  const userPrompt = `Device Type: ${input.deviceType}\nBrand: ${input.brand}\nModel: ${input.model}\nIssue Category: ${input.issueCategory}\nUser Description: ${input.problem}`;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.geminiApiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { role: "user", parts: [{ text: systemContent + "\n\n" + userPrompt }] }
+        ],
+        generationConfig: {
+          temperature: 0.3
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) return { ok: false, summary: null };
+
+    const content = data.candidates[0].content.parts[0].text.trim();
+    return { ok: true, summary: content };
+  } catch (err) {
+    console.error("summarizeDeviceIssue error:", err);
+    return { ok: false, summary: null };
+  }
+}
