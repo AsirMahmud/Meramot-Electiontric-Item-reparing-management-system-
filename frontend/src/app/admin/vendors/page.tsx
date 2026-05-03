@@ -460,7 +460,17 @@ function AllVendorsSection({
   onFeaturedToggle: (vendorId: string, shopId: string, isFeatured: boolean) => void;
   onDelete: (id: string) => void;
 }) {
-  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any);
+  const [sortBy, setSortBy] = useState<"date" | "rating">("date");
+
+  const customSortFn = sortBy === "rating"
+    ? (a: VendorApplication, b: VendorApplication, order: "asc" | "desc") => {
+        const ratingA = a.shop?.ratingAvg || 0;
+        const ratingB = b.shop?.ratingAvg || 0;
+        return order === "desc" ? ratingB - ratingA : ratingA - ratingB;
+      }
+    : undefined;
+
+  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any, "createdAt", customSortFn);
 
   return (
     <section>
@@ -471,12 +481,24 @@ function AllVendorsSection({
         </div>
       ) : (
         <>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "date" | "rating")}
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto bg-white dark:bg-[#1C251F]"
+            >
+                <option value="date">Sort by Applied Date</option>
+                <option value="rating">Sort by Shop Rating</option>
+            </select>
+          </div>
           <AdminTableControls
             searchPlaceholder="Search vendors by name, email, phone…"
             searchQuery={table.searchQuery}
             onSearchChange={table.setSearchQuery}
             sortOrder={table.sortOrder}
             onSortToggle={table.toggleSort}
+            sortLabelDesc={sortBy === "rating" ? "Highest rating first" : "Newest first"}
+            sortLabelAsc={sortBy === "rating" ? "Lowest rating first" : "Oldest first"}
             currentPage={table.currentPage}
             totalPages={table.totalPages}
             onPageChange={table.setCurrentPage}
@@ -485,16 +507,18 @@ function AllVendorsSection({
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
               <colgroup>
                 <col style={{ width: "20%" }} />
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "12%" }} />
+                <col style={{ width: "16%" }} />
                 <col style={{ width: "10%" }} />
-                <col style={{ width: "28%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "26%" }} />
               </colgroup>
               <thead className="border-b border-[var(--border)] bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Rating</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">App Status</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Shop Status</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Featured</th>
@@ -511,6 +535,19 @@ function AllVendorsSection({
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="line-clamp-1">{vendor.businessEmail}</p>
                       <p className="text-[var(--muted-foreground)] line-clamp-1">{vendor.phone}</p>
+                    </td>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      {vendor.shop ? (
+                        <div className="flex items-center gap-1">
+                          <svg className="h-3 w-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="font-bold text-[var(--accent-dark)]">{vendor.shop.ratingAvg?.toFixed(1) || "0.0"}</span>
+                          <span className="text-[8px] text-[var(--muted-foreground)] md:text-[10px]">({vendor.shop.reviewCount || 0})</span>
+                        </div>
+                      ) : (
+                        <span className="text-[var(--muted-foreground)]">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <span
