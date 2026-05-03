@@ -153,6 +153,10 @@ function NewRequestPageInner() {
       
       if (brand.length > 2 || model.length > 2) {
         setCheckingModel(true);
+        // Reset flags when searching again
+        setIsAppliance(false);
+        setIsRubbish(false);
+
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/suggest-model`, {
             method: "POST",
@@ -195,6 +199,8 @@ function NewRequestPageInner() {
         }
       } else {
         setModelSuggestions([]);
+        setIsAppliance(false);
+        setIsRubbish(false);
       }
     }, 1200);
 
