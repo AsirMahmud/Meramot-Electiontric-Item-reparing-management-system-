@@ -83,6 +83,8 @@ function NewRequestPageInner() {
   const [activeField, setActiveField] = useState<"brand" | "model" | null>(null);
   const suggestAbortController = useRef<AbortController | null>(null);
   const skipNextSuggest = useRef(false);
+  const issueClassified = useRef(false);
+  const [classifyingIssue, setClassifyingIssue] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -245,6 +247,32 @@ function NewRequestPageInner() {
     return () => clearTimeout(handler);
   }, [form.brand, form.model, deeperSearch]);
 
+  // Auto-classify issue category from problem description (6s debounce)
+  useEffect(() => {
+    const problem = form.problem.trim();
+    if (problem.length < 10) return;
+    issueClassified.current = false;
+
+    const handler = setTimeout(async () => {
+      try {
+        setClassifyingIssue(true);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/classify-issue`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ problem })
+        });
+        const data = await res.json();
+        if (data.ok && data.issueCategory) {
+          setForm(prev => ({ ...prev, issueCategory: data.issueCategory }));
+          issueClassified.current = true;
+        }
+      } catch { /* ignore */ }
+      finally { setClassifyingIssue(false); }
+    }, 6000);
+
+    return () => clearTimeout(handler);
+  }, [form.problem]);
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
@@ -293,6 +321,9 @@ function NewRequestPageInner() {
 
               try {
                 setIsSubmitting(true);
+
+                // If AI didn't classify yet, fire it in background
+                const shouldClassifyAfter = !issueClassified.current && form.problem.trim().length >= 10;
 
                 type CreateRepairRequestResult = {
                   matchedShop?: {
@@ -350,6 +381,24 @@ function NewRequestPageInner() {
                   type: "request",
                   href: "/orders",
                 });
+
+                // Fire-and-forget: classify issue in background if AI didn't get to it
+                if (shouldClassifyAfter) {
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/classify-issue`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ problem: form.problem.trim() })
+                  }).then(r => r.json()).then(data => {
+                    if (data.ok && data.issueCategory) {
+                      // Update the request's issue category on the server
+                      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/repair-requests/update-category`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ problem: form.problem.trim(), issueCategory: data.issueCategory })
+                      }).catch(() => {});
+                    }
+                  }).catch(() => {});
+                }
               } catch (error) {
                 setMessage(error instanceof Error ? error.message : "Failed to submit request.");
               } finally {
@@ -442,18 +491,25 @@ function NewRequestPageInner() {
               </div>
             </div>
 
-            <select
-              required
-              value={form.issueCategory}
-              onChange={(e) => setForm((prev) => ({ ...prev, issueCategory: e.target.value }))}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-            >
-              {ISSUE_CATEGORIES.map((issue) => (
-                <option key={issue} value={issue}>
-                  {issue}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                required
+                value={form.issueCategory}
+                onChange={(e) => { setForm((prev) => ({ ...prev, issueCategory: e.target.value })); issueClassified.current = true; }}
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+              >
+                {ISSUE_CATEGORIES.map((issue) => (
+                  <option key={issue} value={issue}>
+                    {issue}
+                  </option>
+                ))}
+              </select>
+              {classifyingIssue && (
+                <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--accent-dark)] animate-pulse">
+                  AI selecting...
+                </span>
+              )}
+            </div>
 
             <select
               value={form.mode}

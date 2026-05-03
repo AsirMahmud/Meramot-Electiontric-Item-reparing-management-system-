@@ -117,3 +117,63 @@ Structure the summary like this:
     return { ok: false, summary: null };
   }
 }
+
+export async function classifyIssueCategory(input: {
+  problem: string;
+}) {
+  const systemContent = `You are an AI assistant for an electronics repair platform in Bangladesh. 
+The user will describe their device problem. The description may be in:
+- Pure English
+- Pure Bengali (Bangla)
+- Banglish (Bengali words written in English letters, mixed with English)
+- Any mix of the above
+
+Common Banglish examples:
+- "screen ta bhengeche" = screen is broken
+- "charge hoy na" / "charge hochhe na" = not charging  
+- "garam hoye jay" = overheating
+- "pani poreche" = water damage
+- "awaz ashche na" / "sound nai" = no sound (speaker issue)
+- "camera kaj korche na" = camera not working
+- "net dhore na" / "wifi lagte parchi na" = network/connectivity issue
+- "slow hoye geche" / "hang kore" = performance issue
+- "display e dag" / "screen e line" = screen/display issue
+- "keyboard er button kaj kore na" = keyboard issue
+- "battery drain hoye jay" = battery issue
+- "data udhaar korte hobe" / "file hariye geche" = data recovery
+- "part change korte hobe" = parts replacement
+- "software e problem" / "update er por" = software issue
+
+Your task: classify the problem into EXACTLY ONE of these categories:
+"Screen or display", "Battery or charging", "Keyboard or touchpad", "Performance or overheating", "Water damage", "Speaker or microphone", "Camera issue", "Software or OS", "Network or connectivity", "Data recovery", "Parts replacement", "Other"
+
+Respond ONLY with valid JSON. NO markdown, NO extra text.
+Format: { "issueCategory": "..." }`;
+
+  const userPrompt = `Problem description: ${input.problem}`;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.geminiApiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          { role: "user", parts: [{ text: systemContent + "\n\n" + userPrompt }] }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) return { ok: false, issueCategory: null };
+
+    const parsed = JSON.parse(data.candidates[0].content.parts[0].text.trim());
+    return { ok: true, issueCategory: parsed.issueCategory || null };
+  } catch (err) {
+    console.error("classifyIssueCategory error:", err);
+    return { ok: false, issueCategory: null };
+  }
+}

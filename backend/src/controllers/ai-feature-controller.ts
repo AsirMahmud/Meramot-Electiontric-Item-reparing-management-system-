@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { suggestDeviceModel, summarizeDeviceIssue } from "../services/ai-feature-service.js";
+import { suggestDeviceModel, summarizeDeviceIssue, classifyIssueCategory } from "../services/ai-feature-service.js";
 import prisma from "../models/prisma.js";
 
 export async function suggestModel(req: Request, res: Response) {
@@ -59,5 +59,21 @@ export async function summarizeIssue(req: Request, res: Response) {
   } catch (error) {
     console.error("summarizeIssue error:", error);
     return res.status(500).json({ ok: false, message: "Failed to summarize issue" });
+  }
+}
+
+export async function classifyIssue(req: Request, res: Response) {
+  try {
+    const problem = typeof req.body?.problem === "string" ? req.body.problem.trim() : "";
+
+    if (!problem || problem.length < 5) {
+      return res.json({ ok: false, issueCategory: null });
+    }
+
+    const result = await classifyIssueCategory({ problem });
+    return res.json(result);
+  } catch (error) {
+    console.error("classifyIssue error:", error);
+    return res.json({ ok: false, issueCategory: null });
   }
 }
