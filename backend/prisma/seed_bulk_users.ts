@@ -81,6 +81,7 @@ async function main() {
         status: RepairJobStatus.COMPLETED,
         finalQuotedAmount: 3000 + (i * 200),
         customerApproved: true,
+        completedAt: new Date(),
       },
     });
 
@@ -125,6 +126,56 @@ async function main() {
           createdAt: payment.paidAt || new Date(),
         },
       });
+
+      // Settle payment (Simulate Admin Settlement)
+      const grossAmount = 3000 + (i * 200);
+      const platformCommissionAmount = grossAmount * 0.05;
+      const vendorNetAmount = grossAmount - platformCommissionAmount;
+      const settledAt = new Date((payment.paidAt || new Date()).getTime() + 1000 * 60 * 60 * 24); // 1 day later
+      
+      const shopOwner = await prisma.shopStaff.findFirst({
+        where: { shopId: shop.id, role: "OWNER" },
+        select: { userId: true }
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          vendorUserId: shopOwner?.userId,
+          shopId: shop.id,
+          amount: platformCommissionAmount,
+          grossAmount: grossAmount,
+          platformCommissionAmount: platformCommissionAmount,
+          vendorNetAmount: vendorNetAmount,
+          action: "PLATFORM_COMMISSION_DEDUCTED",
+          note: "Automated settlement with 5% platform commission",
+          createdAt: settledAt,
+        },
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          vendorUserId: shopOwner?.userId,
+          shopId: shop.id,
+          amount: vendorNetAmount,
+          grossAmount: grossAmount,
+          platformCommissionAmount: platformCommissionAmount,
+          vendorNetAmount: vendorNetAmount,
+          action: "VENDOR_EARNING_RELEASED",
+          note: "Automated settlement with 5% platform commission",
+          createdAt: settledAt,
+        },
+      });
+
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { escrowStatus: "RELEASED" }
+      });
     }
 
     // 3. Complaint (Dispute) for every 3rd user
@@ -140,6 +191,17 @@ async function main() {
           status: RequestStatus.COMPLETED,
           mode: RequestMode.DIRECT_REPAIR,
           requestedShopId: shop.id,
+        },
+      });
+
+      await prisma.repairJob.create({
+        data: {
+          repairRequestId: disputeRequest.id,
+          shopId: shop.id,
+          status: RepairJobStatus.COMPLETED,
+          finalQuotedAmount: 4500,
+          customerApproved: true,
+          completedAt: new Date(),
         },
       });
 
