@@ -326,6 +326,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
       area,
       lat,
       lng,
+      preferredPickup = true,
       deliveryType,
       problemNote,
     } = req.body as {
@@ -338,6 +339,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
       area?: string;
       lat?: number;
       lng?: number;
+      preferredPickup?: boolean;
       deliveryType?: "REGULAR" | "EXPRESS";
       problemNote?: string;
     };
@@ -383,7 +385,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
     );
     const selectedDeliveryType = deliveryType === "EXPRESS" ? DeliveryType.EXPRESS : DeliveryType.REGULAR;
     const serviceCharge = calculateServiceCharge(subtotal);
-    const deliveryFee = calculateDeliveryFee(deliveryType);
+    const deliveryFee = preferredPickup ? calculateDeliveryFee(selectedDeliveryType) : 0;
     const totalAmount = subtotal + serviceCharge + deliveryFee;
 
     const serviceLines = cart.items
@@ -435,8 +437,8 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
           problem: problemNote?.trim() || `Direct order services:\n${serviceLines}`,
           imageUrls: [],
           mode: RequestMode.DIRECT_REPAIR,
-          preferredPickup: true,
-          deliveryType: selectedDeliveryType,
+          preferredPickup: preferredPickup,
+          deliveryType: preferredPickup ? selectedDeliveryType : null,
           checkupFee: serviceCharge,
           quotedFinalAmount: totalAmount,
           status: RequestStatus.PENDING,
@@ -451,7 +453,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
         },
       });
 
-      const delivery = await tx.delivery.create({
+      const delivery = preferredPickup ? await tx.delivery.create({
         data: {
           repairJobId: repairJob.id,
           direction: DeliveryDirection.TO_SHOP,
@@ -462,7 +464,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
           dropAddress: cart.shop.address,
           scheduledAt: pickupTime,
         },
-      });
+      }) : null;
       const payment =
         paymentMethod === "SSLCOMMERZ"
           ? null

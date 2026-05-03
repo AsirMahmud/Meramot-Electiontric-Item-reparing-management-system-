@@ -91,6 +91,7 @@ export default function CartPage() {
   const [scheduleType, setScheduleType] = useState<ScheduleType>("NOW");
   const [scheduledAt, setScheduledAt] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("SSLCOMMERZ");
+  const [preferredPickup, setPreferredPickup] = useState<boolean>(true);
   const [deliveryType, setDeliveryType] = useState<"REGULAR" | "EXPRESS">("REGULAR");
   const [addressMode, setAddressMode] = useState<AddressMode>("MANUAL");
   const [address, setAddress] = useState("");
@@ -179,9 +180,9 @@ export default function CartPage() {
   }, [primaryCart, subtotal]);
 
   const deliveryFee = useMemo(() => {
-    if (!primaryCart) return 0;
+    if (!primaryCart || !preferredPickup) return 0;
     return deliveryType === "EXPRESS" ? EXPRESS_DELIVERY_FEE : REGULAR_DELIVERY_FEE;
-  }, [primaryCart, deliveryType]);
+  }, [primaryCart, deliveryType, preferredPickup]);
 
   const total = subtotal + serviceCharge + deliveryFee;
   const shopRating = primaryCart?.shop.ratingAvg
@@ -289,13 +290,14 @@ export default function CartPage() {
           scheduleType,
           scheduledAt: scheduleType === "LATER" ? scheduledAt : undefined,
           paymentMethod,
+          preferredPickup,
           addressMode,
           address,
           city,
           area,
           lat,
           lng,
-          deliveryType,
+          deliveryType: preferredPickup ? deliveryType : undefined,
           problemNote,
         },
         token,
@@ -534,23 +536,32 @@ export default function CartPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
                       Delivery speed
                     </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
                       <button
                         type="button"
-                        onClick={() => setDeliveryType("REGULAR")}
-                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(deliveryType === "REGULAR")}`}
+                        onClick={() => { setPreferredPickup(true); setDeliveryType("REGULAR"); }}
+                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "REGULAR")}`}
                       >
-                        <div className="font-bold text-[var(--foreground)]">Regular delivery</div>
-                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)} courier fee</div>
+                        <div className="font-bold text-[var(--foreground)]">Regular</div>
+                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)}</div>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setDeliveryType("EXPRESS")}
-                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(deliveryType === "EXPRESS")}`}
+                        onClick={() => { setPreferredPickup(true); setDeliveryType("EXPRESS"); }}
+                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "EXPRESS")}`}
                       >
-                        <div className="font-bold text-[var(--foreground)]">Express delivery</div>
-                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)} courier fee</div>
+                        <div className="font-bold text-[var(--foreground)]">Express</div>
+                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)}</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPreferredPickup(false)}
+                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(!preferredPickup)}`}
+                      >
+                        <div className="font-bold text-[var(--foreground)]">Walk-in</div>
+                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">I will go to shop</div>
                       </button>
                     </div>
                   </div>
@@ -599,17 +610,29 @@ export default function CartPage() {
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">📍</span>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Step 3</p>
-                      <h2 className="text-2xl font-bold text-[var(--foreground)]">Pickup location</h2>
+                      <h2 className="text-2xl font-bold text-[var(--foreground)]">
+                        {preferredPickup ? "Pickup location" : "Shop details"}
+                      </h2>
                     </div>
                   </div>
 
-                  {selectedLocation ? (
+                  {selectedLocation && preferredPickup ? (
                     <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-semibold text-[var(--accent-dark)]">
                       {locationLabel}
                     </div>
                   ) : null}
                 </div>
 
+                {!preferredPickup ? (
+                  <div className="mt-5 rounded-2xl bg-[var(--mint-50)] p-5 text-[var(--foreground)]">
+                    <h3 className="font-bold text-lg">You are walking into the shop!</h3>
+                    <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                      No delivery rider will be assigned. Please visit <strong>{primaryCart.shop.name}</strong> at:
+                    </p>
+                    <p className="mt-3 font-semibold text-base">{primaryCart.shop.address}</p>
+                  </div>
+                ) : (
+                  <>
                 <div className="mt-5 grid gap-3 md:grid-cols-3">
                   <button
                     type="button"
@@ -702,6 +725,8 @@ export default function CartPage() {
                     We will use the address saved in your profile. Use map/manual mode if this order needs a different pickup point.
                   </p>
                 )}
+                </>
+                )}
 
                 <label className="mt-5 block">
                   <span className="text-sm font-semibold text-[var(--foreground)]">Problem note</span>
@@ -738,13 +763,13 @@ export default function CartPage() {
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[var(--muted-foreground)]">Pickup</span>
                   <span className="font-semibold text-[var(--foreground)]">
-                    {scheduleType === "NOW" ? "ASAP" : scheduledAt || "Not selected"}
+                    {!preferredPickup ? "Walk-in" : scheduleType === "NOW" ? "ASAP" : scheduledAt || "Not selected"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[var(--muted-foreground)]">Location</span>
                   <span className="max-w-[190px] truncate font-semibold text-[var(--foreground)]">
-                    {addressMode === "PROFILE" ? "Profile address" : address || locationLabel}
+                    {!preferredPickup ? "Shop address" : addressMode === "PROFILE" ? "Profile address" : address || locationLabel}
                   </span>
                 </div>
               </div>
@@ -762,7 +787,7 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[var(--muted-foreground)]">
-                    {deliveryType === "EXPRESS" ? "Express delivery" : "Regular delivery"}
+                    {!preferredPickup ? "Walk-in / No delivery" : deliveryType === "EXPRESS" ? "Express delivery" : "Regular delivery"}
                   </span>
                   <span className="font-semibold text-[var(--foreground)]">{formatMoney(deliveryFee)}</span>
                 </div>
