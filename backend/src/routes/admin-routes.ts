@@ -22,7 +22,7 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: "VENDOR" } }),
-      prisma.user.count({ where: { role: "DELIVERY" } }),
+      prisma.riderProfile.count({ where: { registrationStatus: "APPROVED" } }),
       prisma.vendorApplication.count({ where: { status: "PENDING" } }),
       prisma.supportTicket.count({
         where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
