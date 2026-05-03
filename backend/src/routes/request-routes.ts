@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   acceptRequestBid,
+  cancelRequest,
   createRepairRequest,
   declineRequestBid,
   listMyRequests,
@@ -15,6 +16,7 @@ router.use(requireAuth);
 router.get("/mine", listMyRequests);
 router.post("/", createRepairRequest);
 router.patch("/:requestId/status", updateRequestStatus);
+router.patch("/:requestId/cancel", cancelRequest);
 router.patch("/:requestId/bids/:bidId/accept", acceptRequestBid);
 router.patch("/:requestId/bids/:bidId/decline", declineRequestBid);
 router.patch("/:requestId/final-quote/respond", respondToFinalQuote);

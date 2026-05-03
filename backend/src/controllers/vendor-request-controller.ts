@@ -946,6 +946,13 @@ export async function updateVendorAssignedJobStatus(req: AuthedRequest, res: Res
             id: true,
             title: true,
             user: { select: { email: true, name: true } },
+            payments: {
+              select: {
+                id: true,
+                amount: true,
+                method: true,
+              },
+            },
           },
         },
       },
@@ -1001,6 +1008,7 @@ export async function updateVendorAssignedJobStatus(req: AuthedRequest, res: Res
         where: { id: existing.repairRequestId },
         data: {
           status: toRequestStatus(nextStatus),
+          ...(nextStatus === RepairJobStatus.CANCELLED ? { rejectedAt: new Date() } : {})
         },
         select: {
           id: true,
@@ -1008,7 +1016,30 @@ export async function updateVendorAssignedJobStatus(req: AuthedRequest, res: Res
         },
       });
 
-      return { repairJob, request };
+      // Auto-create refund records if the vendor cancels the job
+      const refunds = [];
+      if (nextStatus === RepairJobStatus.CANCELLED) {
+        for (const payment of existing.repairRequest.payments) {
+          if (payment.method !== "CASH") {
+            const refund = await tx.refund.create({
+              data: {
+                paymentId: payment.id,
+                amount: payment.amount,
+                reason: reason?.trim() || "Vendor cancelled the job",
+                status: "PENDING",
+              },
+            });
+            refunds.push(refund);
+
+            await tx.payment.update({
+              where: { id: payment.id },
+              data: { status: "REFUNDED" },
+            });
+          }
+        }
+      }
+
+      return { repairJob, request, refunds };
     });
 
     if (existing.repairRequest.user.email) {

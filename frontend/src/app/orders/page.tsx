@@ -262,6 +262,29 @@ function OrdersPageInner() {
 
   const firstName = useMemo(() => session?.user?.name?.split(" ")[0] || "User", [session]);
 
+  async function handleCancelRequest(orderId: string) {
+    if (!token) return;
+
+    if (!window.confirm("Are you sure you want to cancel this order? If you paid online, a refund will be initiated automatically.")) {
+      return;
+    }
+
+    try {
+      setPendingKey(`cancel:${orderId}`);
+      // Dynamic import to avoid circular dependencies if any, though it should be fine
+      const { cancelRequest } = await import("@/lib/api");
+      const res = await cancelRequest(token, orderId);
+      setFlash({ type: "success", text: res.message || "Order cancelled successfully." });
+      await loadOrders();
+    } catch (error) {
+      setPendingKey(null);
+      setFlash({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not cancel the order.",
+      });
+    }
+  }
+
   async function handleAcceptBid(orderId: string, bidId: string) {
     if (!token) return;
 
@@ -398,12 +421,24 @@ function OrdersPageInner() {
                     </p>
                     <p className="mt-3 text-sm text-[var(--muted-foreground)]">{order.problem}</p>
                     
-                    <button 
-                      onClick={() => setSelectedOrderForProgress(order)}
-                      className="mt-4 text-sm font-semibold text-[var(--accent-dark)] hover:underline"
-                    >
-                      View Progress Timeline &rarr;
-                    </button>
+                    <div className="mt-4 flex flex-wrap items-center gap-4">
+                      <button 
+                        onClick={() => setSelectedOrderForProgress(order)}
+                        className="text-sm font-semibold text-[var(--accent-dark)] hover:underline"
+                      >
+                        View Progress Timeline &rarr;
+                      </button>
+                      
+                      {(order.status === "PENDING" || order.status === "BIDDING") && (
+                        <button
+                          onClick={() => handleCancelRequest(order.id)}
+                          disabled={pendingKey === `cancel:${order.id}`}
+                          className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {pendingKey === `cancel:${order.id}` ? "Cancelling..." : "Cancel Order"}
+                        </button>
+                      )}
+                    </div>
                     
                     <OrderFinancials order={order} />
                     <OrderSupport order={order} />

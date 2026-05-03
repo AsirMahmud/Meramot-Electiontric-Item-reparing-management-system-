@@ -770,3 +770,77 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function cancelRequest(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { requestId } = req.params;
+
+    const existing = await prisma.repairRequest.findFirst({
+      where: { id: requestId, userId },
+      include: {
+        repairJob: true,
+        payments: true,
+      },
+    });
+
+    if (!existing) return res.status(404).json({ message: "Request not found" });
+
+    // Customer can only cancel if it hasn't been assigned or is still in early stages
+    if (existing.status !== RequestStatus.PENDING && existing.status !== RequestStatus.BIDDING) {
+      return res.status(400).json({ message: "You can only cancel orders that have not yet been assigned to a vendor." });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.CANCELLED,
+          rejectedAt: new Date(),
+        },
+      });
+
+      if (existing.repairJob) {
+        await tx.repairJob.update({
+          where: { id: existing.repairJob.id },
+          data: { status: RepairJobStatus.CANCELLED },
+        });
+      }
+
+      // Auto-create refund records
+      const refunds = [];
+      for (const payment of existing.payments) {
+        if (payment.method !== "CASH" && payment.status === "PAID") {
+          const refund = await tx.refund.create({
+            data: {
+              paymentId: payment.id,
+              amount: payment.amount,
+              reason: "Customer cancelled the order before it was assigned",
+              status: "PENDING",
+            },
+          });
+          refunds.push(refund);
+
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: { status: "REFUNDED" },
+          });
+        }
+      }
+
+      return { request, refunds };
+    });
+
+    return res.json({
+      message: result.refunds.length > 0
+        ? "Order cancelled. A refund has been initiated."
+        : "Order cancelled successfully.",
+      request: result.request,
+    });
+  } catch (error) {
+    console.error("cancelRequest error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

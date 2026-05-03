@@ -439,9 +439,18 @@ export default function VendorDashboardPage() {
       return;
     }
 
+    let reason: string | undefined;
+    if (nextStatus === "CANCELLED") {
+      const input = window.prompt("Please provide a reason for cancelling this job (required for accountability):");
+      if (!input || !input.trim()) {
+        return; // Vendor cancelled the prompt or didn't provide a reason
+      }
+      reason = input.trim();
+    }
+
     try {
       setPendingKey(`job:${jobId}`);
-      await updateVendorJobStatus(token, jobId, nextStatus);
+      await updateVendorJobStatus(token, jobId, nextStatus, reason);
       setFlash({ type: "success", text: "Assigned job status updated." });
       await loadDashboard();
     } catch (error) {

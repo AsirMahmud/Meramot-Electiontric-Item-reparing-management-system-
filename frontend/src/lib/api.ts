@@ -833,6 +833,16 @@ export async function declineBid(token: string, requestId: string, bidId: string
   );
 }
 
+export async function cancelRequest(token: string, requestId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}/cancel`,
+    token,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
 export async function respondToFinalQuote(
   token: string,
   requestId: string,
@@ -905,13 +915,13 @@ export function submitVendorBid(
   );
 }
 
-export function updateVendorJobStatus(token: string, jobId: string, status: string) {
+export function updateVendorJobStatus(token: string, jobId: string, status: string, reason?: string) {
   return authedRequest(
     `/vendor/requests/jobs/${encodeURIComponent(jobId)}/status`,
     token,
     {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, reason }),
     }
   );
 }
