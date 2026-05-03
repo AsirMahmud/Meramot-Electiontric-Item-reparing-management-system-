@@ -21,6 +21,7 @@ Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
 Format: { "isAppliance": false, "isRubbish": false, "suggestions": [ { "brand": "...", "model": "...", "deviceType": "...", "specs": "..." } ] }`
     : `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
 Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung", "Samsi" -> "Samsung") and correct it.
+IMPORTANT: Also check for typos and missing spaces in the MODEL field. Examples: "tabe" -> "Tab E", "galxy s" -> "Galaxy S", "ipd" -> "iPad", "mabook" -> "MacBook". Consider older, discontinued, and budget models too — not just the latest flagships.
 If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
 If the text is completely random, nonsensical, or clearly not any electronic device (e.g. "asdfgh", "rubbish", "Ejjdw" with no context), set "isRubbish" to true.
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:

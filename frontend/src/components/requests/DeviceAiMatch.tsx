@@ -77,17 +77,15 @@ export default function DeviceAiMatch({
               </button>
             ))}
           </div>
-          {!deeperSearch && (
-            <div className="mt-3 text-center">
-              <button
-                type="button"
-                onClick={onSearchDeeper}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--muted-foreground)] transition hover:bg-[var(--mint-50)] hover:text-[var(--foreground)]"
-              >
-                None of these? Search deeper
-              </button>
-            </div>
-          )}
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={onSearchDeeper}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--muted-foreground)] transition hover:bg-[var(--mint-50)] hover:text-[var(--foreground)]"
+            >
+              {deeperSearch ? "Still not right? Search again" : "None of these? Search deeper"}
+            </button>
+          </div>
         </div>
       </div>
     );
