@@ -354,7 +354,7 @@ export async function updateMyDeliveryStatus(req: Request, res: Response) {
           sendOrderStatusEmail({
             to: updated.repairJob.repairRequest.user.email,
             customerName: updated.repairJob.repairRequest.user.name,
-            orderRef: updated.repairJob.repairRequest.title,
+            orderTitle: updated.repairJob.repairRequest.title,
             status: reqUpdated.status,
             shopName: updated.repairJob.shop.name,
           }).catch((err) => console.error("delivery sync email failed:", err));
