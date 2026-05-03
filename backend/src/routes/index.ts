@@ -8,7 +8,7 @@ import paymentRoutes from "./payment-routes.js";
 import profileRoutes from "./profile-routes.js";
 import cartRoutes from "./cart-routes.js";
 import requestRoutes from "./request-routes.js";
-import aiRoutes from "./ai-routes.js";
+import aiRoutes from "./ai-chat-routes.js";
 import aiChatHistoryRoutes from "./ai-chat-history-routes.js";
 import vendorApplicationRoutes from "./vendor-application-routes.js";
 import vendorRequestRoutes from "./vendor-request-routes.js";

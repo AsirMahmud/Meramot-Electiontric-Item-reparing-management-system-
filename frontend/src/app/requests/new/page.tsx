@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { createRepairRequest } from "@/lib/api";
+import { createRepairRequest, uploadImages } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
 import { pushLocalNotification } from "@/lib/notifications";
+import DeviceAiMatch from "@/components/requests/DeviceAiMatch";
+import { Sparkles, Loader2 } from "lucide-react";
 
 const DEVICE_TYPES = [
   "Laptop",
@@ -42,7 +44,7 @@ type CreateRepairRequestResult = {
   delivery?: unknown | null;
 };
 
-export default function NewRequestPage() {
+function NewRequestPageInner() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const shopSlug = searchParams.get("shop") || "";
@@ -51,13 +53,20 @@ export default function NewRequestPage() {
   const [message, setMessage] = useState("");
   const [toast, setToast] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [modelSuggestions, setModelSuggestions] = useState<{brand: string; model: string; specs: string}[]>([]);
+  const [checkingModel, setCheckingModel] = useState(false);
+  const [deeperSearch, setDeeperSearch] = useState(false);
+  const [isAppliance, setIsAppliance] = useState(false);
+  const [isRubbish, setIsRubbish] = useState(false);
+  const [activeField, setActiveField] = useState<"brand" | "model" | null>(null);
 
   const [form, setForm] = useState({
     title: "",
     deviceType: "Laptop",
     brand: "",
     model: "",
-    issueCategory: "Screen or display",
+    issueCategory: "Checkup and diagnosis",
     problem: "",
     mode: shopSlug ? "DIRECT_REPAIR" : "CHECKUP_AND_REPAIR",
     preferredPickup: true,
@@ -137,13 +146,68 @@ export default function NewRequestPage() {
     return () => clearTimeout(timeout);
   }, [toast]);
 
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      const brand = form.brand.trim();
+      const model = form.model.trim();
+      
+      if (brand.length > 2 || model.length > 2) {
+        setCheckingModel(true);
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/suggest-model`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ brand, model, deeperSearch })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            setIsAppliance(!!data.isAppliance);
+            setIsRubbish(!!data.isRubbish);
+            
+            if (data.isAppliance || data.isRubbish) {
+              setModelSuggestions([]);
+              return;
+            }
+            
+            if (data.suggestions && data.suggestions.length > 0) {
+              // Check if first suggestion is literally what they typed for both brand and model
+              const first = data.suggestions[0];
+              const lowerSugModel = first.model.toLowerCase();
+              const lowerMod = model.toLowerCase();
+              const lowerSugBrand = first.brand.toLowerCase();
+              const lowerBrand = brand.toLowerCase();
+              
+              if (lowerSugModel === lowerMod && lowerSugBrand === lowerBrand && data.suggestions.length === 1 && !deeperSearch) {
+                setModelSuggestions([]);
+              } else {
+                setModelSuggestions(data.suggestions);
+              }
+            } else {
+              setModelSuggestions([]);
+            }
+          } else {
+            setModelSuggestions([]);
+          }
+        } catch (err) {
+          setModelSuggestions([]);
+        } finally {
+          setCheckingModel(false);
+        }
+      } else {
+        setModelSuggestions([]);
+      }
+    }, 1200);
+
+    return () => clearTimeout(handler);
+  }, [form.brand, form.model, deeperSearch]);
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
       {toast && (
        <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
            {toast}
          </div>
        </div>
@@ -192,6 +256,12 @@ export default function NewRequestPage() {
                   } | null;
                   delivery?: unknown | null;
                 };
+
+                let uploadedImageUrls: string[] = [];
+                if (files.length > 0) {
+                  const uploadResult = await uploadImages(files, token);
+                  uploadedImageUrls = uploadResult.imageUrls;
+                }
                 
                 const result = (await createRepairRequest(
                   {
@@ -215,6 +285,7 @@ export default function NewRequestPage() {
                     pickupLng: form.pickupLng,
                     contactPhone: form.contactPhone,
                     shopSlug: shopSlug || undefined,
+                    imageUrls: uploadedImageUrls,
                   },
                   token
                 )) as CreateRepairRequestResult;
@@ -263,19 +334,62 @@ export default function NewRequestPage() {
               ))}
             </select>
 
-            <input
-              value={form.brand}
-              onChange={(e) => setForm((prev) => ({ ...prev, brand: e.target.value }))}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              placeholder="Brand"
-            />
+            <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <input
+                  value={form.brand}
+                  onFocus={() => setActiveField("brand")}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, brand: e.target.value }));
+                    setDeeperSearch(false);
+                    setActiveField("brand");
+                  }}
+                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 && activeField === "brand" ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                  placeholder="Brand"
+                />
+                {checkingModel && activeField === "brand" && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
+                    checking...
+                  </span>
+                )}
+              </div>
 
-            <input
-              value={form.model}
-              onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              placeholder="Model"
-            />
+              <div className="relative">
+                <input
+                  value={form.model}
+                  onFocus={() => setActiveField("model")}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, model: e.target.value }));
+                    setDeeperSearch(false);
+                    setActiveField("model");
+                  }}
+                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 && activeField === "model" ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                  placeholder="Model"
+                />
+                {checkingModel && activeField === "model" && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
+                    checking...
+                  </span>
+                )}
+              </div>
+
+              {/* AI Assistant Suggestions spanning both columns */}
+              <div className="md:col-span-2">
+                <DeviceAiMatch 
+                  checkingModel={checkingModel}
+                  activeField={activeField}
+                  isAppliance={isAppliance}
+                  isRubbish={isRubbish}
+                  modelSuggestions={modelSuggestions}
+                  deeperSearch={deeperSearch}
+                  onSelectSuggestion={(brand, model) => {
+                    setForm(prev => ({...prev, brand, model}));
+                    setModelSuggestions([]);
+                  }}
+                  onSearchDeeper={() => setDeeperSearch(true)}
+                />
+              </div>
+            </div>
 
             <select
               required
@@ -496,9 +610,36 @@ export default function NewRequestPage() {
             />
 
             <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]">
+                Upload Images (Max 4)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    const selected = Array.from(e.target.files).slice(0, 4);
+                    setFiles(selected);
+                  }
+                }}
+                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-dark)] file:px-4 file:py-2 file:text-sm file:font-bold file:text-[var(--accent-foreground)] hover:file:opacity-90"
+              />
+              {files.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
+                  {files.map((f, i) => (
+                    <span key={i} className="inline-block rounded border border-[var(--border)] bg-[var(--card)] px-2 py-1 font-medium">
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
               <button
                 disabled={isSubmitting}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] disabled:opacity-60"
               >
                 {isSubmitting ? "Submitting..." : "Submit request"}
               </button>
@@ -509,5 +650,15 @@ export default function NewRequestPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function NewRequestPage() {
+  return (
+    <Suspense fallback={<div>Loading page...</div>}>
+      <NewRequestPageInner />
+    </Suspense>
   );
 }

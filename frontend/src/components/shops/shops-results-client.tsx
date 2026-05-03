@@ -7,7 +7,7 @@ import Navbar from "@/components/home/Navbar";
 import { getShops, type Shop } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
 
-export default function ShopsResultsClient() {
+function ShopsResultsClientInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -103,7 +103,7 @@ export default function ShopsResultsClient() {
                   onClick={() => setSort(value)}
                   className={`rounded-xl px-4 py-2 text-sm font-semibold ${
                     sort === value
-                      ? "bg-[var(--accent-dark)] text-white"
+                      ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
                       : "bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)]"
                   }`}
                 >
@@ -128,13 +128,13 @@ export default function ShopsResultsClient() {
                         {shop.description || shop.address}
                       </p>
                       <p className="mt-2 text-sm text-[var(--foreground)]">
-                        ⭐ {shop.ratingAvg.toFixed(1)} ({shop.reviewCount} reviews)
+                        ⭐ {(shop.ratingAvg ?? 0).toFixed(1)} ({shop.reviewCount ?? 0} reviews)
                       </p>
                     </div>
 
                     <div className="text-right">
                       <div className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-sm font-semibold text-[var(--foreground)]">
-                        {"$".repeat(Math.max(1, shop.priceLevel))}
+                        {"$".repeat(Math.max(1, shop.priceLevel ?? 1))}
                       </div>
                     </div>
                   </div>
@@ -174,5 +174,15 @@ export default function ShopsResultsClient() {
         </div>
       </section>
     </main>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function ShopsResultsClient(props: any) {
+  return (
+    <Suspense fallback={<div>Loading shops...</div>}>
+      <ShopsResultsClientInner {...props} />
+    </Suspense>
   );
 }
