@@ -56,47 +56,45 @@ export default function AdminDashboardPage() {
       ]
     : [];
 
-  return (
-    <section>
-      <div className="mb-4 md:mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)] md:text-sm">
-          Dashboard
-        </p>
-        <h2 className="mt-2 text-2xl font-bold text-[var(--accent-dark)] md:mt-3 md:text-4xl">Admin Overview</h2>
-        <p className="mt-2 text-xs text-[var(--muted-foreground)] md:mt-3 md:text-lg">
-          Monitor platform health, vendor approvals, customer support, and financial mediation.
-        </p>
-      </div>
-
-      {loading ? (
-        <div className="rounded-[24px] bg-[var(--mint-50)] p-6 text-[var(--muted-foreground)]">Loading dashboard...</div>
-      ) : (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
-          {cards.map((card) => (
-            <Link
-              key={card.label}
-              href={card.href}
-              className="group flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-2 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md hover:border-[var(--accent-dark)]/30 sm:block sm:aspect-auto sm:text-left md:rounded-[28px] md:p-6"
-            >
-              <p className="mb-1 text-[10px] font-bold uppercase leading-tight tracking-wider text-[var(--muted-foreground)] transition-colors group-hover:text-[var(--accent-dark)] sm:mb-0 sm:text-xs sm:font-semibold sm:tracking-[0.22em]">
-                {card.label}
-              </p>
-              <p className="text-2xl font-extrabold leading-none text-[var(--accent-dark)] sm:mt-2 sm:font-bold md:mt-4 md:text-4xl">
-                {card.value}
-              </p>
-            </Link>
-          ))}
+    return (
+      <section>
+        <div className="mb-4 md:mb-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground md:text-sm">
+            Dashboard
+          </p>
+    
+          <h2 className="mt-2 text-2xl font-bold text-accent-dark md:mt-3 md:text-4xl">
+            Admin Overview
+          </h2>
+    
+          <p className="mt-2 text-xs text-muted-foreground md:mt-3 md:text-lg">
+            Monitor platform health, vendor approvals, customer support, and financial mediation.
+          </p>
         </div>
-      )}
-
-      <div className="mt-8 md:mt-12 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 md:p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-[var(--accent-dark)] mb-4">Delivery System Credentials</h3>
-        <div className="space-y-2 text-sm text-[var(--foreground)]">
-          <p><strong>Email:</strong> delivery.admin.demo@meeramoot.test</p>
-          <p><strong>Password:</strong> DeliveryAdmin@123</p>
-          <p><strong>URL:</strong> <Link href="/delivery-admin/login" className="text-blue-600 hover:underline">/delivery-admin/login</Link></p>
-        </div>
-      </div>
-    </section>
-  );
+    
+        {loading ? (
+          <div className="rounded-[24px] bg-mint-50 p-6 text-muted-foreground">
+            Loading dashboard...
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 md:gap-5 xl:grid-cols-3">
+            {cards.map((card) => (
+              <Link
+                key={card.label}
+                href={card.href}
+                className="group flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border border-border bg-mint-50 p-2 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md hover:border-accent-dark/30 sm:block sm:aspect-auto sm:text-left md:rounded-[28px] md:p-6"
+              >
+                <p className="mb-1 text-[10px] font-bold uppercase leading-tight tracking-wider text-muted-foreground transition-colors group-hover:text-accent-dark sm:mb-0 sm:text-xs sm:font-semibold sm:tracking-[0.22em]">
+                  {card.label}
+                </p>
+    
+                <p className="text-2xl font-extrabold leading-none text-accent-dark sm:mt-2 sm:font-bold md:mt-4 md:text-4xl">
+                  {card.value}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    );
 }

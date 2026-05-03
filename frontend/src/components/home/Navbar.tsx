@@ -2,16 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, FormEvent, useEffect } from "react";
+import { useMemo, useState, FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
-import { MapPin } from "lucide-react";
+import { signOut } from "next-auth/react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import NavbarLocationButton from "@/components/location/NavbarLocationButton";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import { getVendorApplicationStatus } from "@/lib/api";
 
  type NavbarProps = {
   isLoggedIn?: boolean;
@@ -20,21 +18,13 @@ import { getVendorApplicationStatus } from "@/lib/api";
   onLanguageChange?: (lang: "en" | "bn") => void;
 };
 
-type VendorNavbarStatus = {
-  application?: {
-    status: "PENDING" | "APPROVED" | "REJECTED";
-    setupComplete?: boolean;
-  };
-  message?: string;
-};
-
 const categoryTabs = [
   { label: "Courier Pickup", value: "COURIER_PICKUP" },
   { label: "In-shop Repair", value: "IN_SHOP_REPAIR" },
   { label: "Spare Parts", value: "SPARE_PARTS" },
 ] as const;
 
-export function NavbarInner({
+export default function Navbar({
   isLoggedIn = false,
   firstName = "User",
   language = "en",
@@ -45,8 +35,6 @@ export function NavbarInner({
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -61,59 +49,13 @@ export function NavbarInner({
   const activeCategory =
     pathname === "/shops" ? searchParams.get("category") ?? "" : "";
 
-  const { data: session, status } = useSession();
-
-  const userRole = (session?.user as { role?: string } | undefined)?.role;
-  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
-
-  const [vendorStatus, setVendorStatus] = useState<VendorNavbarStatus | null>(null);
-
-  useEffect(() => {
-    async function loadVendorStatus() {
-      if (userRole !== "VENDOR" || !token) {
-        setVendorStatus(null);
-        return;
-      }
-
-      try {
-        const result = (await getVendorApplicationStatus(token)) as VendorNavbarStatus;
-        setVendorStatus(result);
-      } catch {
-        setVendorStatus(null);
-      }
-    }
-
-    loadVendorStatus();
-  }, [userRole, token]);
-
-  const vendorApplication = vendorStatus?.application;
-  const isVendorSetupComplete =
-    userRole === "VENDOR" &&
-    vendorApplication?.status === "APPROVED" &&
-    vendorApplication?.setupComplete === true;
-
-  const isVendorSetupIncomplete =
-    userRole === "VENDOR" &&
-    vendorApplication?.status === "APPROVED" &&
-    vendorApplication?.setupComplete !== true;
-
   const displayName = useMemo(() => {
-    return firstName?.trim() || session?.user?.name?.split(" ")[0] || "User";
-  }, [firstName, session]);
-
-  const mobileDisplayName = useMemo(() => {
-    const rawName = session?.user?.name?.trim() || "User";
-    const parts = rawName.split(/\s+/);
-    if (parts.length >= 3) {
-      return parts.slice(0, 2).join(" ");
-    }
-    return rawName;
-  }, [session]);
+    return firstName?.trim() || "User";
+  }, [firstName]);
 
   const confirmLogout = async () => {
     setIsUserMenuOpen(false);
     setShowLogoutConfirm(false);
-    setMobileMenuOpen(false);
 
     if (typeof window !== "undefined") {
       localStorage.removeItem("meramot.user");
@@ -137,270 +79,167 @@ export function NavbarInner({
     setLocationModalOpen(true);
     setIsUserMenuOpen(false);
     setIsLangMenuOpen(false);
-    setMobileMenuOpen(false);
   }
 
   return (
     <>
       <header className="w-full border-b border-[var(--border)] bg-[var(--mint-100)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 md:gap-4 md:px-6 md:py-5">
-          {/* ── Row 1: Logo + hamburger (mobile) / Logo + location + actions (desktop) ── */}
-          <div className="flex items-center justify-between gap-3 md:grid md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center md:gap-4">
-            {/* Hamburger — mobile only */}
-              <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--card)] text-xl text-[var(--foreground)] shadow-sm md:hidden"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? "✕" : "☰"}
-            </button>
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 md:px-6">
+          <div className="grid grid-cols-[auto_1fr] gap-4 md:grid-cols-[auto_minmax(280px,1fr)_auto] md:items-center">
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/images/meramot.svg"
+                alt="Meramot"
+                width={280}
+                height={100}
+                className="h-16 w-auto object-contain md:h-20"
+                priority
+              />
+            </Link>
 
-            <div className="flex flex-1 justify-center md:justify-start">
-              <Link href="/" className="inline-flex items-center">
-                <Image
-                  src="/images/meramot.svg"
-                  alt="Meramot"
-                  width={280}
-                  height={100}
-                  className="h-[4.62rem] w-auto object-contain md:h-[5.1975rem] lg:h-[6.3525rem]"
-                  priority
-                  fetchPriority="high"
-                />
-              </Link>
-            </div>
-
-            {/* Desktop-only: location + actions */}
-            <div className="hidden md:flex md:justify-center">
+            <div className="flex justify-end md:justify-center">
               <NavbarLocationButton label={locationLabel} onClick={openLocationModal} />
             </div>
 
-            {/* Right side icons — always visible */}
-            <div className="flex shrink-0 items-center gap-2 md:gap-3">
-              <NotificationBell />
-              {/* Desktop: full action bar */}
-              <div className="hidden md:flex md:items-center md:gap-3">
-                <ThemeToggle />
-                {!isLoggedIn ? (
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center justify-center text-center rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-90"
-                  >
-                    Sign in/Sign up
-                  </Link>
-                ) : (
-                  <div className="relative">
-                    <button
-                      onClick={() => {
-                        setIsUserMenuOpen((prev) => !prev);
-                        setIsLangMenuOpen(false);
-                      }}
-                      className="inline-flex items-center justify-center text-center rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm"
-                    >
-                      {displayName} ▼
-                    </button>
+            <div className="col-span-2 flex flex-wrap items-center gap-3 md:col-span-1 md:justify-end">
+              <ThemeToggle />
 
-                    {isUserMenuOpen && (
-                      <div className="absolute right-0 z-30 mt-2 w-56 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
-                        <Link
-                          href="/profile"
-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          View profile
-                        </Link>
-
-                        <Link
-                          href="/orders"
-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Requests history
-                        </Link>
-
-                        {userRole === "ADMIN" && (
-                          <Link
-                            href="/admin"
-                            className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            Admin dashboard
-                          </Link>
-                        )}
-
-                        {userRole === "VENDOR" ? (
-                          <>
-                            {isVendorSetupComplete ? (
-                              <>
-                                <Link
-                                  href="/vendor/dashboard"
-                                  className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                                  onClick={() => setIsUserMenuOpen(false)}
-                                >
-                                  Vendor dashboard
-                                </Link>
-                                <Link
-                                  href="/vendor/analytics"
-                                  className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                                  onClick={() => setIsUserMenuOpen(false)}
-                                >
-                                  Shop analytics
-                                </Link>
-                              </>
-                            ) : isVendorSetupIncomplete ? (
-                              <Link
-                                href="/vendor/setup-shop"
-                                className="block rounded-2xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Set up your shop
-                              </Link>
-                            ) : (
-                              <Link
-                                href="/vendor/onboarding"
-                                className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                                onClick={() => setIsUserMenuOpen(false)}
-                              >
-                                Vendor onboarding
-                              </Link>
-                            )}
-                          </>
-                        ) : null}
-
-                        {userRole === "VENDOR" ? (
-                          <Link
-                            href="/vendor/my-bids"
-                            className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            My Offers
-                          </Link>
-                        ) : (
-                          <Link
-                            href="/requests/new"
-                            className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            Make Repair Request
-                          </Link>
-                        )}
-
-                        <Link
-                          href="/cart"
-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          View cart
-                        </Link>
-
-                        <Link
-                          href="/ai-chat"
-                          className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          AI help chat
-                        </Link>
-
-                        <button
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            setShowLogoutConfirm(true);
-                          }}
-                          className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-700 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-950/30"
-                        >
-                          Log out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
+              {!isLoggedIn ? (
+                <Link
+                  href="/login"
+                  className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                >
+                  Sign in
+                </Link>
+              ) : (
                 <div className="relative">
                   <button
                     onClick={() => {
-                      setIsLangMenuOpen((prev) => !prev);
-                      setIsUserMenuOpen(false);
+                      setIsUserMenuOpen((prev) => !prev);
+                      setIsLangMenuOpen(false);
                     }}
-                    className="rounded-full bg-[var(--mint-200)] px-5 py-2.5 text-sm font-medium text-[var(--foreground)]"
+                    className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
                   >
-                    {language === "bn" ? "বাংলা" : "English"} ▼
+                    {displayName} ▼
                   </button>
 
-                  {isLangMenuOpen && (
-                    <div className="absolute right-0 z-30 mt-2 w-40 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-lg">
-                      <button
-                        onClick={() => {
-                          onLanguageChange?.("en");
-                          setIsLangMenuOpen(false);
-                        }}
-                        className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 z-30 mt-2 w-56 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
+                      <Link
+                        href="/profile"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
                       >
-                        English
-                      </button>
+                        View profile
+                      </Link>
+
+                      <Link
+                        href="/orders"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Requests history
+                      </Link>
+
+                      <Link
+                        href="/requests/new"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Make request
+                      </Link>
+
+                      <Link
+                        href="/cart"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        View cart
+                      </Link>
+
+                      <Link
+                        href="/ai-chat"
+                        className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        AI help chat
+                      </Link>
 
                       <button
                         onClick={() => {
-                          onLanguageChange?.("bn");
-                          setIsLangMenuOpen(false);
+                          setIsUserMenuOpen(false);
+                          setShowLogoutConfirm(true);
                         }}
-                        className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                        className="block w-full rounded-2xl px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
                       >
-                        বাংলা
+                        Log out
                       </button>
                     </div>
                   )}
                 </div>
-                <Link
-                  href="/cart"
-                  className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
-                >
-                  <Image
-                    src="/images/cart.svg"
-                    alt="Cart"
-                    width={80}
-                    height={80}
-                    className="h-[45px] w-[45px]"
-                  />
-                </Link>
-              </div>
-            </div>
-          </div>
+              )}
 
-          {/* ── Row 2: Mobile location button ── */}
-          <div className="mt-4 md:mt-0 md:hidden">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openLocationModal}
-                className="shrink-0 p-1.5 text-[var(--accent-dark)] md:hidden"
-                aria-label="Change location"
+              <Link
+                href="/cart"
+                className="flex items-center justify-center rounded-full bg-[var(--mint-100)] p-2 transition hover:scale-105 hover:bg-[var(--mint-300)]"
               >
-                <MapPin size={24} />
-              </button>
-              <form onSubmit={handleSearchSubmit} className="flex-1">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search shops, parts..."
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--mint-300)] px-4 py-2.5 text-[0.9rem] text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted-foreground)]"
+                <Image
+                  src="/images/cart.svg"
+                  alt="Cart"
+                  width={80}
+                  height={80}
+                  className="h-[45px] w-[45px]"
                 />
-              </form>
+              </Link>
+
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsLangMenuOpen((prev) => !prev);
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="rounded-full bg-[var(--mint-200)] px-5 py-2.5 text-sm font-medium text-[var(--foreground)]"
+                >
+                  {language === "bn" ? "বাংলা" : "English"} ▼
+                </button>
+
+                {isLangMenuOpen && (
+                  <div className="absolute right-0 z-30 mt-2 w-40 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-lg">
+                    <button
+                      onClick={() => {
+                        onLanguageChange?.("en");
+                        setIsLangMenuOpen(false);
+                      }}
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                    >
+                      English
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onLanguageChange?.("bn");
+                        setIsLangMenuOpen(false);
+                      }}
+                      className="block w-full rounded-xl px-4 py-2 text-left text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                    >
+                      বাংলা
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <NotificationBell />
+
             </div>
           </div>
-
-          {/* ── Row 3: Category tabs + search (desktop) ── */}
-          <div className="mt-2 flex flex-col gap-2 md:mt-0 md:flex-row md:items-center md:justify-between md:gap-4">
-            <div className="flex items-end gap-3 overflow-x-auto whitespace-nowrap text-xs font-semibold text-[var(--foreground)] md:gap-6 md:text-base">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-end gap-6 overflow-x-auto whitespace-nowrap font-semibold text-[var(--foreground)]">
               {categoryTabs.map((tab) => {
                 const active = activeCategory === tab.value;
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("category", tab.value);
-
                 return (
                   <Link
                     key={tab.value}
-                    href={`/shops?${params.toString()}`}
+                    href={`/shops?category=${tab.value}`}
                     className={`inline-flex border-b-[3px] pb-1 transition ${
                       active
                         ? "border-[var(--accent-dark)] text-[var(--accent-dark)]"
@@ -413,7 +252,7 @@ export function NavbarInner({
               })}
             </div>
 
-            <form onSubmit={handleSearchSubmit} className="hidden w-full md:block md:flex-1 md:max-w-[640px]">
+            <form onSubmit={handleSearchSubmit} className="w-full md:w-[520px]">
               <input
                 type="text"
                 value={searchQuery}
@@ -426,218 +265,13 @@ export function NavbarInner({
         </div>
       </header>
 
-      {/* ── Mobile hamburger drawer ── */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[110] md:hidden">
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setMobileMenuOpen(false)}
-            className="mobile-sidebar-backdrop"
-          />
-
-          <aside className="mobile-sidebar-panel">
-            <div className="mb-4 flex items-center justify-between">
-              <Link href="/" onClick={() => setMobileMenuOpen(false)}>
-                <Image
-                  src="/images/meramot.svg"
-                  alt="Meramot"
-                  width={240}
-                  height={80}
-                  className="h-14 w-auto object-contain"
-                />
-              </Link>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--mint-100)] text-sm font-bold text-[var(--accent-dark)]"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="mb-4 flex items-center gap-4">
-              <ThemeToggle />
-              <Link
-                href="/cart"
-                onClick={() => setMobileMenuOpen(false)}
-                className="ml-auto flex items-center justify-center rounded-full bg-[var(--mint-100)] p-3 transition active:bg-[var(--mint-300)]"
-              >
-                <Image src="/images/cart.svg" alt="Cart" width={48} height={48} className="h-12 w-12" />
-              </Link>
-            </div>
-
-            <nav className="space-y-1">
-              {!isLoggedIn ? (
-                <div className="flex">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="inline-flex items-center justify-center rounded-xl bg-[var(--mint-50)] dark:bg-[var(--mint-200)] px-5 py-3 text-sm font-bold text-[var(--accent-dark)] transition hover:opacity-90"
-                  >
-                    Sign in / Sign up
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setMobileUserMenuOpen((prev) => !prev)}
-                    style={{ boxShadow: 'none' }}
-                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-bold text-[var(--accent-dark)] transition bg-[var(--mint-50)] dark:bg-[var(--mint-200)]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-dark)] text-xs text-[var(--accent-foreground)]">
-                        {mobileDisplayName.charAt(0).toUpperCase()}
-                      </span>
-                      {mobileDisplayName.toUpperCase()}
-                    </span>
-                    <span className={`text-xs transition-transform ${mobileUserMenuOpen ? 'rotate-180' : ''}`}>▼</span>
-                  </button>
-
-                  {mobileUserMenuOpen && (
-                    <div className="ml-4 space-y-1 border-l-2 border-[var(--mint-200)] pl-4 mt-1 mb-2">
-                      <Link
-                        href="/profile"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                      >
-                        View profile
-                      </Link>
-
-                      <Link
-                        href="/orders"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                      >
-                        Requests history
-                      </Link>
-
-                      {userRole === "ADMIN" && (
-                        <Link
-                          href="/admin"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                        >
-                          Admin dashboard
-                        </Link>
-                      )}
-
-                      {userRole === "VENDOR" && isVendorSetupComplete && (
-                        <>
-                          <Link
-                            href="/vendor/dashboard"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                          >
-                            Vendor dashboard
-                          </Link>
-                          <Link
-                            href="/vendor/analytics"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                          >
-                            Shop analytics
-                          </Link>
-                        </>
-                      )}
-
-                      {userRole === "VENDOR" && isVendorSetupIncomplete && (
-                        <Link
-                          href="/vendor/setup-shop"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-50)]"
-                        >
-                          Set up your shop
-                        </Link>
-                      )}
-
-                      {userRole === "VENDOR" ? (
-                        <Link
-                          href="/vendor/my-bids"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                        >
-                          My Offers
-                        </Link>
-                      ) : (
-                        <Link
-                          href="/requests/new"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                        >
-                          Make Repair Request
-                        </Link>
-                      )}
-
-                      <Link
-                        href="/cart"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                      >
-                        View cart
-                      </Link>
-
-                      <Link
-                        href="/ai-chat"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block rounded-xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
-                      >
-                        AI help chat
-                      </Link>
-                      
-                      <button
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setShowLogoutConfirm(true);
-                        }}
-                        className="block w-full rounded-xl px-4 py-3 text-left text-sm font-medium text-red-700 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-950/30"
-                      >
-                        Log out
-                      </button>
-                    </div>
-                  )}
-
-                </>
-              )}
-            </nav>
-          </aside>
-        </div>
-      )}
-
-      {/* ── Mobile user dropdown (for profile icon tap) ── */}
-      {isUserMenuOpen && (
-        <div className="fixed inset-0 z-[120] md:hidden">
-          <button
-            type="button"
-            aria-label="Close user menu"
-            onClick={() => setIsUserMenuOpen(false)}
-            className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
-          />
-          <div className="absolute right-3 top-16 z-[121] w-56 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-xl">
-            <Link href="/profile" onClick={() => setIsUserMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]">
-              View profile
-            </Link>
-            <Link href="/orders" onClick={() => setIsUserMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]">
-              My requests
-            </Link>
-            <Link href="/cart" onClick={() => setIsUserMenuOpen(false)} className="block rounded-xl px-3 py-2.5 text-sm text-[var(--foreground)] hover:bg-[var(--mint-50)]">
-              Cart
-            </Link>
-            <button
-              onClick={() => { setIsUserMenuOpen(false); setShowLogoutConfirm(true); }}
-              className="block w-full rounded-xl px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
-            >
-              Log out
-            </button>
-          </div>
-        </div>
-      )}
-
       {locationModalOpen && (
         <LocationPickerModal
           selectedLocation={selectedLocation}
           onClose={() => setLocationModalOpen(false)}
-          onConfirm={saveLocation}
+          onConfirm={async (location) => {
+            await saveLocation(location);
+          }}
         />
       )}
 
@@ -667,7 +301,7 @@ export function NavbarInner({
 
               <button
                 onClick={confirmLogout}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 Yes
               </button>
@@ -676,15 +310,5 @@ export function NavbarInner({
         </div>
       )}
     </>
-  );
-}
-
-import { Suspense } from "react";
-
-export default function Navbar(props: NavbarProps) {
-  return (
-    <Suspense fallback={<div style={{ height: "70px" }}></div>}>
-      <NavbarInner {...props} />
-    </Suspense>
   );
 }

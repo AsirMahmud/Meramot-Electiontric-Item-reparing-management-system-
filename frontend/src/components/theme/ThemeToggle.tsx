@@ -30,7 +30,7 @@ export default function ThemeToggle() {
       <span className="relative z-10 flex w-full items-center justify-between px-1 text-[var(--muted-foreground)]">
         <span
           className={`flex h-6 w-6 items-center justify-center transition ${
-            !isDark ? "text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)]"
+            !isDark ? "text-white" : "text-[var(--muted-foreground)]"
           }`}
         >
           <svg
@@ -45,7 +45,7 @@ export default function ThemeToggle() {
 
         <span
           className={`flex h-6 w-6 items-center justify-center transition ${
-            isDark ? "text-[var(--accent-foreground)]" : "text-[var(--muted-foreground)]"
+            isDark ? "text-white" : "text-[var(--muted-foreground)]"
           }`}
         >
           <svg

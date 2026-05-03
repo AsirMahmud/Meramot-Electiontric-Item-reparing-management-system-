@@ -65,7 +65,7 @@ export async function createAiChatSession(req: AuthedRequest, res: Response) {
 export async function saveAiChatMessage(req: AuthedRequest, res: Response) {
   try {
     const userId = req.user?.id;
-    const sessionId = String(req.params.sessionId || "");
+    const { sessionId } = req.params;
     const { role, text } = req.body;
 
     if (!userId) {
@@ -131,7 +131,7 @@ export async function saveAiChatMessage(req: AuthedRequest, res: Response) {
 export async function deleteAiChatSession(req: AuthedRequest, res: Response) {
   try {
     const userId = req.user?.id;
-    const sessionId = String(req.params.sessionId || "");
+    const { sessionId } = req.params;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });

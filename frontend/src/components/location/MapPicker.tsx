@@ -31,7 +31,6 @@ export default function MapPicker({
     let disposed = false;
 
     async function setupMap() {
-      await import("leaflet/dist/leaflet.css");
       const leafletModule = await import("leaflet");
       if (disposed || !mapContainerRef.current || mapRef.current) return;
 
@@ -110,8 +109,8 @@ export default function MapPicker({
   }, [draftLocation?.lat, draftLocation?.lng, ready]);
 
   return (
-    <div className="relative min-h-[180px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--mint-50)] sm:min-h-[380px] sm:rounded-[1.5rem]">
-      <div ref={mapContainerRef} className="h-[180px] w-full sm:h-[420px]" />
+    <div className="relative min-h-[380px] overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-50)]">
+      <div ref={mapContainerRef} className="h-[420px] min-h-[380px] w-full" />
       <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[var(--accent-dark)] shadow-sm">
         OpenStreetMap + Leaflet
       </div>

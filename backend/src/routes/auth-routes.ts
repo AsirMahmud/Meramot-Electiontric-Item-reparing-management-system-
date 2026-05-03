@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkUsername, googleExchange, login, signup } from "../controllers/auth-controller.js";
+import { checkUsername, googleExchange, login, signup } from "../controllers/auth-controller";
 
 const router = Router();
 

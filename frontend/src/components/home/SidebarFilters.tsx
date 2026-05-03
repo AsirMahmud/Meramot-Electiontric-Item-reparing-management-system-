@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type SidebarFiltersProps = {
@@ -21,7 +21,7 @@ const offerOptions = [
   { label: "Deals", value: "deals" },
 ] as const;
 
-function SidebarFiltersInner({
+export default function SidebarFilters({
   compact = false,
   targetPath,
 }: SidebarFiltersProps) {
@@ -29,16 +29,8 @@ function SidebarFiltersInner({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Local state for immediate visual feedback (avoids Suspense remount issues)
-  const urlSort = searchParams.get("sort") ?? "topRated";
-  const [localSort, setLocalSort] = useState(urlSort);
-
-  const urlDistance = Number(searchParams.get("maxDistanceKm") ?? 12);
-  const [localDistance, setLocalDistance] = useState(urlDistance);
-
-  // Keep local state in sync if URL changes externally (e.g. back button)
-  useEffect(() => { setLocalSort(urlSort); }, [urlSort]);
-  useEffect(() => { setLocalDistance(urlDistance); }, [urlDistance]);
+  const selectedSort = searchParams.get("sort") ?? "topRated";
+  const maxDistanceKm = Number(searchParams.get("maxDistanceKm") ?? 12);
 
   const selectedOffers = useMemo(
     () => ({
@@ -50,14 +42,11 @@ function SidebarFiltersInner({
   );
 
   function updateParam(key: string, value?: string | null) {
-    if (key === "sort" && value) setLocalSort(value);
-    if (key === "maxDistanceKm" && value) setLocalDistance(Number(value));
-
     const params = new URLSearchParams(searchParams.toString());
     if (!value) params.delete(key);
     else params.set(key, value);
     const nextPath = targetPath ?? pathname;
-    router.replace(`${nextPath}?${params.toString()}`, { scroll: false });
+    router.push(`${nextPath}?${params.toString()}`);
   }
 
   return (
@@ -68,7 +57,7 @@ function SidebarFiltersInner({
         </h3>
         <div className="space-y-3">
           {sortOptions.map((option) => {
-            const active = localSort === option.value;
+            const active = selectedSort === option.value;
             return (
               <button
                 key={option.value}
@@ -96,7 +85,7 @@ function SidebarFiltersInner({
             Distance
           </h3>
           <span className="rounded-full bg-[var(--mint-100)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)]">
-            Up to {localDistance} km
+            Up to {maxDistanceKm} km
           </span>
         </div>
 
@@ -105,13 +94,10 @@ function SidebarFiltersInner({
           min={1}
           max={25}
           step={1}
-          value={localDistance}
-          onChange={(event) => {
-            setLocalDistance(Number(event.currentTarget.value));
-          }}
-          onPointerUp={(event) => {
-            updateParam("maxDistanceKm", (event.currentTarget as HTMLInputElement).value);
-          }}
+          value={maxDistanceKm}
+          onChange={(event) =>
+            updateParam("maxDistanceKm", event.currentTarget.value)
+          }
           className="w-full accent-[var(--accent-dark)]"
         />
 
@@ -154,13 +140,3 @@ function SidebarFiltersInner({
     </aside>
   );
 }
-
-import { Suspense } from "react";
-
-export default function SidebarFilters(props: SidebarFiltersProps) {
-  return (
-    <Suspense fallback={<div>Loading filters...</div>}>
-      <SidebarFiltersInner {...props} />
-    </Suspense>
-  );
-}
