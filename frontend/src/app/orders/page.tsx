@@ -443,10 +443,10 @@ function OrdersPageInner() {
                     </p>
                     <p className="mt-3 text-sm text-[var(--muted-foreground)]">{order.problem}</p>
                     
-                    <div className="mt-4 flex flex-wrap items-center gap-4">
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
                       <button 
                         onClick={() => setSelectedOrderForProgress(order)}
-                        className="text-sm font-semibold text-[var(--accent-dark)] hover:underline"
+                        className="inline-flex items-center justify-center rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-200)]"
                       >
                         View Progress Timeline &rarr;
                       </button>
@@ -455,7 +455,7 @@ function OrdersPageInner() {
                         <button
                           onClick={() => handleCancelRequest(order.id)}
                           disabled={pendingKey === `cancel:${order.id}`}
-                          className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                          className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50"
                         >
                           {pendingKey === `cancel:${order.id}` ? "Cancelling..." : "Cancel Order"}
                         </button>
@@ -465,9 +465,9 @@ function OrdersPageInner() {
                         <button
                           onClick={() => handleDeleteRequest(order.id)}
                           disabled={pendingKey === `delete:${order.id}`}
-                          className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                          className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/50"
                         >
-                          {pendingKey === `delete:${order.id}` ? "Deleting..." : "Delete Order"}
+                          {pendingKey === `delete:${order.id}` ? "Deleting..." : "Delete Order History"}
                         </button>
                       )}
                     </div>
