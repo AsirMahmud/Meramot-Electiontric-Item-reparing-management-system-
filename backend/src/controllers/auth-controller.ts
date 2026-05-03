@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma";
-import { env } from "../config/env";
-import { isAdminEmail } from "../config/admin";
-
+import prisma from "../models/prisma.js";
+import { env } from "../config/env.js";
+import { isAdminEmail } from "../config/admin.js";
+import { validateEmail } from "../utils/validate-email.js";
 function signToken(user: {
   id: string;
   username: string;
@@ -25,12 +25,13 @@ function signToken(user: {
 
 export async function signup(req: Request, res: Response) {
   try {
-    const { name, username, email, phone, password } = req.body as {
+    const { name, username, email, phone, password, role } = req.body as {
       name?: string;
       username?: string;
       email?: string;
       phone?: string;
       password?: string;
+      role?: string;
     };
 
     if (!name || !username || !email || !phone || !password) {
@@ -39,22 +40,44 @@ export async function signup(req: Request, res: Response) {
       });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const emailError = validateEmail(email);
+    if (emailError) {
+      return res.status(400).json({ message: emailError });
+    }
+
+    if (role && !["CUSTOMER", "VENDOR", "DELIVERY"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role requested" });
+    }
 
     const existing = await prisma.user.findFirst({
       where: {
-        OR: [{ username: username.trim() }, { email: normalizedEmail }],
+        OR: [{ username: username.trim() }, { email: email.trim().toLowerCase() }],
       },
-      select: { id: true },
+      select: { id: true, role: true },
     });
 
     if (existing) {
+      if (existing.role === "DELIVERY") {
+        return res.status(409).json({
+          message: "Cannot register as customer/vendor with a Delivery Partner email. Please use a separate email.",
+        });
+      }
       return res.status(409).json({
         message: "Username or email already exists",
       });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    let assignedRole: "CUSTOMER" | "ADMIN" | "DELIVERY" = "CUSTOMER";
+    if (isAdminEmail(normalizedEmail)) {
+      assignedRole = "ADMIN";
+    } else if (role === "DELIVERY") {
+      assignedRole = "DELIVERY";
+    }
+    // If role is VENDOR, we still assign CUSTOMER to strictly preserve the existing vendor application/onboarding logic
 
     const user = await prisma.user.create({
       data: {
@@ -63,7 +86,7 @@ export async function signup(req: Request, res: Response) {
         email: normalizedEmail,
         phone: phone.trim(),
         passwordHash,
-        role: isAdminEmail(normalizedEmail) ? "ADMIN" : "CUSTOMER",
+        role: assignedRole,
         isEmailVerified: true,
       },
       select: {
@@ -140,6 +163,18 @@ export async function login(req: Request, res: Response) {
   }
 }
 
+/**
+ * @deprecated Use standard /login endpoint instead
+ * Admins now login through the regular login endpoint using their email
+ * After login, they are redirected to the admin panel based on their role
+ */
+export async function adminDemoLogin(req: Request, res: Response) {
+  return res.status(410).json({
+    message: "Deprecated: Use the standard /login endpoint instead. Admins login like any other user.",
+    hint: "Send credentials to POST /api/auth/login. After login, you will be redirected to the admin panel if you have ADMIN role."
+  });
+}
+
 export async function checkUsername(req: Request, res: Response) {
   try {
     const username = String(req.query.username || "").trim();
@@ -159,7 +194,6 @@ export async function checkUsername(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
-
 export async function googleExchange(req: Request, res: Response) {
   try {
     const { email, name } = req.body as {

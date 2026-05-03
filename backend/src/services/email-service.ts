@@ -1,4 +1,5 @@
 import { env } from "../config/env.js";
+import { sendGmailApiEmail } from "./gmail-api-service.js";
 
 export type OrderStatusEmailInput = {
   to: string;
@@ -36,35 +37,46 @@ export async function sendOrderStatusEmail(input: OrderStatusEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  if (!env.resendApiKey) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  if (!env.emailFrom) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.emailFrom,
-      to: [input.to],
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.to,
       subject: subjectForStatus(input.status, input.orderTitle),
       html: htmlForStatus(input),
-    }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || `Resend request failed with ${response.status}`);
+    });
+  } catch (error) {
+    console.error(`[EmailService] Gmail API request failed: ${error}`);
   }
 
-  return { ok: true, skipped: false, provider: "resend", data };
+  // 2. Send via Resend (Original Logic)
+  let resendData = {};
+  if (env.resendApiKey && env.emailFrom) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: env.emailFrom,
+          to: [input.to],
+          subject: subjectForStatus(input.status, input.orderTitle),
+          html: htmlForStatus(input),
+        }),
+      });
+
+      resendData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        console.error(`[EmailService] Resend request failed with ${response.status}`, resendData);
+      }
+    } catch (error) {
+      console.error(`[EmailService] Resend network error: ${error}`);
+    }
+  }
+
+  return { ok: true, skipped: false, provider: "both", data: resendData };
 }
 
 export type InvoiceEmailInput = {
@@ -103,33 +115,44 @@ export async function sendInvoiceLinkEmail(input: InvoiceEmailInput) {
     return { ok: false, skipped: true, reason: "email notifications disabled" };
   }
 
-  if (!env.resendApiKey) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  if (!env.emailFrom) {
-    throw new Error("EMAIL_FROM is missing");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.emailFrom,
-      to: [input.to],
+  // 1. Send via Gmail API over HTTPS (Added because Render blocks SMTP ports and Resend free tier is restricted to verified emails only)
+  try {
+    await sendGmailApiEmail({
+      to: input.to,
       subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
       html: htmlPaymentReceipt(input),
-    }),
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || `Resend request failed with ${response.status}`);
+    });
+  } catch (error) {
+    console.error(`[EmailService] Gmail API request failed: ${error}`);
   }
 
-  return { ok: true, skipped: false, provider: "resend", data };
+  // 2. Send via Resend (Original Logic)
+  let resendData = {};
+  if (env.resendApiKey && env.emailFrom) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: env.emailFrom,
+          to: [input.to],
+          subject: `Your Meramot Payment Receipt - ${input.transactionRef}`,
+          html: htmlPaymentReceipt(input),
+        }),
+      });
+
+      resendData = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        console.error(`[EmailService] Resend request failed with ${response.status}`, resendData);
+      }
+    } catch (error) {
+      console.error(`[EmailService] Resend network error: ${error}`);
+    }
+  }
+
+  return { ok: true, skipped: false, provider: "both", data: resendData };
 }

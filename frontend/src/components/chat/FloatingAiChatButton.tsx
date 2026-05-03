@@ -2,24 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Position = {
   x: number;
   y: number;
 };
 
-function getButtonSize() {
-  if (typeof window !== "undefined" && window.innerWidth < 640) {
-    return { width: 80, height: 80 }; // mobile
-  }
-  return { width: 220, height: 72 }; // desktop
-}
-
-
-const { width: BUTTON_WIDTH, height: BUTTON_HEIGHT } = getButtonSize();
-
-const EDGE_MARGIN = 16;
+const EDGE_MARGIN = 12;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -60,63 +50,90 @@ export default function FloatingAiChatButton() {
   const shouldHide = isBlockedPage || !isUserPage;
 
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState<Position>({
-    x: 0,
-    y: 0,
-  });
+  const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
 
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const movedRef = useRef(false);
+  const buttonRef = useRef<HTMLAnchorElement>(null);
 
+  const getBounds = useCallback(() => {
+    if (buttonRef.current) {
+      return {
+        width: buttonRef.current.offsetWidth,
+        height: buttonRef.current.offsetHeight,
+      };
+    }
+    return { width: 140, height: 48 }; // safe fallback
+  }, []);
+
+  const clampToViewport = useCallback(
+    (pos: Position) => {
+      const b = getBounds();
+      return {
+        x: clamp(pos.x, EDGE_MARGIN, window.innerWidth - b.width - EDGE_MARGIN),
+        y: clamp(pos.y, EDGE_MARGIN, window.innerHeight - b.height - EDGE_MARGIN),
+      };
+    },
+    [getBounds]
+  );
+
+  // Mount + restore saved position
   useEffect(() => {
     setMounted(true);
 
     const saved = window.localStorage.getItem("meramot-ai-chat-position");
+    let initial: Position;
 
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as Position;
-        setPosition(parsed);
-        return;
+        initial = JSON.parse(saved) as Position;
       } catch {
-
+        initial = {
+          x: window.innerWidth - 160 - EDGE_MARGIN,
+          y: window.innerHeight - 56 - EDGE_MARGIN,
+        };
       }
+    } else {
+      initial = {
+        x: window.innerWidth - 160 - EDGE_MARGIN,
+        y: window.innerHeight - 56 - EDGE_MARGIN,
+      };
     }
 
-    setPosition({
-      x: window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN,
-      y: window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN,
+    // Defer clamp until after first paint so buttonRef is measured
+    requestAnimationFrame(() => {
+      const b = buttonRef.current
+        ? { width: buttonRef.current.offsetWidth, height: buttonRef.current.offsetHeight }
+        : { width: 140, height: 48 };
+      setPosition({
+        x: clamp(initial.x, EDGE_MARGIN, window.innerWidth - b.width - EDGE_MARGIN),
+        y: clamp(initial.y, EDGE_MARGIN, window.innerHeight - b.height - EDGE_MARGIN),
+      });
     });
   }, []);
 
+  // Persist position (debounced to avoid tight loops)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
     if (!mounted) return;
-    window.localStorage.setItem(
-      "meramot-ai-chat-position",
-      JSON.stringify(position)
-    );
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      window.localStorage.setItem(
+        "meramot-ai-chat-position",
+        JSON.stringify(position)
+      );
+    }, 300);
   }, [position, mounted]);
 
+  // Keep inside on resize
   useEffect(() => {
-    function keepInsideViewport() {
-      setPosition((prev) => ({
-        x: clamp(
-          prev.x,
-          EDGE_MARGIN,
-          window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
-        ),
-        y: clamp(
-          prev.y,
-          EDGE_MARGIN,
-          window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
-        ),
-      }));
+    function keepInside() {
+      setPosition((prev) => clampToViewport(prev));
     }
-
-    window.addEventListener("resize", keepInsideViewport);
-    return () => window.removeEventListener("resize", keepInsideViewport);
-  }, []);
+    window.addEventListener("resize", keepInside);
+    return () => window.removeEventListener("resize", keepInside);
+  }, [clampToViewport]);
 
   function startDrag(clientX: number, clientY: number) {
     movedRef.current = false;
@@ -128,15 +145,16 @@ export default function FloatingAiChatButton() {
   }
 
   function updateDrag(clientX: number, clientY: number) {
+    const b = getBounds();
     const nextX = clamp(
       clientX - dragOffsetRef.current.x,
       EDGE_MARGIN,
-      window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
+      window.innerWidth - b.width - EDGE_MARGIN
     );
     const nextY = clamp(
       clientY - dragOffsetRef.current.y,
       EDGE_MARGIN,
-      window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
+      window.innerHeight - b.height - EDGE_MARGIN
     );
 
     movedRef.current = true;
@@ -186,9 +204,11 @@ export default function FloatingAiChatButton() {
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        willChange: dragging ? "left, top" : "auto",
       }}
     >
       <Link
+        ref={buttonRef}
         href="/ai-chat"
         aria-label="Open AI chat"
         draggable={false}
@@ -207,51 +227,37 @@ export default function FloatingAiChatButton() {
           const touch = event.touches[0];
           startDrag(touch.clientX, touch.clientY);
         }}
-        className={`group flex items-center rounded-full bg-[#214c34] text-white
-          shadow-[0_12px_30px_rgba(36,66,41,0.28)] ring-1 ring-white/10 transition
-          ${
-            typeof window !== "undefined" && window.innerWidth < 640
-              ? "p-3"
-              : "gap-3 px-4 py-3"
-          }
-          ${
-            dragging
-              ? "cursor-grabbing select-none"
-              : "cursor-grab hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(36,66,41,0.38)]"
-          }
-        `}
+        className={`group flex items-center gap-2 rounded-full bg-[#214c34] px-3 py-2 text-white shadow-[0_8px_24px_rgba(36,66,41,0.3)] ring-1 ring-white/10 transition sm:gap-3 sm:px-4 sm:py-3 ${
+          dragging
+            ? "cursor-grabbing select-none"
+            : "cursor-grab hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(36,66,41,0.4)]"
+        }`}
       >
-        <div
-          className={`flex items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20
-            ${
-              typeof window !== "undefined" && window.innerWidth < 640
-                ? "h-10 w-10"
-                : "h-12 w-12"
-            }
-          `}
-        >
+        {/* Icon — recognizable sparkles/AI symbol */}
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20 sm:h-10 sm:w-10">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
-            className="h-6 w-6"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4 sm:h-5.5 sm:w-5.5"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 10h.01M12 10h.01M15 10h.01M8.4 18.2 4 20l1.6-4.1A8 8 0 1 1 20 12"
-            />
+            <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z" />
+            <path d="M5 3v4" />
+            <path d="M3 5h4" />
+            <path d="M19 17v4" />
+            <path d="M17 19h4" />
           </svg>
         </div>
 
+        {/* Always-visible short label on mobile, full label on desktop */}
         <div>
-          <p className="text-xs sm:text-sm font-semibold leading-4">
-            AI Help Chat
-          </p>
-          <p className="mt-0.5 text-[10px] sm:text-xs text-white/80 leading-tight">
-            Ask repair questions instantly
+          <p className="text-xs font-bold leading-tight sm:text-sm">AI Chat</p>
+          <p className="hidden text-[10px] text-white/70 sm:block">
+            Ask anything
           </p>
         </div>
       </Link>
