@@ -56,6 +56,8 @@ function NewRequestPageInner() {
   const [checkingModel, setCheckingModel] = useState(false);
   const [deeperSearch, setDeeperSearch] = useState(false);
   const [isAppliance, setIsAppliance] = useState(false);
+  const [isRubbish, setIsRubbish] = useState(false);
+  const [activeField, setActiveField] = useState<"brand" | "model" | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -157,12 +159,13 @@ function NewRequestPageInner() {
           });
           const data = await res.json();
           if (data.ok) {
-            if (data.isAppliance) {
-              setIsAppliance(true);
+            setIsAppliance(!!data.isAppliance);
+            setIsRubbish(!!data.isRubbish);
+            
+            if (data.isAppliance || data.isRubbish) {
               setModelSuggestions([]);
               return;
             }
-            setIsAppliance(false);
             
             if (data.suggestions && data.suggestions.length > 0) {
               // Check if first suggestion is literally what they typed for both brand and model
@@ -330,27 +333,38 @@ function NewRequestPageInner() {
             </select>
 
             <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
-              <input
-                value={form.brand}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, brand: e.target.value }));
-                  setDeeperSearch(false);
-                }}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]"
-                placeholder="Brand"
-              />
+              <div className="relative">
+                <input
+                  value={form.brand}
+                  onFocus={() => setActiveField("brand")}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, brand: e.target.value }));
+                    setDeeperSearch(false);
+                    setActiveField("brand");
+                  }}
+                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 && activeField === "brand" ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                  placeholder="Brand"
+                />
+                {checkingModel && activeField === "brand" && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
+                    checking...
+                  </span>
+                )}
+              </div>
 
               <div className="relative">
                 <input
                   value={form.model}
+                  onFocus={() => setActiveField("model")}
                   onChange={(e) => {
                     setForm((prev) => ({ ...prev, model: e.target.value }));
                     setDeeperSearch(false);
+                    setActiveField("model");
                   }}
-                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 && activeField === "model" ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
                   placeholder="Model"
                 />
-                {checkingModel && (
+                {checkingModel && activeField === "model" && (
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
                     checking...
                   </span>
@@ -358,7 +372,7 @@ function NewRequestPageInner() {
               </div>
 
               {/* AI Assistant Suggestions spanning both columns */}
-              {(isAppliance || modelSuggestions.length > 0) && !checkingModel && (
+              {(isAppliance || isRubbish || modelSuggestions.length > 0) && !checkingModel && (
                 <div className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-all">
                   {isAppliance ? (
                     <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
@@ -366,6 +380,15 @@ function NewRequestPageInner() {
                         <span className="text-xl">⚠️</span>
                         <p className="text-sm font-semibold text-red-600 dark:text-red-400">
                           Sorry, we do not repair large home appliances like fridges or ovens.
+                        </p>
+                      </div>
+                    </div>
+                  ) : isRubbish ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">🤔</span>
+                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                          We couldn't recognize this device. Please enter a valid electronic device brand and model.
                         </p>
                       </div>
                     </div>
