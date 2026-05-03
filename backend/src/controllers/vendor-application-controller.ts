@@ -255,7 +255,7 @@ async function generateUniqueShopSlug(base: string, tx: typeof prisma) {
 export async function listVendorApplications(req: Request, res: Response) {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 20));
+    const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
     const [applications, total] = await Promise.all([
