@@ -62,7 +62,7 @@ export default function AdminMobileShell({
           </aside>
         </div>
 
-        <main className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm md:rounded-[2rem] md:p-6 lg:p-8">
+        <main className="min-w-0 overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm md:rounded-[2rem] md:p-6 lg:p-8">
           {children}
         </main>
       </div>

@@ -284,7 +284,7 @@ export default function AdminVendorsPage() {
   const rejectedVendors = vendors.filter(v => v.status === "REJECTED").length;
 
   return (
-    <div className="space-y-8 relative">
+    <div className="min-w-0 space-y-8 relative overflow-hidden">
       {hasNewData && (
         <div className="sticky top-4 z-50 rounded-xl border border-blue-500 bg-blue-50 p-4 shadow-lg dark:border-blue-800 dark:bg-blue-900/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
           <div className="flex items-center gap-3">
@@ -333,7 +333,7 @@ export default function AdminVendorsPage() {
         </div>
       </div>
 
-      <PendingSection vendors={pendingVendors} actionId={actionId} onAction={handleApplicationAction} />
+      <PendingSection vendors={pendingVendors} actionId={actionId} onAction={handleApplicationAction} onDelete={handleDeleteApplication} />
       <AllVendorsSection
         vendors={allOtherVendors}
         actionId={actionId}
@@ -351,10 +351,12 @@ function PendingSection({
   vendors,
   actionId,
   onAction,
+  onDelete,
 }: {
   vendors: VendorApplication[];
   actionId: string | null;
   onAction: (id: string, action: "approve" | "reject" | "request-info") => void;
+  onDelete: (id: string) => void;
 }) {
   const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any);
 
@@ -431,6 +433,14 @@ function PendingSection({
                           className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-500 dark:bg-red-500/10 dark:text-red-400 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           Reject
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionId === vendor.id}
+                          onClick={() => onDelete(vendor.id)}
+                          className="inline-flex w-full items-center justify-center rounded-lg border border-[#8A2A2A] px-3 py-1.5 text-[10px] font-bold text-[#8A2A2A] transition hover:bg-[#FDEAEA] disabled:opacity-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10 md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
