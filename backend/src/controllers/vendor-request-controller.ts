@@ -955,6 +955,15 @@ export async function updateVendorAssignedJobStatus(req: AuthedRequest, res: Res
             },
           },
         },
+        deliveries: {
+          where: { direction: "TO_SHOP" },
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: {
+            pickupAddress: true,
+            dropAddress: true,
+          },
+        },
       },
     });
 
@@ -1015,6 +1024,32 @@ export async function updateVendorAssignedJobStatus(req: AuthedRequest, res: Res
           status: true,
         },
       });
+
+      // Handle post-pickup cancellation (device is at shop but vendor cancels)
+      const isPostPickup = ["AT_SHOP", "DIAGNOSING", "WAITING_APPROVAL", "REPAIRING"].includes(existing.status);
+      if (nextStatus === RepairJobStatus.CANCELLED && isPostPickup) {
+        // Automatically create a return delivery back to the customer
+        const originalDelivery = existing.deliveries[0];
+        
+        await tx.delivery.create({
+          data: {
+            repairJobId: repairJob.id,
+            direction: "TO_CUSTOMER",
+            type: "REGULAR",
+            status: "PENDING",
+            fee: 0, // No extra charge for returning a cancelled item (or could be policy-dependent)
+            pickupAddress: originalDelivery?.dropAddress || shop.address || "",
+            dropAddress: originalDelivery?.pickupAddress || "Customer Address (Please confirm)",
+          },
+        });
+
+        // We override the status to RETURN_SCHEDULED to indicate it's on its way back
+        await tx.repairRequest.update({
+          where: { id: existing.repairRequestId },
+          data: { status: "RETURN_SCHEDULED" }
+        });
+        request.status = "RETURN_SCHEDULED";
+      }
 
       // Auto-create refund records if the vendor cancels the job
       const refunds = [];

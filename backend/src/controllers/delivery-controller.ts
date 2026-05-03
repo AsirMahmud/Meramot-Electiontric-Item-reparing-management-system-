@@ -2,6 +2,7 @@ import { DeliveryStatus, PayoutStatus } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "../models/prisma.js";
 import { getPusherPublicConfig, publishDeliveryChatMessage } from "../services/pusher-service.js";
+import { sendOrderStatusEmail } from "../services/email-service.js";
 
 function parseDeliveryStatusQuery(raw: unknown): DeliveryStatus | undefined {
   if (typeof raw !== "string" || !raw.trim()) return undefined;
@@ -288,7 +289,7 @@ export async function updateMyDeliveryStatus(req: Request, res: Response) {
                 title: true,
                 deviceType: true,
                 status: true,
-                user: { select: { name: true, phone: true, lat: true, lng: true } },
+                user: { select: { email: true, name: true, phone: true, lat: true, lng: true } },
               },
             },
             shop: {
@@ -305,6 +306,61 @@ export async function updateMyDeliveryStatus(req: Request, res: Response) {
         },
       },
     });
+
+    if (updated.repairJob) {
+      let newJobStatus;
+      let newReqStatus;
+
+      if (updated.direction === "TO_SHOP") {
+        if (status === "SCHEDULED") {
+          newJobStatus = "PICKUP_SCHEDULED";
+          newReqStatus = "PICKUP_SCHEDULED";
+        } else if (status === "PICKED_UP" || status === "IN_TRANSIT") {
+          newJobStatus = "PICKED_UP";
+          newReqStatus = "PICKED_UP";
+        } else if (status === "DELIVERED") {
+          newJobStatus = "AT_SHOP";
+          newReqStatus = "AT_SHOP";
+        }
+      } else if (updated.direction === "TO_CUSTOMER") {
+        if (status === "SCHEDULED") {
+          newReqStatus = "RETURN_SCHEDULED";
+        } else if (status === "PICKED_UP" || status === "IN_TRANSIT") {
+          newJobStatus = "RETURNING";
+          newReqStatus = "RETURNING";
+        } else if (status === "DELIVERED") {
+          newJobStatus = "COMPLETED";
+          newReqStatus = "COMPLETED";
+        }
+      }
+
+      if (newJobStatus) {
+        await prisma.repairJob.update({
+          where: { id: updated.repairJob.id },
+          data: { status: newJobStatus as any },
+        });
+      }
+
+      if (newReqStatus) {
+        const reqUpdated = await prisma.repairRequest.update({
+          where: { id: updated.repairJob.repairRequest.id },
+          data: { status: newReqStatus as any },
+          select: { status: true },
+        });
+        updated.repairJob.repairRequest.status = reqUpdated.status;
+
+        // Send email for critical status updates
+        if (updated.repairJob.repairRequest.user.email) {
+          sendOrderStatusEmail({
+            to: updated.repairJob.repairRequest.user.email,
+            customerName: updated.repairJob.repairRequest.user.name,
+            orderRef: updated.repairJob.repairRequest.title,
+            status: reqUpdated.status,
+            shopName: updated.repairJob.shop.name,
+          }).catch((err) => console.error("delivery sync email failed:", err));
+        }
+      }
+    }
 
     return res.json({ delivery: updated });
   } catch (error) {
