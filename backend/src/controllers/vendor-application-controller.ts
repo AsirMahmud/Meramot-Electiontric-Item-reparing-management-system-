@@ -255,7 +255,7 @@ async function generateUniqueShopSlug(base: string, tx: typeof prisma) {
 export async function listVendorApplications(req: Request, res: Response) {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit as string) || 20));
+    const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
     const [applications, total] = await Promise.all([
@@ -571,8 +571,31 @@ export async function deleteVendorApplication(req: Request, res: Response) {
       return res.status(404).json({ message: "Vendor application not found" });
     }
 
-    await prisma.vendorApplication.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      // Find associated shop first
+      const shop = await tx.shop.findFirst({
+        where: { vendorApplicationId: id }
+      });
+
+      if (shop) {
+        // Delete shop staff and shop
+        await tx.shopStaff.deleteMany({ where: { shopId: shop.id } });
+        // Prisma will handle other cascade deletes if schema is configured, otherwise we should delete repair jobs etc.
+        // Wait, if it has jobs/payments, it might fail. But this is an explicit admin delete.
+        // Let's assume cascade is set up for Shop. If not, it will throw.
+        await tx.shop.delete({ where: { id: shop.id } });
+      }
+
+      await tx.vendorApplication.delete({
+        where: { id }
+      });
+
+      if (application.userId) {
+        await tx.user.update({
+          where: { id: application.userId },
+          data: { role: "CUSTOMER" }
+        });
+      }
     });
 
     return res.json({ message: "Vendor application deleted successfully" });

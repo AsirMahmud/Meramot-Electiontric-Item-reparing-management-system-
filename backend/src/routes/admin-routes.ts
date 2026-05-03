@@ -21,8 +21,8 @@ router.get("/dashboard", async (_req: Request, res: Response) => {
       pendingRefunds,
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.user.count({ where: { role: "VENDOR" } }),
-      prisma.user.count({ where: { role: "DELIVERY" } }),
+      prisma.vendorApplication.count({ where: { status: "APPROVED" } }),
+      prisma.riderProfile.count({ where: { registrationStatus: "APPROVED" } }),
       prisma.vendorApplication.count({ where: { status: "PENDING" } }),
       prisma.supportTicket.count({
         where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
@@ -208,15 +208,19 @@ router.get("/reviews", async (req: Request, res: Response) => {
   try {
     const shopId = String(req.query.shopId || "").trim();
     const userId = String(req.query.userId || "").trim();
+    const hasText = req.query.hasText === "true";
     const minScore = req.query.minScore ? Number(req.query.minScore) : undefined;
     const maxScore = req.query.maxScore ? Number(req.query.maxScore) : undefined;
-    const take = Math.min(100, Math.max(1, Number(req.query.take || 25)));
+    const take = Math.min(1000, Math.max(1, Number(req.query.take || 1000)));
     const page = Math.max(1, Number(req.query.page || 1));
     const skip = (page - 1) * take;
 
     const where: Record<string, unknown> = {};
     if (shopId) where.shopId = shopId;
     if (userId) where.userId = userId;
+    if (hasText) {
+      where.review = { not: null, notIn: [""] };
+    }
     if (minScore !== undefined || maxScore !== undefined) {
       where.score = {
         ...(minScore !== undefined ? { gte: minScore } : {}),

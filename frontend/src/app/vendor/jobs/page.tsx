@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import AiSummary from "@/components/shared/AiSummary";
 import {
   getVendorDashboard,
   submitVendorFinalQuote,
@@ -273,6 +274,16 @@ export default function VendorJobsPage() {
                         <p className="font-semibold text-[#173726]">Device & Issue</p>
                         <p className="mt-2">{job.repairRequest.deviceType} · {job.repairRequest.brand} · {job.repairRequest.model}</p>
                         <p className="mt-1 text-[#5b7262]">{job.repairRequest.problem}</p>
+                        
+                        <AiSummary 
+                          orderId={job.repairRequest.id}
+                          deviceType={job.repairRequest.deviceType}
+                          brand={job.repairRequest.brand}
+                          model={job.repairRequest.model}
+                          issueCategory={job.repairRequest.issueCategory}
+                          problem={job.repairRequest.problem}
+                          initialSummary={job.repairRequest.aiSummary}
+                        />
                       </div>
                       <div className="rounded-2xl bg-[#f6faf4] p-4 text-sm text-[#355541]">
                         <p className="font-semibold text-[#173726]">Accepted Bid</p>

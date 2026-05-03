@@ -466,6 +466,7 @@ model RepairRequest {
   dropoffAddress     String?
   checkupFee         Float?
   quotedFinalAmount  Float?
+  aiSummary          String?   // Cached AI generated summary
   approvedAt         DateTime?
   rejectedAt         DateTime?
   createdAt          DateTime      @default(now())

@@ -413,6 +413,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         preferredPickup: true,
         deliveryType: true,
         status: true,
+        aiSummary: true,
         createdAt: true,
         requestedShopId: true,
         _count: { select: { bids: true } },
@@ -599,6 +600,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         preferredPickup: true,
         deliveryType: true,
         quotedFinalAmount: true,
+        aiSummary: true,
         createdAt: true,
         user: {
           select: { name: true, email: true, phone: true },
@@ -682,6 +684,18 @@ export async function getVendorAnalytics(req: AuthedRequest, res: Response) {
       },
     });
 
+    const ledgerEntries = await prisma.escrowLedger.findMany({
+      where: {
+        shopId: shop.id,
+        action: "VENDOR_EARNING_RELEASED",
+        createdAt: { gte: historyStart },
+      },
+      select: {
+        amount: true,
+        createdAt: true,
+      },
+    });
+
     for (const job of jobs) {
       if (job.acceptedBidId) {
         const wonIndex = findBucketIndex(job.createdAt, buckets);
@@ -693,11 +707,17 @@ export async function getVendorAnalytics(req: AuthedRequest, res: Response) {
       if (job.status === RepairJobStatus.COMPLETED && job.completedAt) {
         const earningsIndex = findBucketIndex(job.completedAt, buckets);
         if (earningsIndex >= 0) {
-          buckets[earningsIndex].earnings = roundMoney(
-            buckets[earningsIndex].earnings + getJobEarnings(job),
-          );
           buckets[earningsIndex].completedJobs += 1;
         }
+      }
+    }
+
+    for (const entry of ledgerEntries) {
+      const earningsIndex = findBucketIndex(entry.createdAt, buckets);
+      if (earningsIndex >= 0) {
+        buckets[earningsIndex].earnings = roundMoney(
+          buckets[earningsIndex].earnings + Number(entry.amount),
+        );
       }
     }
 
@@ -1265,6 +1285,7 @@ export async function getVendorMyBids(req: AuthedRequest, res: Response) {
         problem: true,
         mode: true,
         status: true,
+        aiSummary: true,
         createdAt: true,
         bids: {
           orderBy: { totalCost: "asc" },
