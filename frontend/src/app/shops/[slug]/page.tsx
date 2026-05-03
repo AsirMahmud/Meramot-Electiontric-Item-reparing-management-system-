@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import { formatServiceTitle } from "@/lib/utils";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
 import type { StoredLocation } from "@/components/location/types";
@@ -375,7 +376,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       const summaryData = getServiceSummary(name);
       return {
-        name,
+        name: formatServiceTitle(name),
         summary: summaryData.summary,
         estimate: estimate !== undefined && !isNaN(estimate) ? estimate : summaryData.estimate,
       };

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { generateAiRepairReply } from "../services/ai-chat-service.js";
+import { generateAiRepairReply, suggestDeviceModel } from "../services/ai-chat-service.js";
 
 export async function chatWithAi(req: Request, res: Response) {
   try {
@@ -40,5 +40,22 @@ export async function chatWithAi(req: Request, res: Response) {
       message:
         error instanceof Error ? error.message : "Failed to generate AI reply",
     });
+  }
+}
+
+export async function suggestModel(req: Request, res: Response) {
+  try {
+    const brand = typeof req.body?.brand === "string" ? req.body.brand.trim() : "";
+    const model = typeof req.body?.model === "string" ? req.body.model.trim() : "";
+
+    if (!model) {
+      return res.json({ ok: false, suggestion: null });
+    }
+
+    const result = await suggestDeviceModel({ brand, model });
+    return res.json(result);
+  } catch (error) {
+    console.error("suggestModel error:", error);
+    return res.json({ ok: false, suggestion: null });
   }
 }

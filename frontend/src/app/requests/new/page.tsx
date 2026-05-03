@@ -52,6 +52,8 @@ function NewRequestPageInner() {
   const [toast, setToast] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [modelSuggestion, setModelSuggestion] = useState<string | null>(null);
+  const [checkingModel, setCheckingModel] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -137,6 +139,46 @@ function NewRequestPageInner() {
     const timeout = setTimeout(() => setToast(""), 2800);
     return () => clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      const brand = form.brand.trim();
+      const model = form.model.trim();
+      
+      if (model.length > 2) {
+        setCheckingModel(true);
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/suggest-model`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ brand, model })
+          });
+          const data = await res.json();
+          if (data.ok && data.suggestion) {
+            const lowerSug = data.suggestion.toLowerCase();
+            const lowerMod = model.toLowerCase();
+            const lowerBrandMod = `${brand.toLowerCase()} ${lowerMod}`.trim();
+            
+            if (lowerSug !== lowerMod && lowerSug !== lowerBrandMod && data.suggestion.length > model.length) {
+              setModelSuggestion(data.suggestion);
+            } else {
+              setModelSuggestion(null);
+            }
+          } else {
+            setModelSuggestion(null);
+          }
+        } catch (err) {
+          setModelSuggestion(null);
+        } finally {
+          setCheckingModel(false);
+        }
+      } else {
+        setModelSuggestion(null);
+      }
+    }, 1200);
+
+    return () => clearTimeout(handler);
+  }, [form.brand, form.model]);
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -278,12 +320,35 @@ function NewRequestPageInner() {
               placeholder="Brand"
             />
 
-            <input
-              value={form.model}
-              onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              placeholder="Model"
-            />
+            <div className="relative">
+              <input
+                value={form.model}
+                onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
+                className={`w-full rounded-2xl border ${modelSuggestion ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                placeholder="Model"
+              />
+              {checkingModel && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
+                  checking...
+                </span>
+              )}
+              {modelSuggestion && !checkingModel && (
+                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
+                  <p className="text-xs text-[var(--muted-foreground)]">Did you mean this?</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(prev => ({...prev, model: modelSuggestion}));
+                      setModelSuggestion(null);
+                    }}
+                    className="mt-2 flex w-full items-center justify-between rounded-xl bg-[var(--mint-50)] px-3 py-2 text-left text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)]"
+                  >
+                    {modelSuggestion}
+                    <span>→</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <select
               required

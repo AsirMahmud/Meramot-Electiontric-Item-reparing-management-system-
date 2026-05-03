@@ -90,3 +90,42 @@ export async function generateAiRepairReply(input: AiChatInput) {
     raw: data,
   };
 }
+
+export async function suggestDeviceModel(input: { brand: string; model: string }) {
+  if (!env.groqApiKey) {
+    return { ok: false, suggestion: null };
+  }
+
+  const messages = [
+    {
+      role: "system",
+      content: `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
+If the user's input is misspelled or uses a vague model number, suggest the full correct commercial name. 
+Respond ONLY with the corrected model name (and brand if necessary). Do not add conversational filler. If it looks correct already or you cannot guess, just return the original input.`
+    },
+    { role: "user", content: `Brand: ${input.brand}\nModel: ${input.model}` }
+  ];
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.groqApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages,
+        temperature: 0.1, // low temperature for more deterministic factual answers
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) return { ok: false, suggestion: null };
+
+    const reply = data?.choices?.[0]?.message?.content?.trim();
+    return { ok: true, suggestion: reply };
+  } catch (err) {
+    return { ok: false, suggestion: null };
+  }
+}

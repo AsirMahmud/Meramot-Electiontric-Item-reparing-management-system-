@@ -403,7 +403,7 @@ function OrdersPageInner() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="max-w-3xl">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-lg font-bold text-[var(--foreground)] md:text-2xl">{order.title}</h2>
+                      <h2 className="text-lg font-bold capitalize text-[var(--foreground)] md:text-2xl">{order.title}</h2>
                       <span className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] ${order.status === "BIDDING" ? "bg-[var(--mint-100)] text-[var(--accent-dark)]" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"}`}>
                         {formatStatus(order.status)}
                       </span>

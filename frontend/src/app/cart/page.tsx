@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import { formatServiceTitle } from "@/lib/utils";
 import {
   checkoutCart,
   getMyCarts,
@@ -456,7 +458,7 @@ export default function CartPage() {
                               </div>
                               <div className="min-w-0">
                                 <h3 className="truncate text-lg font-bold text-[var(--foreground)]">
-                                  {item.serviceName}
+                                  {formatServiceTitle(item.serviceName)}
                                 </h3>
                                 <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                                   {formatMoney(Number(item.price))} each · {formatMoney(lineTotal)} total
