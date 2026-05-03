@@ -48,7 +48,7 @@ export default function VendorOnboardingPage() {
         return;
       }
 
-      if (role !== "VENDOR") {
+      if (role !== "VENDOR" && role !== "VENDOR_APPLICANT") {
         router.replace("/");
         return;
       }
@@ -99,7 +99,7 @@ export default function VendorOnboardingPage() {
     );
   }
 
-  if (!session?.user || role !== "VENDOR") {
+  if (!session?.user || (role !== "VENDOR" && role !== "VENDOR_APPLICANT")) {
     return null;
   }
 

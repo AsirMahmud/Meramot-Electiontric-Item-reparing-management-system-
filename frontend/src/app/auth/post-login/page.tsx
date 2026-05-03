@@ -69,6 +69,11 @@ export default function PostLoginPage() {
         return;
       }
 
+      if (role === "VENDOR_APPLICANT") {
+        router.replace("/vendor/onboarding");
+        return;
+      }
+
       if (role === "VENDOR") {
         if (!accessToken) {
           router.replace("/vendor/onboarding");

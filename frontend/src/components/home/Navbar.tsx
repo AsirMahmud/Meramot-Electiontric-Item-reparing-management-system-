@@ -228,6 +228,16 @@ export function NavbarInner({
                           </Link>
                         )}
 
+                        {userRole === "VENDOR_APPLICANT" ? (
+                          <Link
+                            href="/vendor/onboarding"
+                            className="block rounded-2xl px-4 py-3 text-sm text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            Vendor onboarding
+                          </Link>
+                        ) : null}
+
                         {userRole === "VENDOR" ? (
                           <>
                             {isVendorSetupComplete ? (

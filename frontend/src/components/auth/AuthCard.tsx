@@ -218,6 +218,11 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       return;
     }
 
+    if (user.role === "VENDOR_APPLICANT") {
+      router.replace("/vendor/onboarding");
+      return;
+    }
+
     if (user.role === "VENDOR") {
       if (!user.accessToken) {
         router.replace("/vendor/onboarding");

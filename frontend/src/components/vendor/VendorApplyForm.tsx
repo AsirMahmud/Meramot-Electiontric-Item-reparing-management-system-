@@ -158,7 +158,7 @@ export default function VendorApplyForm() {
     async function loadExisting() {
       setError("");
 
-      if (!token || role !== "VENDOR") {
+      if (!token || (role !== "VENDOR" && role !== "VENDOR_APPLICANT")) {
         setForm({ ...emptyVendorApplicationForm });
         setIsEditMode(false);
         setLoadingExisting(false);

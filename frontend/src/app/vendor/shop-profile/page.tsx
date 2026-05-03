@@ -83,6 +83,13 @@ export default function VendorShopProfilePage() {
     void loadProfile();
   }, [loadProfile, role, router, session, status]);
 
+  // Redirect to setup-shop if shop setup is not complete
+  useEffect(() => {
+    if (profile && !profile.shop?.setupComplete) {
+      router.replace("/vendor/setup-shop");
+    }
+  }, [profile, router]);
+
   async function handleAddService(e: React.FormEvent) {
     e.preventDefault();
     if (!token) return;

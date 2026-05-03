@@ -113,8 +113,6 @@ export async function checkEmailAvailability(req: Request, res: Response) {
 
 export async function createVendorApplication(req: Request, res: Response) {
   try {
-    const authUser = (req as any).user;
-    const isAuthed = !!authUser;
 
     const {
       ownerName,
@@ -156,41 +154,31 @@ export async function createVendorApplication(req: Request, res: Response) {
       logoUrl?: string;
     };
 
-    // Authenticated users (e.g. existing CUSTOMER accounts) don't need a password
-    // to apply — they already have credentials.
-    if (!isAuthed) {
-      if (
-        !ownerName ||
-        !businessEmail ||
-        !phone ||
-        !password ||
-        !confirmPassword ||
-        !shopName
-      ) {
-        return res.status(400).json({
-          message:
-            "ownerName, businessEmail, phone, password, confirmPassword, and shopName are required",
-        });
-      }
+    // Always require all fields — no authenticated upgrade path
+    if (
+      !ownerName ||
+      !businessEmail ||
+      !phone ||
+      !password ||
+      !confirmPassword ||
+      !shopName
+    ) {
+      return res.status(400).json({
+        message:
+          "ownerName, businessEmail, phone, password, confirmPassword, and shopName are required",
+      });
+    }
 
-      if (password.length < 8) {
-        return res.status(400).json({
-          message: "Password must be at least 8 characters long",
-        });
-      }
+    if (password.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long",
+      });
+    }
 
-      if (password !== confirmPassword) {
-        return res.status(400).json({
-          message: "Password and confirmPassword do not match",
-        });
-      }
-    } else {
-      if (!ownerName || !businessEmail || !phone || !shopName) {
-        return res.status(400).json({
-          message:
-            "ownerName, businessEmail, phone, and shopName are required",
-        });
-      }
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Password and confirmPassword do not match",
+      });
     }
 
     const normalizedEmail = businessEmail!.trim().toLowerCase();
@@ -231,19 +219,10 @@ export async function createVendorApplication(req: Request, res: Response) {
       select: { id: true },
     });
 
-    // If the email belongs to someone else AND the requester is not authenticated,
-    // prompt them to sign in. Authenticated users can freely use their own email.
-    if (existingUser && !isAuthed) {
+    // Reject if email already exists as ANY user
+    if (existingUser) {
       return res.status(409).json({
-        message: "A user with this business email already exists. Please sign in first to apply.",
-      });
-    }
-
-    // If authenticated, verify the email matches the logged-in user's account
-    // to prevent a vendor from hijacking another user's email.
-    if (isAuthed && existingUser && existingUser.id !== authUser.id) {
-      return res.status(409).json({
-        message: "This email belongs to another account.",
+        message: "Account already exists.",
       });
     }
 
@@ -263,35 +242,29 @@ export async function createVendorApplication(req: Request, res: Response) {
       : parseCsvList(specialties);
 
     const result = await prisma.$transaction(async (tx: any) => {
-      let user;
+      const usernameBase = normalizedEmail.split("@")[0] || shopName;
+      const username = await generateUniqueUsername(usernameBase);
+      const passwordHash = await bcrypt.hash(password, 10);
 
-      if (isAuthed) {
-        user = await tx.user.findUnique({ where: { id: authUser.id } });
-        if (!user) throw new Error("Authenticated user not found");
-      } else {
-        const usernameBase = normalizedEmail.split("@")[0] || shopName;
-        const username = await generateUniqueUsername(usernameBase);
-        const passwordHash = await bcrypt.hash(password as string, 10);
-        
-        user = await tx.user.create({
-          data: {
-            username,
-            email: normalizedEmail,
-            passwordHash,
-            name: ownerName.trim(),
-            phone: phone.trim(),
-            role: "CUSTOMER",
-          },
-          select: {
-            id: true,
-            username: true,
-            email: true,
-            name: true,
-            phone: true,
-            role: true,
-          },
-        });
-      }
+      // Create user as VENDOR_APPLICANT — NOT CUSTOMER
+      const user = await tx.user.create({
+        data: {
+          username,
+          email: normalizedEmail,
+          passwordHash,
+          name: ownerName.trim(),
+          phone: phone.trim(),
+          role: "VENDOR_APPLICANT",
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+        },
+      });
 
       const application = await tx.vendorApplication.create({
         data: {
@@ -473,9 +446,10 @@ export async function approveVendorApplication(req: Request, res: Response) {
         },
       });
 
+      // Promote VENDOR_APPLICANT → VENDOR, but SUSPENDED until shop setup
       await tx.user.update({
         where: { id: application.userId },
-        data: { role: "VENDOR" },
+        data: { role: "VENDOR", status: "SUSPENDED" },
       });
 
       // Check for existing shop INSIDE the transaction for proper isolation
@@ -504,7 +478,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
           ],
           specialties: application.specialties,
           logoUrl: application.logoUrl || null,
-          isActive: true,
+          isActive: false,
           isPublic: false,
           setupComplete: false,
         },
@@ -527,7 +501,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
           ],
           specialties: application.specialties,
           logoUrl: application.logoUrl || null,
-          isActive: true,
+          isActive: false,
           isPublic: false,
           setupComplete: false,
         },
@@ -715,10 +689,10 @@ export async function deleteVendorApplication(req: Request, res: Response) {
         where: { id }
       });
 
+      // Delete the VENDOR_APPLICANT user entirely (they have no other purpose)
       if (application.userId) {
-        await tx.user.update({
+        await tx.user.delete({
           where: { id: application.userId },
-          data: { role: "CUSTOMER" }
         });
       }
     });

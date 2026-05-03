@@ -614,6 +614,12 @@ export async function completeVendorShopSetup(req: Request, res: Response) {
         },
       });
 
+      // Unsuspend the vendor — shop setup complete
+      await tx.user.update({
+        where: { id: user.id },
+        data: { status: "ACTIVE" },
+      });
+
       return updatedShop;
     });
 

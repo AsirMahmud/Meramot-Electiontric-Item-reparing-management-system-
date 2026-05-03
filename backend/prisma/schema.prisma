@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   CUSTOMER
   VENDOR
+  VENDOR_APPLICANT
   ADMIN
   DELIVERY
   DELIVERY_ADMIN

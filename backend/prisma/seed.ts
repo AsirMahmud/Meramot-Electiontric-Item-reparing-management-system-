@@ -461,7 +461,7 @@ async function main() {
         passwordHash,
         name: applicant.name,
         phone: applicant.phone,
-        role: "CUSTOMER", // stays CUSTOMER until approved
+        role: "VENDOR_APPLICANT", // stays VENDOR_APPLICANT until approved
       },
     });
 
