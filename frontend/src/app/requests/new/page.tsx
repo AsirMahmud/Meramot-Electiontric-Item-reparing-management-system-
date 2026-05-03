@@ -85,6 +85,8 @@ function NewRequestPageInner() {
   const skipNextSuggest = useRef(false);
   const issueClassified = useRef(false);
   const [classifyingIssue, setClassifyingIssue] = useState(false);
+  const [issueCategories, setIssueCategories] = useState<string[]>(ISSUE_CATEGORIES);
+  const [deviceTypes, setDeviceTypes] = useState<string[]>(DEVICE_TYPES);
 
   const [form, setForm] = useState({
     title: "",
@@ -263,6 +265,15 @@ function NewRequestPageInner() {
         });
         const data = await res.json();
         if (data.ok && data.issueCategory) {
+          // If AI created a new category, add it to the dropdown
+          if (data.isNew && !issueCategories.includes(data.issueCategory)) {
+            setIssueCategories(prev => {
+              const otherIdx = prev.indexOf("Other");
+              const newList = [...prev];
+              newList.splice(otherIdx >= 0 ? otherIdx : newList.length, 0, data.issueCategory);
+              return newList;
+            });
+          }
           setForm(prev => ({ ...prev, issueCategory: data.issueCategory }));
           issueClassified.current = true;
         }
@@ -420,7 +431,7 @@ function NewRequestPageInner() {
               onChange={(e) => setForm((prev) => ({ ...prev, deviceType: e.target.value }))}
               className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
             >
-              {DEVICE_TYPES.map((device) => (
+              {deviceTypes.map((device) => (
                 <option key={device} value={device}>
                   {device}
                 </option>
@@ -477,6 +488,15 @@ function NewRequestPageInner() {
                   deeperSearch={deeperSearch}
                   onSelectSuggestion={(brand, model, deviceType) => {
                     skipNextSuggest.current = true;
+                    // If AI returned a new device type not in the list, add it dynamically
+                    if (deviceType && !deviceTypes.includes(deviceType)) {
+                      setDeviceTypes(prev => {
+                        const otherIdx = prev.indexOf("Other");
+                        const newList = [...prev];
+                        newList.splice(otherIdx >= 0 ? otherIdx : newList.length, 0, deviceType);
+                        return newList;
+                      });
+                    }
                     setForm(prev => ({
                       ...prev, 
                       brand, 
@@ -498,7 +518,7 @@ function NewRequestPageInner() {
                 onChange={(e) => { setForm((prev) => ({ ...prev, issueCategory: e.target.value })); issueClassified.current = true; }}
                 className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
               >
-                {ISSUE_CATEGORIES.map((issue) => (
+                {issueCategories.map((issue) => (
                   <option key={issue} value={issue}>
                     {issue}
                   </option>

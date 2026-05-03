@@ -16,7 +16,7 @@ If the text is completely random, nonsensical, or clearly not any electronic dev
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name, including the release year in parentheses if applicable (e.g. "Galaxy S24 (2024)", "MacBook Air M2 (2022)", "Arctis Nova Pro (2023)")
-- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
+- "deviceType": preferably one of these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other". If the device clearly doesn't fit ANY of these, create a short new category (2-3 words, Title Case). Do NOT use "Other" if a more specific name is possible.
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
@@ -31,7 +31,7 @@ If the text is completely random, nonsensical, or clearly not any electronic dev
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name, including the release year in parentheses if applicable (e.g. "Galaxy S24 (2024)", "MacBook Air M2 (2022)", "Arctis Nova Pro (2023)")
-- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
+- "deviceType": preferably one of these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other". If the device clearly doesn't fit ANY of these, create a short new category (2-3 words, Title Case). Do NOT use "Other" if a more specific name is possible.
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
@@ -144,11 +144,13 @@ Common Banglish examples:
 - "part change korte hobe" = parts replacement
 - "software e problem" / "update er por" = software issue
 
-Your task: classify the problem into EXACTLY ONE of these categories:
+Your task: classify the problem into the BEST matching category from this list:
 "Screen or display", "Battery or charging", "Keyboard or touchpad", "Performance or overheating", "Water damage", "Speaker or microphone", "Camera issue", "Software or OS", "Network or connectivity", "Data recovery", "Parts replacement", "Other"
 
+IMPORTANT: If the problem clearly does NOT fit any of the above categories, you may create a SHORT new category name (2-4 words, Title Case, similar style to the existing ones). Set "isNew" to true if you create a new category. Examples of valid new categories: "Bluetooth issue", "Port or connector", "Hinge or body damage", "Touchscreen issue", "SIM or eSIM", "Storage or memory".
+
 Respond ONLY with valid JSON. NO markdown, NO extra text.
-Format: { "issueCategory": "..." }`;
+Format: { "issueCategory": "...", "isNew": false }`;
 
   const userPrompt = `Problem description: ${input.problem}`;
 
@@ -171,7 +173,7 @@ Format: { "issueCategory": "..." }`;
     if (!response.ok) return { ok: false, issueCategory: null };
 
     const parsed = JSON.parse(data.candidates[0].content.parts[0].text.trim());
-    return { ok: true, issueCategory: parsed.issueCategory || null };
+    return { ok: true, issueCategory: parsed.issueCategory || null, isNew: !!parsed.isNew };
   } catch (err) {
     console.error("classifyIssueCategory error:", err);
     return { ok: false, issueCategory: null };
