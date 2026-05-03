@@ -150,7 +150,7 @@ function NewRequestPageInner() {
       if (brand.length > 2 || model.length > 2) {
         setCheckingModel(true);
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/suggest-model`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/suggest-model`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ brand, model, deeperSearch })
