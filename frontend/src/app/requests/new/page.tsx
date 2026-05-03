@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
@@ -83,6 +83,7 @@ function NewRequestPageInner() {
   });
 
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const flowTitle = useMemo(
     () => (shopSlug ? `Direct order with ${shopSlug}` : "Market flow request"),
@@ -152,12 +153,20 @@ function NewRequestPageInner() {
       const model = form.model.trim();
       
       if (brand.length > 2 || model.length > 2) {
+        // Cancel any previous in-flight request
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        const ac = new AbortController();
+        abortControllerRef.current = ac;
+
         setCheckingModel(true);
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/suggest-model`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brand, model, deeperSearch })
+            body: JSON.stringify({ brand, model, deeperSearch }),
+            signal: ac.signal
           });
           const data = await res.json();
           if (data.ok) {
@@ -188,15 +197,18 @@ function NewRequestPageInner() {
           } else {
             setModelSuggestions([]);
           }
-        } catch (err) {
-          setModelSuggestions([]);
+        } catch (err: any) {
+          // Don't clear suggestions if the request was intentionally aborted
+          if (err?.name !== "AbortError") {
+            setModelSuggestions([]);
+          }
         } finally {
           setCheckingModel(false);
         }
       } else {
         setModelSuggestions([]);
       }
-    }, 1200);
+    }, 800);
 
     return () => clearTimeout(handler);
   }, [form.brand, form.model, deeperSearch]);
