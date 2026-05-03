@@ -1,8 +1,12 @@
 import { Router } from "express";
 import {
   acceptMyDelivery,
+  getDeliveryChatMessages,
   getDeliveryMe,
+  getDeliveryPayoutSummary,
   listMyDeliveries,
+  requestDeliveryPayout,
+  sendDeliveryChatMessage,
   updateMyDeliveryStatus,
   updateLocation,
 } from "../controllers/delivery-controller.js";
@@ -23,5 +27,9 @@ router.patch(
   updateMyDeliveryStatus,
 );
 router.patch("/location", requireDeliveryAuth, requireApprovedDeliveryPartner, updateLocation);
+router.get("/payouts", requireDeliveryAuth, requireApprovedDeliveryPartner, getDeliveryPayoutSummary);
+router.post("/payouts/request", requireDeliveryAuth, requireApprovedDeliveryPartner, requestDeliveryPayout);
+router.get("/deliveries/:id/chat", requireDeliveryAuth, requireApprovedDeliveryPartner, getDeliveryChatMessages);
+router.post("/deliveries/:id/chat", requireDeliveryAuth, requireApprovedDeliveryPartner, sendDeliveryChatMessage);
 
 export default router;

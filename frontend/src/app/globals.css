@@ -1,40 +1,56 @@
 @import "tailwindcss";
+@import "./mobile.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #E4FCD5 !important;
+  --background: #E4FCD5;
   --foreground: #203126;
-  --card: #ffffff;
+  --card: #c8e7c5;
   --card-foreground: #203126;
-  --muted: #eef5ec;
+  --muted: #b1c9aa;
   --muted-foreground: #5e6d64;
-  --border: #d8e5d5;
-  --mint-50: #f4fbf2;
+  --border: #556c527a;
+  --mint-50: #b5d4ad;
   --mint-100: #e4f3df;
-  --mint-200: #cfe8c8;
+  --mint-200: #c4ddbd;
   --mint-300: #b8d9b5;
   --mint-500: #7eae77;
   --mint-700: #436440;
   --accent-dark: #244229;
+  --accent-foreground: #ffffff;
+  --vendor-select-bg: #ffffff;
+  --vendor-select-hover: #f0fdf4;
+  --vendor-select-tag: #dcfce7;
+  --vendor-select-tag-text: #166534;
+  --vendor-select-tag-remove-hover: #bbf7d0;
 }
 
 .dark {
   --background: #0f1512;
-  --foreground: #edf3ed;
-  --card: #17201b;
-  --card-foreground: #edf3ed;
-  --muted: #111913;
-  --muted-foreground: #9caf9e;
-  --border: #243128;
-  --mint-50: #0f1512;
-  --mint-100: #17201b;
-  --mint-200: #243128;
-  --mint-300: #2c4433;
-  --mint-500: #7eae77;
-  --mint-700: #d6ecd0;
-  --accent-dark: #d6ecd0;
+  --foreground: #f0fde8;
+  --card: #141c16;
+  --card-foreground: #c8e0c2;
+  --muted: #2b342f;
+  --muted-foreground: #b4c9b0;
+  --border: #2a3d2f;
+  --mint-50: #111814;
+  --mint-100: #1a241e;
+  --mint-200: #263830;
+  --mint-300: #2f4e3a;
+  --mint-500: #8ebe86;
+  --mint-700: #c4dabb;
+  --accent-dark: #b5e4a8;
+  --accent-foreground: #0f1c12;
+  --vendor-select-bg: #15201A;
+  --vendor-select-hover: #1e2e24;
+  --vendor-select-tag: #1e3a28;
+  --vendor-select-tag-text: #a8d5a2;
+  --vendor-select-tag-remove-hover: #2a4d35;
 }
 
 @theme inline {
+  --variant-dark: (&:where(.dark, .dark *));
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -49,6 +65,7 @@
   --color-mint-500: var(--mint-500);
   --color-mint-700: var(--mint-700);
   --color-accent-dark: var(--accent-dark);
+  --color-accent-foreground: var(--accent-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -62,6 +79,7 @@ html {
 }
 
 body {
+  margin: 0;
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
@@ -73,8 +91,8 @@ select {
   outline: none;
 }
 
-input:focus,
-button:focus,
-select:focus {
+input:focus-visible,
+button:focus-visible,
+select:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--mint-500) 24%, transparent);
 }

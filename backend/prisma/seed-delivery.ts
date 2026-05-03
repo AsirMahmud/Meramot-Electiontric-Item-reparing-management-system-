@@ -179,17 +179,53 @@ async function main() {
     },
   });
 
+  // Create a proper vendor for the delivery demo shop
+  const deliveryShopVendor = await upsertUser({
+    email: "vendor.delivery.demo@meeramoot.test",
+    username: "vendor_delivery_demo",
+    name: "Delivery Demo Shop Owner",
+    phone: "01700000004",
+    role: UserRole.VENDOR,
+    passwordHash,
+  });
+
+  const deliveryVendorApp = await prisma.vendorApplication.upsert({
+    where: { businessEmail: "vendor.delivery.demo@meeramoot.test" },
+    update: { status: "APPROVED", reviewedAt: new Date() },
+    create: {
+      userId: deliveryShopVendor.id,
+      ownerName: "Delivery Demo Shop Owner",
+      businessEmail: "vendor.delivery.demo@meeramoot.test",
+      phone: "01700000004",
+      shopName: "Delivery Demo Service Center",
+      address: "Road 2, Dhanmondi, Dhaka",
+      city: "Dhaka",
+      area: "Dhanmondi",
+      specialties: ["Washing Machine", "Microwave Oven"],
+      courierPickup: true,
+      inShopRepair: true,
+      spareParts: false,
+      status: "APPROVED",
+      reviewedAt: new Date(),
+    },
+  });
+
   const shop = await prisma.shop.upsert({
     where: { slug: "delivery-demo-service-center" },
     update: {
+      vendorApplicationId: deliveryVendorApp.id,
       name: "Delivery Demo Service Center",
       address: "Road 2, Dhanmondi, Dhaka",
       city: "Dhaka",
       area: "Dhanmondi",
+      lat: 23.7461,
+      lng: 90.3742,
+      isPublic: true,
       supportsPickup: true,
       freeDelivery: false,
     },
     create: {
+      vendorApplicationId: deliveryVendorApp.id,
       name: "Delivery Demo Service Center",
       slug: "delivery-demo-service-center",
       address: "Road 2, Dhanmondi, Dhaka",
@@ -197,9 +233,22 @@ async function main() {
       area: "Dhanmondi",
       supportsPickup: true,
       freeDelivery: false,
+      inspectionFee: 200,
+      baseLaborFee: 400,
+      pickupFee: 100,
+      expressFee: 300,
+      setupComplete: true,
+      isPublic: true,
       categories: ["IN_SHOP_REPAIR", "COURIER_PICKUP"],
       specialties: ["Washing Machine", "Microwave Oven"],
     },
+  });
+
+  // Link vendor as shop owner
+  await prisma.shopStaff.upsert({
+    where: { shopId_userId: { shopId: shop.id, userId: deliveryShopVendor.id } },
+    update: {},
+    create: { shopId: shop.id, userId: deliveryShopVendor.id, role: "OWNER", isActive: true },
   });
 
   let repairRequest = await prisma.repairRequest.findFirst({
@@ -407,7 +456,20 @@ async function main() {
     },
   ];
 
+  const activeStatusCycle: DeliveryStatus[] = [
+    DeliveryStatus.SCHEDULED,
+    DeliveryStatus.DISPATCHED,
+    DeliveryStatus.PICKED_UP,
+    DeliveryStatus.IN_TRANSIT,
+    DeliveryStatus.PENDING,
+  ];
+
   for (const item of extraRequests) {
+    const itemIndex = extraRequests.findIndex((entry) => entry.title === item.title);
+    const seededStatus = activeStatusCycle[itemIndex % activeStatusCycle.length];
+    const seededRider = itemIndex % 2 === 0 ? rider : providedRider;
+    const seededRiderUser = itemIndex % 2 === 0 ? deliveryUser : providedDeliveryUser;
+
     let rr = await prisma.repairRequest.findFirst({
       where: {
         userId: customer.id,
@@ -464,22 +526,30 @@ async function main() {
       await prisma.delivery.update({
         where: { id: toShop.id },
         data: {
-          deliveryAgentId: null,
+          deliveryAgentId: seededRider.id,
           coverageZoneId: zone.id,
           direction: DeliveryDirection.TO_SHOP,
           type: DeliveryType.REGULAR,
-          status: DeliveryStatus.PENDING,
+          status: seededStatus,
           partnerName: "Meeramoot Logistics",
           trackingCode: item.toShopTracking,
-          riderName: null,
-          riderPhone: null,
+          riderName: seededRiderUser.name,
+          riderPhone: seededRiderUser.phone,
           pickupAddress: item.pickupAddress,
           dropAddress: shop.address,
           fee: item.fee,
           distanceKm: 3.8,
-          scheduledAt: null,
-          dispatchedAt: null,
-          pickedUpAt: null,
+          scheduledAt:
+            seededStatus === DeliveryStatus.SCHEDULED ||
+            seededStatus === DeliveryStatus.DISPATCHED ||
+            seededStatus === DeliveryStatus.PICKED_UP ||
+            seededStatus === DeliveryStatus.IN_TRANSIT
+              ? new Date(Date.now() - 45 * 60 * 1000)
+              : null,
+          pickedUpAt:
+            seededStatus === DeliveryStatus.PICKED_UP || seededStatus === DeliveryStatus.IN_TRANSIT
+              ? new Date(Date.now() - 20 * 60 * 1000)
+              : null,
           deliveredAt: null,
           cancellationReason: null,
         },
@@ -488,17 +558,30 @@ async function main() {
       await prisma.delivery.create({
         data: {
           repairJobId: rj.id,
-          deliveryAgentId: null,
+          deliveryAgentId: seededRider.id,
           coverageZoneId: zone.id,
           direction: DeliveryDirection.TO_SHOP,
           type: DeliveryType.REGULAR,
-          status: DeliveryStatus.PENDING,
+          status: seededStatus,
           partnerName: "Meeramoot Logistics",
           trackingCode: item.toShopTracking,
+          riderName: seededRiderUser.name ?? null,
+          riderPhone: seededRiderUser.phone ?? null,
           pickupAddress: item.pickupAddress,
           dropAddress: shop.address,
           fee: item.fee,
           distanceKm: 3.8,
+          scheduledAt:
+            seededStatus === DeliveryStatus.SCHEDULED ||
+            seededStatus === DeliveryStatus.DISPATCHED ||
+            seededStatus === DeliveryStatus.PICKED_UP ||
+            seededStatus === DeliveryStatus.IN_TRANSIT
+              ? new Date(Date.now() - 45 * 60 * 1000)
+              : null,
+          pickedUpAt:
+            seededStatus === DeliveryStatus.PICKED_UP || seededStatus === DeliveryStatus.IN_TRANSIT
+              ? new Date(Date.now() - 20 * 60 * 1000)
+              : null,
         },
       });
     }

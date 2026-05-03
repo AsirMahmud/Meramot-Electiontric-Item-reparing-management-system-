@@ -1,0 +1,284 @@
+import bcrypt from "bcryptjs";
+import {
+  PrismaClient,
+  RequestMode,
+  RequestStatus,
+  RepairJobStatus,
+  PaymentStatus,
+  EscrowStatus,
+} from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log("≡ƒÜÇ Starting Bulk User Generation (10 Users)...");
+
+  const passwordHash = await bcrypt.hash("password123", 10);
+  
+  // Use a deterministic shop (first by slug alphabetically) for consistent data
+  const shop = await prisma.shop.findFirst({ orderBy: { slug: "asc" } });
+  if (!shop) {
+    console.error("Error: No shops found. Please run main seed first.");
+    return;
+  }
+
+  const userNames = [
+    "Arif Ahmed", "Sultana Razia", "Tanvir Hossain", "Nabila Islam", 
+    "Fahim Rahman", "Sadia Afrin", "Mahmudul Hasan", "Ishrat Jahan",
+    "Rakibul Islam", "Tasnim Akter"
+  ];
+
+  for (let i = 0; i < userNames.length; i++) {
+    const name = userNames[i];
+    const email = `user${i + 1}@example.com`;
+    const username = `user_test_${i + 1}`;
+
+    console.log(`≡ƒæñ Creating user: ${name}`);
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        username,
+        email,
+        passwordHash,
+        name,
+        phone: `+88018${1000000 + i}`,
+        role: "CUSTOMER",
+        status: "ACTIVE",
+      },
+    });
+
+    // 1. Support Ticket
+    await prisma.supportTicket.create({
+      data: {
+        userId: user.id,
+        subject: `Issue from ${name}`,
+        message: `Hello, I am having trouble with my recent repair request. User ID: ${user.id}`,
+        status: i % 2 === 0 ? "OPEN" : "IN_PROGRESS",
+        priority: i % 3 === 0 ? "HIGH" : "MEDIUM",
+      },
+    });
+
+    // 2. Repair Request & Payment
+    const request = await prisma.repairRequest.create({
+      data: {
+        userId: user.id,
+        title: `Smartphone Repair - ${name}`,
+        deviceType: "Mobile",
+        brand: i % 2 === 0 ? "Apple" : "Xiaomi",
+        problem: "Battery replacement",
+        status: RequestStatus.COMPLETED,
+        mode: RequestMode.DIRECT_REPAIR,
+        requestedShopId: shop.id,
+      },
+    });
+
+    await prisma.repairJob.create({
+      data: {
+        repairRequestId: request.id,
+        shopId: shop.id,
+        status: RepairJobStatus.COMPLETED,
+        finalQuotedAmount: 3000 + (i * 200),
+        customerApproved: true,
+        completedAt: new Date(),
+      },
+    });
+
+    const statuses: PaymentStatus[] = ["PAID", "PENDING", "FAILED", "REFUNDED"];
+    const methods = ["CASH", "SSLCOMMERZ"];
+    const payment = await prisma.payment.create({
+      data: {
+        userId: user.id,
+        repairRequestId: request.id,
+        amount: 3000 + (i * 200),
+        currency: "BDT",
+        method: methods[i % 2],
+        status: statuses[i % 4],
+        escrowStatus: statuses[i % 4] === "PAID" ? "HELD" : "NOT_APPLICABLE",
+        transactionRef: `TXN-BULK-${i}-${Date.now()}`,
+        paidAt: statuses[i % 4] === "PAID" ? new Date() : null,
+      },
+    });
+
+    if (payment.status === "PAID") {
+      await prisma.ledgerEntry.create({
+        data: {
+          paymentId: payment.id,
+          amount: payment.amount,
+          type: "CUSTOMER_PAYMENT",
+          direction: "CREDIT",
+          description: "Customer payment for repair job (bulk seed)",
+          createdAt: payment.paidAt || new Date(),
+        },
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          shopId: shop.id,
+          amount: payment.amount,
+          grossAmount: payment.amount,
+          action: "PAYMENT_HELD",
+          note: "Payment held in escrow after successful transaction",
+          createdAt: payment.paidAt || new Date(),
+        },
+      });
+
+      // Settle payment (Simulate Admin Settlement)
+      const grossAmount = 3000 + (i * 200);
+      const platformCommissionAmount = grossAmount * 0.05;
+      const vendorNetAmount = grossAmount - platformCommissionAmount;
+      const settledAt = new Date((payment.paidAt || new Date()).getTime() + 1000 * 60 * 60 * 24); // 1 day later
+      
+      const shopOwner = await prisma.shopStaff.findFirst({
+        where: { shopId: shop.id, role: "OWNER" },
+        select: { userId: true }
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          vendorUserId: shopOwner?.userId,
+          shopId: shop.id,
+          amount: platformCommissionAmount,
+          grossAmount: grossAmount,
+          platformCommissionAmount: platformCommissionAmount,
+          vendorNetAmount: vendorNetAmount,
+          action: "PLATFORM_COMMISSION_DEDUCTED",
+          note: "Automated settlement with 5% platform commission",
+          createdAt: settledAt,
+        },
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          vendorUserId: shopOwner?.userId,
+          shopId: shop.id,
+          amount: vendorNetAmount,
+          grossAmount: grossAmount,
+          platformCommissionAmount: platformCommissionAmount,
+          vendorNetAmount: vendorNetAmount,
+          action: "VENDOR_EARNING_RELEASED",
+          note: "Automated settlement with 5% platform commission",
+          createdAt: settledAt,
+        },
+      });
+
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { escrowStatus: "RELEASED" }
+      });
+    }
+
+    // 3. Complaint (Dispute) for every 3rd user
+    if (i % 3 === 0) {
+      console.log(`≡ƒÜ⌐ Creating dispute for: ${name}`);
+      const disputeRequest = await prisma.repairRequest.create({
+        data: {
+          userId: user.id,
+          title: `Faulty Repair Complaint - ${name}`,
+          deviceType: "Mobile",
+          brand: "Apple",
+          problem: "The device is overheating after repair",
+          status: RequestStatus.COMPLETED,
+          mode: RequestMode.DIRECT_REPAIR,
+          requestedShopId: shop.id,
+        },
+      });
+
+      await prisma.repairJob.create({
+        data: {
+          repairRequestId: disputeRequest.id,
+          shopId: shop.id,
+          status: RepairJobStatus.COMPLETED,
+          finalQuotedAmount: 4500,
+          customerApproved: true,
+          completedAt: new Date(),
+        },
+      });
+
+      const disputePayment = await prisma.payment.create({
+        data: {
+          userId: user.id,
+          repairRequestId: disputeRequest.id,
+          amount: 4500,
+          currency: "BDT",
+          method: methods[(i+1) % 2],
+          status: statuses[(i+1) % 4],
+          escrowStatus: statuses[(i+1) % 4] === "PAID" ? "HELD" : "NOT_APPLICABLE",
+          transactionRef: `TXN-COMPLAINT-${i}-${Date.now()}`,
+          paidAt: statuses[(i+1) % 4] === "PAID" ? new Date() : null,
+        },
+      });
+
+      if (disputePayment.status === "PAID") {
+        await prisma.ledgerEntry.create({
+          data: {
+            paymentId: disputePayment.id,
+            amount: disputePayment.amount,
+            type: "CUSTOMER_PAYMENT",
+            direction: "CREDIT",
+            description: "Customer payment for disputed repair job (bulk seed)",
+            createdAt: disputePayment.paidAt || new Date(),
+          },
+        });
+
+        await prisma.escrowLedger.create({
+          data: {
+            paymentId: disputePayment.id,
+            repairRequestId: disputeRequest.id,
+            customerUserId: user.id,
+            shopId: shop.id,
+            amount: disputePayment.amount,
+            grossAmount: disputePayment.amount,
+            action: "PAYMENT_HELD",
+            note: "Payment held in escrow after successful transaction",
+            createdAt: disputePayment.paidAt || new Date(),
+          },
+        });
+      }
+
+      // Find a vendor to complain against
+      const shopOwner = await prisma.shopStaff.findFirst({
+        where: { shopId: shop.id, role: "OWNER" },
+        select: { userId: true }
+      });
+
+      await prisma.disputeCase.create({
+        data: {
+          openedById: user.id,
+          againstId: shopOwner?.userId || null, 
+          paymentId: disputePayment.id,
+          repairRequestId: disputeRequest.id,
+          status: "OPEN",
+          notes: {
+            create: {
+              authorId: user.id,
+              note: "I am extremely unhappy. The shop charged me but the phone is now unusable due to overheating.",
+              isInternal: false,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  console.log("Γ£à Bulk Seeding Completed Successfully!");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

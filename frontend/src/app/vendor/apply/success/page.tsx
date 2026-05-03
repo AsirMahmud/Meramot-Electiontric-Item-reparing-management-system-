@@ -41,7 +41,7 @@ export default async function VendorApplySuccessPage({
             href="/"
             className="rounded-2xl border border-border px-5 py-3 text-sm font-semibold text-slate-700"
           >
-            Back to home
+            Back to Home
           </Link>
         </div>
       </div>

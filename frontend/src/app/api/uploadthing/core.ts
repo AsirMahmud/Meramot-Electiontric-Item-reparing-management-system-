@@ -3,6 +3,13 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 const f = createUploadthing();
 
 export const uploadRouter = {
+  shopLogoUploader: f({
+    "image/jpeg": { maxFileSize: "4MB", maxFileCount: 1 },
+    "image/png": { maxFileSize: "4MB", maxFileCount: 1 },
+    "image/webp": { maxFileSize: "4MB", maxFileCount: 1 },
+  }).onUploadComplete(async ({ file }) => {
+    return { fileUrl: file.url, fileName: file.name };
+  }),
   deliveryNidUploader: f({
     "application/pdf": {
       maxFileSize: "8MB",

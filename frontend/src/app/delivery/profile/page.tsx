@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Settings, Shield, Bell, HelpCircle, LogOut, ChevronRight, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,7 @@ export default function ProfilePage() {
 
       <div className="bg-white rounded-3xl p-6 border border-neutral-100 shadow-sm flex flex-col items-center mb-6">
         <div className="w-24 h-24 rounded-full border-[3px] border-orange-500 p-1 mb-4">
-          <div className="w-full h-full rounded-full bg-[#163625] text-[#E4FCD5] overflow-hidden flex items-center justify-center text-2xl font-bold">
+          <div className="w-full h-full rounded-full bg-[var(--foreground)] text-[#E4FCD5] overflow-hidden flex items-center justify-center text-2xl font-bold">
             {(me?.user?.name ?? me?.user?.username ?? "P").slice(0, 1).toUpperCase()}
           </div>
         </div>
@@ -64,3 +64,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
