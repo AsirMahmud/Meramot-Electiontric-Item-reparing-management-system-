@@ -13,7 +13,7 @@ If the device is a heavy home appliance (like a washing machine, refrigerator, a
 If the text is completely random, nonsensical, or clearly not any electronic device (e.g. "asdfgh", "rubbish", "Ejjdw" with no context), set "isRubbish" to true.
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
 - "brand": the corrected brand name
-- "model": the exact commercial model name
+- "model": the exact commercial model name, including the release year in parentheses if applicable (e.g. "Galaxy S24 (2024)", "MacBook Air M2 (2022)", "Arctis Nova Pro (2023)")
 - "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
@@ -25,7 +25,7 @@ If the device is a heavy home appliance (like a washing machine, refrigerator, a
 If the text is completely random, nonsensical, or clearly not any electronic device (e.g. "asdfgh", "rubbish", "Ejjdw" with no context), set "isRubbish" to true.
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
 - "brand": the corrected brand name
-- "model": the exact commercial model name
+- "model": the exact commercial model name, including the release year in parentheses if applicable (e.g. "Galaxy S24 (2024)", "MacBook Air M2 (2022)", "Arctis Nova Pro (2023)")
 - "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 

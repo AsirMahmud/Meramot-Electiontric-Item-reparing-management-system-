@@ -82,6 +82,7 @@ function NewRequestPageInner() {
   const [isRubbish, setIsRubbish] = useState(false);
   const [activeField, setActiveField] = useState<"brand" | "model" | null>(null);
   const suggestAbortController = useRef<AbortController | null>(null);
+  const skipNextSuggest = useRef(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -174,6 +175,11 @@ function NewRequestPageInner() {
       const model = form.model.trim();
       
       if (brand.length > 2 || model.length > 2) {
+        // Skip if this was triggered by selecting a suggestion
+        if (skipNextSuggest.current) {
+          skipNextSuggest.current = false;
+          return;
+        }
         setCheckingModel(true);
         // Reset flags when searching again
         setIsAppliance(false);
@@ -421,6 +427,7 @@ function NewRequestPageInner() {
                   modelSuggestions={modelSuggestions}
                   deeperSearch={deeperSearch}
                   onSelectSuggestion={(brand, model, deviceType) => {
+                    skipNextSuggest.current = true;
                     setForm(prev => ({
                       ...prev, 
                       brand, 
@@ -428,6 +435,7 @@ function NewRequestPageInner() {
                       ...(deviceType ? { deviceType } : {})
                     }));
                     setModelSuggestions([]);
+                    setCheckingModel(false);
                   }}
                   onSearchDeeper={() => setDeeperSearch(true)}
                 />
