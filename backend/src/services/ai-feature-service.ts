@@ -7,8 +7,10 @@ export async function suggestDeviceModel(input: { brand: string; model: string; 
 
   const systemContent = input.deeperSearch
     ? `You are an AI assistant helping a user identify an electronic device. The user provided a vague or incorrect brand/model, and previous standard suggestions were rejected.
-Your goal is to search deeper: think of phonetically similar names, common typos, or older/obscure models under the likely correct brand. 
-Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung", "Aple" -> "Apple") and correct it.
+Your goal is to search deeper: think of phonetically similar names, common typos, missing/extra spaces, swapped letters, or older/obscure models under the likely correct brand.
+BRAND typo examples: "Samsang"->"Samsung", "Aple"->"Apple", "Huwei"->"Huawei", "Xaomi"->"Xiaomi", "Lnovo"->"Lenovo", "Sont"->"Sony", "Noka"->"Nokia", "Onne Plus"->"OnePlus", "Raelme"->"Realme", "Opop"->"Oppo", "Assu"->"Asus", "Acer"->"Acer", "Del"->"Dell", "Hp"->"HP", "Tosiba"->"Toshiba", "Panasnic"->"Panasonic".
+MODEL typo examples: "tabe"->"Tab E", "galxy s"->"Galaxy S", "ipd"->"iPad", "macbok"->"MacBook", "iPhne"->"iPhone", "pixl"->"Pixel", "thinkpd"->"ThinkPad", "surfce"->"Surface", "ntbook"->"Notebook", "airpd"->"AirPods", "bds"->"Buds", "swch"->"Switch", "playsttion"->"PlayStation".
+Consider the ENTIRE product lineup: flagship, mid-range, budget, older discontinued models, regional variants, and special editions. Do NOT only suggest the latest models.
 If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
 If the text is completely random, nonsensical, or clearly not any electronic device (e.g. "asdfgh", "rubbish", "Ejjdw" with no context), set "isRubbish" to true.
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
@@ -20,8 +22,10 @@ Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
 Format: { "isAppliance": false, "isRubbish": false, "suggestions": [ { "brand": "...", "model": "...", "deviceType": "...", "specs": "..." } ] }`
     : `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
-Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung", "Samsi" -> "Samsung") and correct it.
-IMPORTANT: Also check for typos and missing spaces in the MODEL field. Examples: "tabe" -> "Tab E", "galxy s" -> "Galaxy S", "ipd" -> "iPad", "mabook" -> "MacBook". Consider older, discontinued, and budget models too — not just the latest flagships.
+Critical: Users often make typos, miss spaces, swap letters, or use shorthand. You MUST aggressively correct these.
+BRAND typo examples: "Samsang"->"Samsung", "Samsi"->"Samsung", "Aple"->"Apple", "Huwei"->"Huawei", "Xaomi"->"Xiaomi", "Lnovo"->"Lenovo", "Sont"->"Sony", "Noka"->"Nokia", "Onne Plus"->"OnePlus", "Raelme"->"Realme", "Opop"->"Oppo", "Del"->"Dell", "Tosiba"->"Toshiba".
+MODEL typo examples: "tabe"->"Tab E", "tab e"->"Tab E", "galxy s"->"Galaxy S", "ipd"->"iPad", "macbok"->"MacBook", "iPhne"->"iPhone", "pixl"->"Pixel", "thinkpd"->"ThinkPad", "surfce"->"Surface", "airpd"->"AirPods", "bds"->"Buds", "swch"->"Switch", "playsttion"->"PlayStation".
+Consider the ENTIRE product lineup: flagship, mid-range, budget, older discontinued models, and regional variants — not just the latest flagships.
 If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
 If the text is completely random, nonsensical, or clearly not any electronic device (e.g. "asdfgh", "rubbish", "Ejjdw" with no context), set "isRubbish" to true.
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
