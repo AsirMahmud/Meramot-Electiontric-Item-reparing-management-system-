@@ -165,12 +165,14 @@ function NewRequestPageInner() {
             setIsAppliance(false);
             
             if (data.suggestions && data.suggestions.length > 0) {
-              // Check if first suggestion is literally what they typed
+              // Check if first suggestion is literally what they typed for both brand and model
               const first = data.suggestions[0];
-              const lowerSug = first.model.toLowerCase();
+              const lowerSugModel = first.model.toLowerCase();
               const lowerMod = model.toLowerCase();
+              const lowerSugBrand = first.brand.toLowerCase();
+              const lowerBrand = brand.toLowerCase();
               
-              if (lowerSug === lowerMod && data.suggestions.length === 1 && !deeperSearch) {
+              if (lowerSugModel === lowerMod && lowerSugBrand === lowerBrand && data.suggestions.length === 1 && !deeperSearch) {
                 setModelSuggestions([]);
               } else {
                 setModelSuggestions(data.suggestions);
