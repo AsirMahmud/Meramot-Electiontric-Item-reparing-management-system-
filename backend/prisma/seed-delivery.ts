@@ -179,17 +179,53 @@ async function main() {
     },
   });
 
+  // Create a proper vendor for the delivery demo shop
+  const deliveryShopVendor = await upsertUser({
+    email: "vendor.delivery.demo@meeramoot.test",
+    username: "vendor_delivery_demo",
+    name: "Delivery Demo Shop Owner",
+    phone: "01700000004",
+    role: UserRole.VENDOR,
+    passwordHash,
+  });
+
+  const deliveryVendorApp = await prisma.vendorApplication.upsert({
+    where: { businessEmail: "vendor.delivery.demo@meeramoot.test" },
+    update: { status: "APPROVED", reviewedAt: new Date() },
+    create: {
+      userId: deliveryShopVendor.id,
+      ownerName: "Delivery Demo Shop Owner",
+      businessEmail: "vendor.delivery.demo@meeramoot.test",
+      phone: "01700000004",
+      shopName: "Delivery Demo Service Center",
+      address: "Road 2, Dhanmondi, Dhaka",
+      city: "Dhaka",
+      area: "Dhanmondi",
+      specialties: ["Washing Machine", "Microwave Oven"],
+      courierPickup: true,
+      inShopRepair: true,
+      spareParts: false,
+      status: "APPROVED",
+      reviewedAt: new Date(),
+    },
+  });
+
   const shop = await prisma.shop.upsert({
     where: { slug: "delivery-demo-service-center" },
     update: {
+      vendorApplicationId: deliveryVendorApp.id,
       name: "Delivery Demo Service Center",
       address: "Road 2, Dhanmondi, Dhaka",
       city: "Dhaka",
       area: "Dhanmondi",
+      lat: 23.7461,
+      lng: 90.3742,
+      isPublic: true,
       supportsPickup: true,
       freeDelivery: false,
     },
     create: {
+      vendorApplicationId: deliveryVendorApp.id,
       name: "Delivery Demo Service Center",
       slug: "delivery-demo-service-center",
       address: "Road 2, Dhanmondi, Dhaka",
@@ -197,9 +233,22 @@ async function main() {
       area: "Dhanmondi",
       supportsPickup: true,
       freeDelivery: false,
+      inspectionFee: 200,
+      baseLaborFee: 400,
+      pickupFee: 100,
+      expressFee: 300,
+      setupComplete: true,
+      isPublic: true,
       categories: ["IN_SHOP_REPAIR", "COURIER_PICKUP"],
       specialties: ["Washing Machine", "Microwave Oven"],
     },
+  });
+
+  // Link vendor as shop owner
+  await prisma.shopStaff.upsert({
+    where: { shopId_userId: { shopId: shop.id, userId: deliveryShopVendor.id } },
+    update: {},
+    create: { shopId: shop.id, userId: deliveryShopVendor.id, role: "OWNER", isActive: true },
   });
 
   let repairRequest = await prisma.repairRequest.findFirst({
