@@ -14,7 +14,7 @@ If the text is completely random, nonsensical, or clearly not any electronic dev
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name
-- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Camera", "Game Console", "Router/Modem", "Drone", "Projector", "Power Bank", "E-Reader", or "Other"
+- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard/Mouse", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
@@ -26,7 +26,7 @@ If the text is completely random, nonsensical, or clearly not any electronic dev
 Provide a JSON object containing "isAppliance" boolean, "isRubbish" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name
-- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Camera", "Game Console", "Router/Modem", "Drone", "Projector", "Power Bank", "E-Reader", or "Other"
+- "deviceType": one of exactly these values: "Laptop", "Desktop", "Mobile Phone", "Tablet", "Smartwatch", "Fitness Tracker", "Headphones/Earbuds", "Smart TV", "Monitor", "Speaker", "Printer", "Scanner", "Camera", "Action Camera", "Game Console", "VR Headset", "Router/Modem", "Drone", "Projector", "Power Bank", "UPS", "E-Reader", "External Storage", "Keyboard/Mouse", "Streaming Device", "Dash Cam", "GPS Device", "Smart Home Device", or "Other"
 - "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
