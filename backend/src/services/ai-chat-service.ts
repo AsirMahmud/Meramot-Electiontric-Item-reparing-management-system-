@@ -57,7 +57,7 @@ export async function generateAiRepairReply(input: AiChatInput) {
     { role: "user", parts: [{ text: input.message }] },
   ];
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${env.geminiApiKey}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${env.geminiApiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
