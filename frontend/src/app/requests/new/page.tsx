@@ -8,6 +8,8 @@ import { createRepairRequest, uploadImages } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
 import { pushLocalNotification } from "@/lib/notifications";
+import DeviceAiMatch from "@/components/requests/DeviceAiMatch";
+import { Sparkles, Loader2 } from "lucide-react";
 
 const DEVICE_TYPES = [
   "Laptop",
@@ -372,65 +374,21 @@ function NewRequestPageInner() {
               </div>
 
               {/* AI Assistant Suggestions spanning both columns */}
-              {(isAppliance || isRubbish || modelSuggestions.length > 0) && !checkingModel && (
-                <div className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-all">
-                  {isAppliance ? (
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">⚠️</span>
-                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                          Sorry, we do not repair large home appliances like fridges or ovens.
-                        </p>
-                      </div>
-                    </div>
-                  ) : isRubbish ? (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-950/30">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">🤔</span>
-                        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                          We couldn't recognize this device. Please enter a valid electronic device brand and model.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--accent-dark)] mb-3">
-                        ✨ AI Assistant Match
-                      </p>
-                      <p className="text-sm font-semibold text-[var(--foreground)] mb-3">
-                        Did you mean one of these devices?
-                      </p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {modelSuggestions.map((sug, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => {
-                              setForm(prev => ({...prev, brand: sug.brand, model: sug.model}));
-                              setModelSuggestions([]);
-                            }}
-                            className="flex flex-col items-start rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition hover:border-[var(--accent-dark)] hover:bg-[var(--mint-50)]"
-                          >
-                            <span className="text-sm font-bold text-[var(--foreground)]">{sug.brand} {sug.model}</span>
-                            {sug.specs && <span className="mt-1 text-xs text-[var(--muted-foreground)] line-clamp-2">{sug.specs}</span>}
-                          </button>
-                        ))}
-                      </div>
-                      {!deeperSearch && (
-                        <div className="mt-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setDeeperSearch(true)}
-                            className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--muted-foreground)] transition hover:bg-[var(--mint-50)] hover:text-[var(--foreground)]"
-                          >
-                            None of these? Search deeper
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="md:col-span-2">
+                <DeviceAiMatch 
+                  checkingModel={checkingModel}
+                  activeField={activeField}
+                  isAppliance={isAppliance}
+                  isRubbish={isRubbish}
+                  modelSuggestions={modelSuggestions}
+                  deeperSearch={deeperSearch}
+                  onSelectSuggestion={(brand, model) => {
+                    setForm(prev => ({...prev, brand, model}));
+                    setModelSuggestions([]);
+                  }}
+                  onSearchDeeper={() => setDeeperSearch(true)}
+                />
+              </div>
             </div>
 
             <select
