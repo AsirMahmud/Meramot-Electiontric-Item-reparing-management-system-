@@ -94,6 +94,7 @@ function NewRequestPageInner() {
     brand: "",
     model: "",
     displaySize: "",
+    chipset: "",
     issueCategory: "Checkup and diagnosis",
     problem: "",
     mode: shopSlug ? "DIRECT_REPAIR" : "CHECKUP_AND_REPAIR",
@@ -356,7 +357,11 @@ function NewRequestPageInner() {
                     description: "",
                     deviceType: form.deviceType,
                     brand: form.brand,
-                    model: form.deviceType === "Laptop" && form.displaySize.trim() ? `${form.model} (${form.displaySize})` : form.model,
+                    model: [
+                      form.model,
+                      form.deviceType === "Laptop" && form.displaySize.trim() ? `(${form.displaySize})` : "",
+                      form.deviceType === "Mobile Phone" && form.brand.toLowerCase() === "samsung" && form.chipset.trim() ? `(${form.chipset})` : ""
+                    ].filter(Boolean).join(" "),
                     issueCategory: form.issueCategory,
                     problem: form.problem,
                     mode: form.mode,
@@ -485,6 +490,17 @@ function NewRequestPageInner() {
                     onChange={(e) => setForm((prev) => ({ ...prev, displaySize: e.target.value }))}
                     className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]"
                     placeholder="Display Size (e.g. 15.6&quot;)"
+                  />
+                </div>
+              )}
+
+              {form.deviceType === "Mobile Phone" && form.brand.toLowerCase() === "samsung" && (
+                <div className="relative md:col-span-2">
+                  <input
+                    value={form.chipset}
+                    onChange={(e) => setForm((prev) => ({ ...prev, chipset: e.target.value }))}
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]"
+                    placeholder="Chipset (e.g. Snapdragon, Exynos)"
                   />
                 </div>
               )}
