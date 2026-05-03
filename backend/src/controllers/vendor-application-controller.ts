@@ -91,6 +91,8 @@ export async function createVendorApplication(req: Request, res: Response) {
       address,
       city,
       area,
+      lat,
+      lng,
       specialties,
       courierPickup,
       inShopRepair,
@@ -529,6 +531,8 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
       address,
       city,
       area,
+      lat,
+      lng,
       specialties,
       courierPickup,
       inShopRepair,
@@ -543,6 +547,8 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
       address?: string;
       city?: string;
       area?: string;
+      lat?: number | string;
+      lng?: number | string;
       specialties?: string[] | string;
       courierPickup?: boolean;
       inShopRepair?: boolean;
@@ -578,6 +584,8 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
         address: address?.trim() || existing.address,
         city: city?.trim() || null,
         area: area?.trim() || null,
+        lat: lat !== undefined && lat !== null && lat !== "" ? Number(lat) : existing.lat,
+        lng: lng !== undefined && lng !== null && lng !== "" ? Number(lng) : existing.lng,
         specialties: normalizedSpecialties.length ? normalizedSpecialties : existing.specialties,
         courierPickup: !!courierPickup,
         inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : existing.inShopRepair,
