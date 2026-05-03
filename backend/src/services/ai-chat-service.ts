@@ -43,29 +43,30 @@ export async function generateAiRepairReply(input: AiChatInput) {
     };
   }
 
-  if (!env.groqApiKey) {
-    throw new Error("GROQ_API_KEY is missing");
+  if (!env.geminiApiKey) {
+    throw new Error("GEMINI_API_KEY is missing");
   }
 
-  const messages = [
-    { role: "system", content: SYSTEM_PROMPT },
+  const contents = [
+    { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+    { role: "model", parts: [{ text: "Understood. I am Meramot AI. How can I help you today?" }] },
     ...(input.history ?? []).map((turn) => ({
-      role: turn.role,
-      content: turn.text,
+      role: turn.role === "assistant" ? "model" : "user",
+      parts: [{ text: turn.text }],
     })),
-    { role: "user", content: input.message },
+    { role: "user", parts: [{ text: input.message }] },
   ];
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.geminiApiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.groqApiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages,
-      temperature: 0.4,
+      contents,
+      generationConfig: {
+        temperature: 0.4,
+      },
     }),
   });
 
@@ -75,12 +76,12 @@ export async function generateAiRepairReply(input: AiChatInput) {
     throw new Error(
       data?.error?.message ||
         data?.message ||
-        `Groq request failed with status ${response.status}`
+        `Gemini request failed with status ${response.status}`
     );
   }
 
   const reply =
-    data?.choices?.[0]?.message?.content?.trim() ||
+    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
     "Sorry, I could not generate a response right now.";
 
   return {
@@ -92,7 +93,7 @@ export async function generateAiRepairReply(input: AiChatInput) {
 }
 
 export async function suggestDeviceModel(input: { brand: string; model: string; deeperSearch?: boolean }) {
-  if (!env.groqApiKey) {
+  if (!env.geminiApiKey) {
     return { ok: false, suggestions: [] };
   }
 
@@ -119,33 +120,30 @@ Provide a JSON object containing an "isAppliance" boolean, and a "suggestions" a
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
 Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...", "specs": "..." } ] }`;
 
-  const messages = [
-    { role: "system", content: systemContent },
-    { role: "user", content: `Brand: ${input.brand}\nModel: ${input.model}` }
-  ];
+  const userPrompt = `Brand: ${input.brand}\nModel: ${input.model}`;
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.geminiApiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${env.groqApiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant", // Reverted to 8b-instant for better compatibility and rate limits
-        messages,
-        temperature: input.deeperSearch ? 0.6 : 0.2,
-        response_format: { type: "json_object" }
-      }),
+        contents: [
+          { role: "user", parts: [{ text: systemContent + "\n\n" + userPrompt }] }
+        ],
+        generationConfig: {
+          temperature: input.deeperSearch ? 0.6 : 0.2,
+          responseMimeType: "application/json"
+        }
+      })
     });
 
     const data = await response.json();
-    if (!response.ok) return { ok: false, suggestions: [] };
+    if (!response.ok) return { ok: false, suggestions: [], isAppliance: false };
 
-    const reply = data?.choices?.[0]?.message?.content?.trim();
-    if (!reply) return { ok: false, suggestions: [] };
-
-    const parsed = JSON.parse(reply);
+    const content = data.candidates[0].content.parts[0].text;
+    const parsed = JSON.parse(content);
     return { 
       ok: true, 
       suggestions: parsed.suggestions || [],
