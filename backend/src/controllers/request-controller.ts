@@ -109,28 +109,14 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
           deliveryType: normalizeDeliveryType(
             typeof deliveryType === "string" ? deliveryType : undefined,
           ),
-          status: isDirectFlow ? RequestStatus.PENDING : RequestStatus.BIDDING,
+          source: isDirectFlow ? "DIRECT_CUSTOM_SHOP" : "MARKETPLACE",
+          requestedShopId: matchedShop?.id || null,
+          status: RequestStatus.BIDDING,
         },
       });
 
-      let repairJob = null;
-
-      if (isDirectFlow && matchedShop) {
-        repairJob = await tx.repairJob.create({
-          data: {
-            repairRequestId: request.id,
-            shopId: matchedShop.id,
-            status: RepairJobStatus.CREATED,
-          },
-          select: {
-            id: true,
-            status: true,
-            shop: { select: { id: true, name: true, slug: true } },
-          },
-        });
-      }
-
-      return { request, repairJob };
+      // No repair job is created here. The shop will bid on it first.
+      return { request, repairJob: null };
     });
 
     if (user?.email) {

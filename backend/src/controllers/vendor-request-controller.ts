@@ -388,7 +388,15 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
       where: {
         status: RequestStatus.BIDDING,
         bids: { none: { shopId: shop.id } },
-        ...specialtyFilter,
+        OR: [
+          {
+            requestedShopId: null,
+            ...(Object.keys(specialtyFilter).length > 0 ? specialtyFilter : {}),
+          },
+          {
+            requestedShopId: shop.id,
+          },
+        ],
       },
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -406,6 +414,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         deliveryType: true,
         status: true,
         createdAt: true,
+        requestedShopId: true,
         _count: { select: { bids: true } },
         bids: {
           where: { shopId: shop.id },
@@ -438,7 +447,10 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
 
     const relevantRequests = biddingRequests
       .map((request) => {
-        const relevance = buildRelevance(request, shop.specialties);
+        const isExplicitlyRequested = request.requestedShopId === shop.id;
+        const relevance = isExplicitlyRequested 
+          ? { isRelevant: true, score: 100, reasons: ["Customer directly requested your shop"] }
+          : buildRelevance(request, shop.specialties);
         const myBid = request.bids[0] ?? null;
 
         if (!relevance.isRelevant && !myBid) {
@@ -793,11 +805,16 @@ export async function upsertVendorBid(req: AuthedRequest, res: Response) {
         issueCategory: true,
         problem: true,
         status: true,
+        requestedShopId: true,
       },
     });
 
     if (!repairRequest) {
       return res.status(404).json({ message: "Repair request not found" });
+    }
+
+    if (repairRequest.requestedShopId && repairRequest.requestedShopId !== shop.id) {
+      return res.status(403).json({ message: "This request is restricted to a different shop" });
     }
 
     if (repairRequest.status !== RequestStatus.BIDDING) {
