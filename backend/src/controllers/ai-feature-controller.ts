@@ -8,47 +8,47 @@ export async function suggestModel(req: Request, res: Response) {
     const model = typeof req.body?.model === "string" ? req.body.model.trim() : "";
     const deeperSearch = !!req.body?.deeperSearch;
 
-    if (!brand && !model) {
-      return res.status(400).json({ message: "brand or model is required" });
+    if (!model && !brand) {
+      return res.json({ ok: false, suggestions: [] });
     }
 
     const result = await suggestDeviceModel({ brand, model, deeperSearch });
     return res.json(result);
   } catch (error) {
     console.error("suggestModel error:", error);
-    return res.status(500).json({ message: "Failed to suggest device model" });
+    return res.json({ ok: false, suggestions: [] });
   }
 }
 
 export async function summarizeIssue(req: Request, res: Response) {
   try {
-    const requestId = req.body?.requestId;
-    if (!requestId) {
-      return res.status(400).json({ message: "requestId is required" });
+    const { requestId, deviceType, brand, model, issueCategory, problem } = req.body;
+    
+    if (!requestId || !problem) {
+      return res.status(400).json({ ok: false, message: "Request ID and problem description are required" });
     }
 
-    const repairRequest = await prisma.repairRequest.findUnique({
+    // 1. Check if summary already exists in DB
+    const request = await prisma.repairRequest.findUnique({
       where: { id: requestId },
-      select: { deviceType: true, brand: true, model: true, issueCategory: true, problem: true, aiSummary: true }
+      select: { aiSummary: true }
     });
 
-    if (!repairRequest) {
-      return res.status(404).json({ message: "Request not found" });
+    if (request?.aiSummary) {
+      return res.json({ ok: true, summary: request.aiSummary });
     }
 
-    if (repairRequest.aiSummary) {
-      return res.json({ ok: true, summary: repairRequest.aiSummary, cached: true });
-    }
-
+    // 2. If not, generate a new one
     const result = await summarizeDeviceIssue({
-      deviceType: repairRequest.deviceType || "",
-      brand: repairRequest.brand || "",
-      model: repairRequest.model || "",
-      issueCategory: repairRequest.issueCategory || "",
-      problem: repairRequest.problem
+      deviceType: String(deviceType || ""),
+      brand: String(brand || ""),
+      model: String(model || ""),
+      issueCategory: String(issueCategory || ""),
+      problem: String(problem)
     });
 
     if (result.ok && result.summary) {
+      // 3. Save to DB for future use
       await prisma.repairRequest.update({
         where: { id: requestId },
         data: { aiSummary: result.summary }
@@ -58,6 +58,6 @@ export async function summarizeIssue(req: Request, res: Response) {
     return res.json(result);
   } catch (error) {
     console.error("summarizeIssue error:", error);
-    return res.status(500).json({ message: "Failed to summarize issue" });
+    return res.status(500).json({ ok: false, message: "Failed to summarize issue" });
   }
 }
