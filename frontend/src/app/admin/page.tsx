@@ -88,6 +88,15 @@ export default function AdminDashboardPage() {
           ))}
         </div>
       )}
+
+      <div className="mt-8 md:mt-12 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 md:p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-[var(--accent-dark)] mb-4">Delivery System Credentials</h3>
+        <div className="space-y-2 text-sm text-[var(--foreground)]">
+          <p><strong>Email:</strong> delivery.admin.demo@meeramoot.test</p>
+          <p><strong>Password:</strong> DeliveryAdmin@123</p>
+          <p><strong>URL:</strong> <Link href="/delivery-admin/login" className="text-blue-600 hover:underline">/delivery-admin/login</Link></p>
+        </div>
+      </div>
     </section>
   );
 }

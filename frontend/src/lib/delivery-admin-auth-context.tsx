@@ -1,8 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
 import {
-
   createContext,
   useCallback,
   useContext,
@@ -48,10 +46,6 @@ export function DeliveryAdminAuthProvider({ children }: { children: ReactNode })
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  const { data: session } = useSession();
-  const sessionUser = session?.user as any;
-  const isSessionAdmin = sessionUser?.role === "ADMIN" && sessionUser?.accessToken;
-
   const persistToken = useCallback((t: string | null) => {
     setToken(t);
     if (typeof window === "undefined") return;
@@ -77,24 +71,6 @@ export function DeliveryAdminAuthProvider({ children }: { children: ReactNode })
   }, [token, persistToken]);
 
   useEffect(() => {
-    // 1. If NextAuth session has an ADMIN, just use their token automatically!
-    if (isSessionAdmin) {
-      setToken(sessionUser.accessToken);
-      setLoading(true);
-      fetchDeliveryAdminMe(sessionUser.accessToken)
-        .then((data) => setUser(data.user))
-        .catch(() => {
-          setToken(null);
-          setUser(null);
-        })
-        .finally(() => {
-          setLoading(false);
-          setHydrated(true);
-        });
-      return;
-    }
-
-    // 2. Otherwise fall back to the standalone Delivery Admin local storage
     const stored =
       typeof window !== "undefined" ? localStorage.getItem(DELIVERY_ADMIN_TOKEN_STORAGE_KEY) : null;
     if (!stored) {
@@ -113,7 +89,7 @@ export function DeliveryAdminAuthProvider({ children }: { children: ReactNode })
         setLoading(false);
         setHydrated(true);
       });
-  }, [persistToken, isSessionAdmin, sessionUser?.accessToken]);
+  }, [persistToken]);
 
   const login = useCallback(
     async (identifier: string, password: string) => {
