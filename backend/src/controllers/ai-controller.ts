@@ -47,15 +47,16 @@ export async function suggestModel(req: Request, res: Response) {
   try {
     const brand = typeof req.body?.brand === "string" ? req.body.brand.trim() : "";
     const model = typeof req.body?.model === "string" ? req.body.model.trim() : "";
+    const deeperSearch = !!req.body?.deeperSearch;
 
     if (!model) {
-      return res.json({ ok: false, suggestion: null });
+      return res.json({ ok: false, suggestions: [] });
     }
 
-    const result = await suggestDeviceModel({ brand, model });
+    const result = await suggestDeviceModel({ brand, model, deeperSearch });
     return res.json(result);
   } catch (error) {
     console.error("suggestModel error:", error);
-    return res.json({ ok: false, suggestion: null });
+    return res.json({ ok: false, suggestions: [] });
   }
 }

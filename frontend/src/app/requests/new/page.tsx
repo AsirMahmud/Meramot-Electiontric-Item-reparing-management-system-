@@ -52,8 +52,10 @@ function NewRequestPageInner() {
   const [toast, setToast] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [modelSuggestion, setModelSuggestion] = useState<string | null>(null);
+  const [modelSuggestions, setModelSuggestions] = useState<{brand: string; model: string; specs: string}[]>([]);
   const [checkingModel, setCheckingModel] = useState(false);
+  const [deeperSearch, setDeeperSearch] = useState(false);
+  const [isAppliance, setIsAppliance] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -151,34 +153,46 @@ function NewRequestPageInner() {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/suggest-model`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brand, model })
+            body: JSON.stringify({ brand, model, deeperSearch })
           });
           const data = await res.json();
-          if (data.ok && data.suggestion) {
-            const lowerSug = data.suggestion.toLowerCase();
-            const lowerMod = model.toLowerCase();
-            const lowerBrandMod = `${brand.toLowerCase()} ${lowerMod}`.trim();
+          if (data.ok) {
+            if (data.isAppliance) {
+              setIsAppliance(true);
+              setModelSuggestions([]);
+              return;
+            }
+            setIsAppliance(false);
             
-            if (lowerSug !== lowerMod && lowerSug !== lowerBrandMod && data.suggestion.length > model.length) {
-              setModelSuggestion(data.suggestion);
+            if (data.suggestions && data.suggestions.length > 0) {
+              // Check if first suggestion is literally what they typed
+              const first = data.suggestions[0];
+              const lowerSug = first.model.toLowerCase();
+              const lowerMod = model.toLowerCase();
+              
+              if (lowerSug === lowerMod && data.suggestions.length === 1 && !deeperSearch) {
+                setModelSuggestions([]);
+              } else {
+                setModelSuggestions(data.suggestions);
+              }
             } else {
-              setModelSuggestion(null);
+              setModelSuggestions([]);
             }
           } else {
-            setModelSuggestion(null);
+            setModelSuggestions([]);
           }
         } catch (err) {
-          setModelSuggestion(null);
+          setModelSuggestions([]);
         } finally {
           setCheckingModel(false);
         }
       } else {
-        setModelSuggestion(null);
+        setModelSuggestions([]);
       }
     }, 1200);
 
     return () => clearTimeout(handler);
-  }, [form.brand, form.model]);
+  }, [form.brand, form.model, deeperSearch]);
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
@@ -323,8 +337,11 @@ function NewRequestPageInner() {
             <div className="relative">
               <input
                 value={form.model}
-                onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
-                className={`w-full rounded-2xl border ${modelSuggestion ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, model: e.target.value }));
+                  setDeeperSearch(false);
+                }}
+                className={`w-full rounded-2xl border ${modelSuggestions.length > 0 ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
                 placeholder="Model"
               />
               {checkingModel && (
@@ -332,20 +349,39 @@ function NewRequestPageInner() {
                   checking...
                 </span>
               )}
-              {modelSuggestion && !checkingModel && (
-                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
-                  <p className="text-xs text-[var(--muted-foreground)]">Did you mean this?</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForm(prev => ({...prev, model: modelSuggestion}));
-                      setModelSuggestion(null);
-                    }}
-                    className="mt-2 flex w-full items-center justify-between rounded-xl bg-[var(--mint-50)] px-3 py-2 text-left text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)]"
-                  >
-                    {modelSuggestion}
-                    <span>→</span>
-                  </button>
+              {isAppliance && !checkingModel && (
+                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-red-200 bg-red-50 p-3 shadow-lg dark:border-red-900/50 dark:bg-red-950/30">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Sorry, we don't repair those :(</p>
+                </div>
+              )}
+              {modelSuggestions.length > 0 && !checkingModel && !isAppliance && (
+                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg max-h-64 overflow-y-auto">
+                  <p className="text-xs font-semibold text-[var(--muted-foreground)] mb-2">Did you mean this?</p>
+                  <div className="flex flex-col gap-2">
+                    {modelSuggestions.map((sug, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setForm(prev => ({...prev, brand: sug.brand, model: sug.model}));
+                          setModelSuggestions([]);
+                        }}
+                        className="flex w-full flex-col items-start rounded-xl bg-[var(--mint-50)] px-3 py-2 text-left transition hover:bg-[var(--mint-100)]"
+                      >
+                        <span className="text-sm font-bold text-[var(--accent-dark)]">{sug.brand} {sug.model}</span>
+                        {sug.specs && <span className="text-xs text-[var(--muted-foreground)]">{sug.specs}</span>}
+                      </button>
+                    ))}
+                    {!deeperSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setDeeperSearch(true)}
+                        className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--muted-foreground)] hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        None of these? Search deeper
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

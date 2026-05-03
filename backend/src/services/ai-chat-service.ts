@@ -91,18 +91,36 @@ export async function generateAiRepairReply(input: AiChatInput) {
   };
 }
 
-export async function suggestDeviceModel(input: { brand: string; model: string }) {
+export async function suggestDeviceModel(input: { brand: string; model: string; deeperSearch?: boolean }) {
   if (!env.groqApiKey) {
-    return { ok: false, suggestion: null };
+    return { ok: false, suggestions: [] };
   }
 
+  const systemContent = input.deeperSearch
+    ? `You are an AI assistant helping a user identify an electronic device. The user provided a vague or incorrect brand/model, and previous standard suggestions were rejected.
+Your goal is to search deeper: think of phonetically similar names, common typos, or older/obscure models under the likely correct brand. 
+Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung", "Aple" -> "Apple") and correct it.
+If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
+Provide a JSON object containing an "isAppliance" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
+- "brand": the corrected brand name
+- "model": the exact commercial model name
+- "specs": a brief 3-4 word description (e.g., "Smartphone, 2021", "Laptop, Core i5")
+
+Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
+Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...", "specs": "..." } ] }`
+    : `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
+Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung") and correct it.
+If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
+Provide a JSON object containing an "isAppliance" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
+- "brand": the corrected brand name
+- "model": the exact commercial model name
+- "specs": a brief 3-4 word description (e.g., "Smartphone, 2021")
+
+Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
+Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...", "specs": "..." } ] }`;
+
   const messages = [
-    {
-      role: "system",
-      content: `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
-If the user's input is misspelled or uses a vague model number, suggest the full correct commercial name. 
-Respond ONLY with the corrected model name (and brand if necessary). Do not add conversational filler. If it looks correct already or you cannot guess, just return the original input.`
-    },
+    { role: "system", content: systemContent },
     { role: "user", content: `Brand: ${input.brand}\nModel: ${input.model}` }
   ];
 
@@ -114,18 +132,27 @@ Respond ONLY with the corrected model name (and brand if necessary). Do not add 
         Authorization: `Bearer ${env.groqApiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile", // Use 70b model for better JSON and reasoning
         messages,
-        temperature: 0.1, // low temperature for more deterministic factual answers
+        temperature: input.deeperSearch ? 0.6 : 0.2,
+        response_format: { type: "json_object" }
       }),
     });
 
     const data = await response.json();
-    if (!response.ok) return { ok: false, suggestion: null };
+    if (!response.ok) return { ok: false, suggestions: [] };
 
     const reply = data?.choices?.[0]?.message?.content?.trim();
-    return { ok: true, suggestion: reply };
+    if (!reply) return { ok: false, suggestions: [] };
+
+    const parsed = JSON.parse(reply);
+    return { 
+      ok: true, 
+      suggestions: parsed.suggestions || [],
+      isAppliance: !!parsed.isAppliance
+    };
   } catch (err) {
-    return { ok: false, suggestion: null };
+    console.error("suggestDeviceModel error:", err);
+    return { ok: false, suggestions: [], isAppliance: false };
   }
 }
