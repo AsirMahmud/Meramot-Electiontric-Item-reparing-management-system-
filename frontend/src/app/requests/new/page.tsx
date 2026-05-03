@@ -399,8 +399,13 @@ function NewRequestPageInner() {
                   isRubbish={isRubbish}
                   modelSuggestions={modelSuggestions}
                   deeperSearch={deeperSearch}
-                  onSelectSuggestion={(brand, model) => {
-                    setForm(prev => ({...prev, brand, model}));
+                  onSelectSuggestion={(brand, model, deviceType) => {
+                    setForm(prev => ({
+                      ...prev, 
+                      brand, 
+                      model,
+                      ...(deviceType ? { deviceType } : {})
+                    }));
                     setModelSuggestions([]);
                   }}
                   onSearchDeeper={() => setDeeperSearch(true)}

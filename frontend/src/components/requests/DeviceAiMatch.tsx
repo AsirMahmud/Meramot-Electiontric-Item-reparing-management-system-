@@ -5,9 +5,9 @@ interface DeviceAiMatchProps {
   activeField: "brand" | "model" | null;
   isAppliance: boolean;
   isRubbish: boolean;
-  modelSuggestions: {brand: string; model: string; specs: string}[];
+  modelSuggestions: {brand: string; model: string; deviceType?: string; specs: string}[];
   deeperSearch: boolean;
-  onSelectSuggestion: (brand: string, model: string) => void;
+  onSelectSuggestion: (brand: string, model: string, deviceType?: string) => void;
   onSearchDeeper: () => void;
 }
 
@@ -69,7 +69,7 @@ export default function DeviceAiMatch({
               <button
                 key={i}
                 type="button"
-                onClick={() => onSelectSuggestion(sug.brand, sug.model)}
+                onClick={() => onSelectSuggestion(sug.brand, sug.model, sug.deviceType)}
                 className="flex flex-col items-start rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition hover:border-[var(--accent-dark)] hover:bg-[var(--mint-50)]"
               >
                 <span className="text-sm font-bold text-[var(--foreground)]">{sug.brand} {sug.model}</span>
