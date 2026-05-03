@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Request, Response } from "express";
 import prisma from "../models/prisma.js";
 
@@ -78,7 +77,7 @@ export async function getShops(req: Request, res: Response) {
     const hasVoucher = req.query.voucher === "true";
     const freeDelivery = req.query.freeDelivery === "true";
     const hasDeals = req.query.deals === "true";
-    const category = typeof req.query.category === "string" ? req.query.category : undefined as any;
+    const category = typeof req.query.category === "string" ? req.query.category : undefined;
     const sort = typeof req.query.sort === "string" ? req.query.sort : "topRated";
     const take = toNumber(req.query.take, 18) ?? 18;
     const query = typeof req.query.q === "string" ? req.query.q : "";
@@ -87,15 +86,14 @@ export async function getShops(req: Request, res: Response) {
     const originLng = toNumber(req.query.lng, 90.4125);
 
     const where: Record<string, unknown> = {
-    isActive: true,
-    isPublic: true,
-  };
+      isActive: true,
+    };
 
     if (featuredOnly) where.isFeatured = true;
     if (hasVoucher) where.hasVoucher = true;
     if (freeDelivery) where.freeDelivery = true;
     if (hasDeals) where.hasDeals = true;
-    if (category) where.categories = { has: category as string };
+    if (category) where.categories = { has: category };
 
     const shops = await prisma.shop.findMany({
       where,
@@ -120,24 +118,18 @@ export async function getShops(req: Request, res: Response) {
         hasDeals: true,
         categories: true,
         specialties: true,
-        baseLaborFee: true,
-        inspectionFee: true,
       },
     });
 
     const enriched = shops
-      .map((shop) => {
+      .map((shop: any) => {
         const distanceKm = haversineDistanceKm(originLat, originLng, shop.lat, shop.lng);
         const etaMinutes = distanceKm == null ? null : Math.max(45, Math.round(distanceKm * 18));
         return {
           ...shop,
           distanceKm,
           etaMinutes,
-          offerSummary: shop.inspectionFee != null
-            ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
-            : shop.baseLaborFee
-            ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
-            : `Starting from ৳${(shop.priceLevel || 1) * 150}`,
+          offerSummary: `৳${(700 + shop.priceLevel * 250 + Math.max(0, 5 - Math.round(shop.ratingAvg)) * 80).toLocaleString("en-BD")}`,
           resultTag: resultTag({
             priceLevel: shop.priceLevel,
             distanceKm,
@@ -146,29 +138,17 @@ export async function getShops(req: Request, res: Response) {
           }),
         };
       })
-      .filter((shop) => matchesQuery(shop, query))
-      .filter((shop) => shop.distanceKm == null || shop.distanceKm <= maxDistanceKm);
+      .filter((shop: any) => matchesQuery(shop, query))
+      .filter((shop: any) => shop.distanceKm == null || shop.distanceKm <= maxDistanceKm);
 
-    const sorted = enriched.sort((a, b) => {
+    const sorted = enriched.sort((a: any, b: any) => {
       if (sort === "price") {
-        const getPrice = (s: any) => s.inspectionFee ?? ((s.priceLevel || 1) * 150);
-        const priceA = getPrice(a);
-        const priceB = getPrice(b);
-        
-        if (priceA !== priceB) return priceA - priceB;
-
-        const laborA = a.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
-        const laborB = b.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
-        if (laborA !== laborB) return laborA - laborB;
-
-        if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
-        return (b.ratingAvg || 0) - (a.ratingAvg || 0);
+        if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
+        return b.ratingAvg - a.ratingAvg;
       }
 
       if (sort === "distance") {
-        const distDiff = (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
-        if (distDiff !== 0) return distDiff;
-        return (a.etaMinutes ?? Number.MAX_SAFE_INTEGER) - (b.etaMinutes ?? Number.MAX_SAFE_INTEGER);
+        return (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
       }
 
       if (sort === "relevance") {
@@ -177,8 +157,8 @@ export async function getShops(req: Request, res: Response) {
         return (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
       }
 
-      if ((b.ratingAvg || 0) !== (a.ratingAvg || 0)) return (b.ratingAvg || 0) - (a.ratingAvg || 0);
-      return (b.reviewCount || 0) - (a.reviewCount || 0);
+      if (b.ratingAvg !== a.ratingAvg) return b.ratingAvg - a.ratingAvg;
+      return b.reviewCount - a.reviewCount;
     });
 
     return res.json(sorted.slice(0, take));
@@ -193,17 +173,16 @@ export async function getFeaturedShops(_req: Request, res: Response) {
     const shops = await prisma.shop.findMany({
       where: {
         isActive: true,
-        isFeatured: true,
-        isPublic: true,
       },
       orderBy: [{ ratingAvg: "desc" }, { reviewCount: "desc" }],
-      take: 8,
+      take: 6,
       select: {
         id: true,
         name: true,
         slug: true,
         description: true,
         logoUrl: true,
+        bannerUrl: true,
         address: true,
         city: true,
         area: true,
@@ -212,26 +191,16 @@ export async function getFeaturedShops(_req: Request, res: Response) {
         ratingAvg: true,
         reviewCount: true,
         priceLevel: true,
+        isFeatured: true,
         hasVoucher: true,
         freeDelivery: true,
         hasDeals: true,
         categories: true,
         specialties: true,
-        baseLaborFee: true,
-        inspectionFee: true,
       },
     });
 
-    const enriched = shops.map((shop) => ({
-      ...shop,
-      offerSummary: shop.inspectionFee != null
-        ? `Inspection ৳${shop.inspectionFee.toLocaleString("en-BD")}`
-        : shop.baseLaborFee
-        ? `Starting from ৳${shop.baseLaborFee.toLocaleString("en-BD")}`
-        : `Starting from ৳${(shop.priceLevel || 1) * 150}`,
-    }));
-
-    return res.json(enriched);
+    return res.json(shops);
   } catch (error) {
     console.error("getFeaturedShops error:", error);
     return res.status(500).json({ message: "Server error" });
@@ -240,40 +209,36 @@ export async function getFeaturedShops(_req: Request, res: Response) {
 
 export async function getShopBySlug(req: Request, res: Response) {
   try {
-    const { slug } = req.params;
+    const slug = String(req.params.slug);
 
-    const shop = await prisma.shop.findFirst({
-    where: {
-      slug,
-      isActive: true,
-      isPublic: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      logoUrl: true,
-      bannerUrl: true,
-      address: true,
-      city: true,
-      area: true,
-      lat: true,
-      lng: true,
-      phone: true,
-      email: true,
-      ratingAvg: true,
-      reviewCount: true,
-      priceLevel: true,
-      isFeatured: true,
-      hasVoucher: true,
-      freeDelivery: true,
-      hasDeals: true,
-      categories: true,
-      specialties: true,
-      createdAt: true,
-    },
-  });
+    const shop = await prisma.shop.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoUrl: true,
+        bannerUrl: true,
+        address: true,
+        city: true,
+        area: true,
+        lat: true,
+        lng: true,
+        phone: true,
+        email: true,
+        ratingAvg: true,
+        reviewCount: true,
+        priceLevel: true,
+        isFeatured: true,
+        hasVoucher: true,
+        freeDelivery: true,
+        hasDeals: true,
+        categories: true,
+        specialties: true,
+        createdAt: true,
+      },
+    });
 
     if (!shop) {
       return res.status(404).json({ message: "Shop not found" });

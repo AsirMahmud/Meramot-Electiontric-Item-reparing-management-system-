@@ -63,22 +63,22 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] px-3 py-6 md:px-4 md:py-10">
-      <section className="mx-auto max-w-2xl rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:rounded-[2rem] md:p-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+    <main className="min-h-screen bg-[#f2f7ef] px-4 py-10">
+      <section className="mx-auto max-w-2xl rounded-[2rem] border border-[#d9e5d5] bg-white p-8 shadow-sm">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#58725f]">
               Checkout
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-[var(--foreground)] md:text-3xl">Pay With SSLCommerz</h1>
-            <p className="mt-2 text-xs text-[var(--muted-foreground)] md:text-sm">
+            <h1 className="mt-2 text-3xl font-bold text-[#173726]">Pay With SSLCommerz</h1>
+            <p className="mt-2 text-sm text-[#5b7262]">
               Start a secure payment session and continue on SSLCommerz.
             </p>
           </div>
 
           <Link
             href="/account"
-            className="rounded-full border border-[var(--border)] bg-[var(--card)] px-5 py-2 text-sm font-semibold text-[var(--foreground)]"
+            className="rounded-full border border-[#214c34] bg-white px-5 py-2 text-sm font-semibold text-[#214c34]"
           >
             Back
           </Link>
@@ -86,7 +86,7 @@ export default function CheckoutPage() {
 
         <form className="space-y-4" onSubmit={handlePayNow}>
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#6b8270]">
               Amount
             </label>
             <input
@@ -95,28 +95,28 @@ export default function CheckoutPage() {
               step="0.01"
               value={form.amount}
               onChange={(event) => setForm((prev) => ({ ...prev, amount: event.target.value }))}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none focus:border-[var(--accent-dark)]"
+              className="w-full rounded-2xl border border-[#d9e5d5] px-4 py-3 text-[#173726] outline-none focus:border-[#214c34]"
               placeholder="100"
               required
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#6b8270]">
               Currency
             </label>
             <input
               type="text"
               value={form.currency}
               onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value }))}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none focus:border-[var(--accent-dark)]"
+              className="w-full rounded-2xl border border-[#d9e5d5] px-4 py-3 text-[#173726] outline-none focus:border-[#214c34]"
               placeholder="BDT"
               required
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#6b8270]">
               Product Name
             </label>
             <input
@@ -125,13 +125,13 @@ export default function CheckoutPage() {
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, productName: event.target.value }))
               }
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none focus:border-[var(--accent-dark)]"
+              className="w-full rounded-2xl border border-[#d9e5d5] px-4 py-3 text-[#173726] outline-none focus:border-[#214c34]"
               placeholder="Repair service payment"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[#6b8270]">
               Repair Request ID (optional)
             </label>
             <input
@@ -140,17 +140,17 @@ export default function CheckoutPage() {
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, repairRequestId: event.target.value }))
               }
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none focus:border-[var(--accent-dark)]"
+              className="w-full rounded-2xl border border-[#d9e5d5] px-4 py-3 text-[#173726] outline-none focus:border-[#214c34]"
               placeholder="cuid"
             />
           </div>
 
-          {error ? <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p> : null}
+          {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-[#214c34] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Redirecting to gateway..." : "Pay now"}
           </button>
