@@ -161,6 +161,14 @@ export default function CartPage() {
 
   const primaryCart = carts[0] || null;
 
+  useEffect(() => {
+    if (primaryCart && primaryCart.shop.categories) {
+      if (!primaryCart.shop.categories.includes("COURIER_PICKUP") && primaryCart.shop.categories.includes("IN_SHOP_REPAIR")) {
+        setPreferredPickup(false);
+      }
+    }
+  }, [primaryCart]);
+
   const subtotal = useMemo(() => {
     if (!primaryCart) return 0;
     return primaryCart.items.reduce(
@@ -537,32 +545,38 @@ export default function CartPage() {
                       Delivery speed
                     </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                      <button
-                        type="button"
-                        onClick={() => { setPreferredPickup(true); setDeliveryType("REGULAR"); }}
-                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "REGULAR")}`}
-                      >
-                        <div className="font-bold text-[var(--foreground)]">Regular</div>
-                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)}</div>
-                      </button>
+                      {(!primaryCart.shop.categories || primaryCart.shop.categories.includes("COURIER_PICKUP")) && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => { setPreferredPickup(true); setDeliveryType("REGULAR"); }}
+                            className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "REGULAR")}`}
+                          >
+                            <div className="font-bold text-[var(--foreground)]">Regular</div>
+                            <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)}</div>
+                          </button>
 
-                      <button
-                        type="button"
-                        onClick={() => { setPreferredPickup(true); setDeliveryType("EXPRESS"); }}
-                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "EXPRESS")}`}
-                      >
-                        <div className="font-bold text-[var(--foreground)]">Express</div>
-                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)}</div>
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => { setPreferredPickup(true); setDeliveryType("EXPRESS"); }}
+                            className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "EXPRESS")}`}
+                          >
+                            <div className="font-bold text-[var(--foreground)]">Express</div>
+                            <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)}</div>
+                          </button>
+                        </>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => setPreferredPickup(false)}
-                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(!preferredPickup)}`}
-                      >
-                        <div className="font-bold text-[var(--foreground)]">Walk-in</div>
-                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">I will go to shop</div>
-                      </button>
+                      {primaryCart.shop.categories?.includes("IN_SHOP_REPAIR") && (
+                        <button
+                          type="button"
+                          onClick={() => setPreferredPickup(false)}
+                          className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(!preferredPickup)}`}
+                        >
+                          <div className="font-bold text-[var(--foreground)]">Walk-in</div>
+                          <div className="mt-1 text-sm text-[var(--muted-foreground)]">I will go to shop</div>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -53,6 +53,7 @@ export async function getMyActiveCarts(req: AuthedRequest, res: Response) {
             address: true,
             ratingAvg: true,
             reviewCount: true,
+            categories: true,
           },
         },
         items: {
@@ -205,6 +206,7 @@ export async function addItemToCart(req: AuthedRequest, res: Response) {
             address: true,
             ratingAvg: true,
             reviewCount: true,
+            categories: true,
           },
         },
         items: true,

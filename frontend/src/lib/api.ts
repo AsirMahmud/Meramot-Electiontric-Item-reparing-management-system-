@@ -1785,6 +1785,7 @@ export type Cart = {
     address: string;
     ratingAvg: number;
     reviewCount: number;
+    categories?: string[];
   };
   items: CartItem[];
 };
