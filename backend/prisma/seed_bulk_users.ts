@@ -84,19 +84,48 @@ async function main() {
       },
     });
 
-    await prisma.payment.create({
+    const statuses: PaymentStatus[] = ["PAID", "PENDING", "FAILED", "REFUNDED"];
+    const methods = ["CASH", "SSLCOMMERZ"];
+    const payment = await prisma.payment.create({
       data: {
         userId: user.id,
         repairRequestId: request.id,
         amount: 3000 + (i * 200),
         currency: "BDT",
-        method: "SSLCOMMERZ",
-        status: "PAID",
-        escrowStatus: "HELD",
+        method: methods[i % 2],
+        status: statuses[i % 4],
+        escrowStatus: statuses[i % 4] === "PAID" ? "HELD" : "NOT_APPLICABLE",
         transactionRef: `TXN-BULK-${i}-${Date.now()}`,
-        paidAt: new Date(),
+        paidAt: statuses[i % 4] === "PAID" ? new Date() : null,
       },
     });
+
+    if (payment.status === "PAID") {
+      await prisma.ledgerEntry.create({
+        data: {
+          paymentId: payment.id,
+          amount: payment.amount,
+          type: "CUSTOMER_PAYMENT",
+          direction: "CREDIT",
+          description: "Customer payment for repair job (bulk seed)",
+          createdAt: payment.paidAt || new Date(),
+        },
+      });
+
+      await prisma.escrowLedger.create({
+        data: {
+          paymentId: payment.id,
+          repairRequestId: request.id,
+          customerUserId: user.id,
+          shopId: shop.id,
+          amount: payment.amount,
+          grossAmount: payment.amount,
+          action: "PAYMENT_HELD",
+          note: "Payment held in escrow after successful transaction",
+          createdAt: payment.paidAt || new Date(),
+        },
+      });
+    }
 
     // 3. Complaint (Dispute) for every 3rd user
     if (i % 3 === 0) {
@@ -120,12 +149,40 @@ async function main() {
           repairRequestId: disputeRequest.id,
           amount: 4500,
           currency: "BDT",
-          status: "PAID",
-          escrowStatus: "HELD",
+          method: methods[(i+1) % 2],
+          status: statuses[(i+1) % 4],
+          escrowStatus: statuses[(i+1) % 4] === "PAID" ? "HELD" : "NOT_APPLICABLE",
           transactionRef: `TXN-COMPLAINT-${i}-${Date.now()}`,
-          paidAt: new Date(),
+          paidAt: statuses[(i+1) % 4] === "PAID" ? new Date() : null,
         },
       });
+
+      if (disputePayment.status === "PAID") {
+        await prisma.ledgerEntry.create({
+          data: {
+            paymentId: disputePayment.id,
+            amount: disputePayment.amount,
+            type: "CUSTOMER_PAYMENT",
+            direction: "CREDIT",
+            description: "Customer payment for disputed repair job (bulk seed)",
+            createdAt: disputePayment.paidAt || new Date(),
+          },
+        });
+
+        await prisma.escrowLedger.create({
+          data: {
+            paymentId: disputePayment.id,
+            repairRequestId: disputeRequest.id,
+            customerUserId: user.id,
+            shopId: shop.id,
+            amount: disputePayment.amount,
+            grossAmount: disputePayment.amount,
+            action: "PAYMENT_HELD",
+            note: "Payment held in escrow after successful transaction",
+            createdAt: disputePayment.paidAt || new Date(),
+          },
+        });
+      }
 
       // Find a vendor to complain against
       const shopOwner = await prisma.shopStaff.findFirst({

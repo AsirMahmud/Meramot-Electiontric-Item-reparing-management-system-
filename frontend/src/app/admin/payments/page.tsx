@@ -14,6 +14,7 @@ export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("ALL");
+  const [methodFilter, setMethodFilter] = useState("ALL");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -24,11 +25,19 @@ export default function AdminPaymentsPage() {
       setError("");
 
       try {
-        const response = await getAdminPayments({
-          status: filter === "ALL" ? undefined : filter,
-        }, token);
+        let url = `${process.env.NEXT_PUBLIC_API_URL}/api/payments/admin/list?`;
+        if (filter !== "ALL") url += `status=${filter}&`;
+        if (methodFilter !== "ALL") url += `method=${methodFilter}&`;
 
-        setPayments(response.data || []);
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.message || "Failed to load payments");
+
+        setPayments(json.data || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load payments");
       } finally {
@@ -37,7 +46,7 @@ export default function AdminPaymentsPage() {
     };
 
     fetchPayments();
-  }, [filter, token]);
+  }, [filter, methodFilter, token]);
 
   const table = useAdminTableState(payments, ["transactionRef", "id", "user", "status", "method"] as any);
 
@@ -52,20 +61,27 @@ export default function AdminPaymentsPage() {
       </div>
 
       <div className="mb-5 flex flex-wrap gap-3">
-        {FILTERS.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setFilter(item)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              filter === item
-                ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
-                : "border border-[#BFD0BA] bg-white dark:bg-[#1C251F] text-[var(--accent-dark)]"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as any)}
+          className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none dark:bg-[#1C251F] md:px-4 md:py-2.5 md:text-sm"
+        >
+          {FILTERS.map((item) => (
+            <option key={item} value={item}>
+              {item === "ALL" ? "All Statuses" : item.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={methodFilter}
+          onChange={(e) => setMethodFilter(e.target.value)}
+          className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none dark:bg-[#1C251F] md:px-4 md:py-2.5 md:text-sm"
+        >
+          <option value="ALL">All Methods</option>
+          <option value="CASH">Cash</option>
+          <option value="SSLCOMMERZ">SSLCOMMERZ</option>
+        </select>
       </div>
 
       {loading ? (
