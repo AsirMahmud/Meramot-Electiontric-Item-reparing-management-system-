@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createVendorApplication,
+  checkEmailAvailability,
   listVendorApplications,
   approveVendorApplication,
   rejectVendorApplication,
@@ -13,6 +14,7 @@ import { vendorApplyRateLimiter } from "../middleware/rate-limit.js";
 
 const router = Router();
 
+router.get("/check-email", checkEmailAvailability);
 router.post("/", vendorApplyRateLimiter, createVendorApplication);
 
 router.get("/admin", requireAuth, requireAdmin, listVendorApplications);

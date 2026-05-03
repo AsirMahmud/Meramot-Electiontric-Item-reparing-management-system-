@@ -75,6 +75,42 @@ async function generateUniqueUsername(base: string) {
   return candidate;
 }
 
+export async function checkEmailAvailability(req: Request, res: Response) {
+  try {
+    const { email } = req.query as { email?: string };
+    if (!email || !email.trim()) {
+      return res.status(400).json({ available: false, message: "Email is required." });
+    }
+
+    const normalized = email.trim().toLowerCase();
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalized },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return res.json({ available: false, message: "Account already exists." });
+    }
+
+    const existingApp = await prisma.vendorApplication.findUnique({
+      where: { businessEmail: normalized },
+      select: { id: true },
+    });
+
+    if (existingApp) {
+      return res.json({ available: false, message: "A vendor application with this email already exists." });
+    }
+
+    return res.json({ available: true });
+  } catch (error) {
+    console.error("checkEmailAvailability error:", error);
+    return res.status(500).json({ available: false, message: "Server error" });
+  }
+}
+
+
+
 export async function createVendorApplication(req: Request, res: Response) {
   try {
     const authUser = (req as any).user;

@@ -146,6 +146,13 @@ export function createVendorApplication(data: VendorApplicationPayload, token?: 
   });
 }
 
+export function checkEmailAvailability(email: string) {
+  return request<{ available: boolean; message?: string }>(
+    `/vendor/applications/check-email?email=${encodeURIComponent(email)}`,
+    { method: "GET" }
+  );
+}
+
 export function vendorLogin(data: { identifier: string; password: string }) {
   return request<{
     message: string;

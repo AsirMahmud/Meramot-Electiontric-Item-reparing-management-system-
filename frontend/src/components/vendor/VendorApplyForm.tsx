@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
@@ -8,6 +8,7 @@ import {
   createVendorApplication,
   getVendorApplicationStatus,
   updateVendorApplication,
+  checkEmailAvailability,
 } from "@/lib/api";
 import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -105,6 +106,8 @@ export default function VendorApplyForm() {
   const [mapDraft, setMapDraft] = useState<StoredLocation | null>(null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [emailTaken, setEmailTaken] = useState<string | null>(null);
+  const emailCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { startUpload } = useUploadThing("shopLogoUploader");
 
@@ -243,6 +246,8 @@ export default function VendorApplyForm() {
 
       const emailError = validateEmail(form.businessEmail);
       if (emailError) throw new Error(emailError);
+
+      if (emailTaken) throw new Error(emailTaken);
 
       const phoneError = validateBDPhone(form.phone);
       if (phoneError) throw new Error(phoneError);
@@ -413,19 +418,40 @@ export default function VendorApplyForm() {
             <input
               id="vendorBusinessEmail"
               className={`rounded-2xl border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3 ${
-                form.businessEmail && validateEmail(form.businessEmail) ? "border-red-400" : "border-border"
+                (form.businessEmail && validateEmail(form.businessEmail)) || emailTaken ? "border-red-400" : "border-border"
               }`}
               placeholder="Business email"
               type="email"
               name="vendorBusinessEmail"
               autoComplete="off"
               value={form.businessEmail}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, businessEmail: e.target.value }))
-              }
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm((prev) => ({ ...prev, businessEmail: val }));
+                setEmailTaken(null);
+
+                // Debounced availability check
+                if (emailCheckTimer.current) clearTimeout(emailCheckTimer.current);
+                const trimmed = val.trim().toLowerCase();
+                if (trimmed && !validateEmail(trimmed)) {
+                  emailCheckTimer.current = setTimeout(async () => {
+                    try {
+                      const result = await checkEmailAvailability(trimmed);
+                      if (!result.available) {
+                        setEmailTaken(result.message || "Account already exists.");
+                      }
+                    } catch {
+                      // silently fail — server check is best-effort
+                    }
+                  }, 500);
+                }
+              }}
             />
             {form.businessEmail && validateEmail(form.businessEmail) && (
               <p className="text-[11px] text-red-500 pl-1 mt-0.5">{validateEmail(form.businessEmail)}</p>
+            )}
+            {emailTaken && (
+              <p className="text-[11px] text-red-500 pl-1 mt-0.5">{emailTaken}</p>
             )}
           </div>
 
