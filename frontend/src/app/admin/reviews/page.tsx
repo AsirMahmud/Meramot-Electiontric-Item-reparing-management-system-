@@ -41,6 +41,8 @@ export default function AdminReviewsPage() {
       const queryParams = new URLSearchParams();
       if (shopId) queryParams.append("shopId", shopId);
       if (userId) queryParams.append("userId", userId);
+      queryParams.append("hasText", "true");
+      queryParams.append("take", "1000");
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/reviews?${queryParams.toString()}`, {
         credentials: "include",
