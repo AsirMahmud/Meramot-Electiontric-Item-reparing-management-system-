@@ -1970,4 +1970,154 @@ export async function deleteAiChatSession(sessionId: string, token?: string) {
   return authedRequest(`/ai-chat/sessions/${sessionId}`, token, {
     method: "DELETE",
   });
+}
+
+// ─── Vendor Shop Profile ────────────────────────────────────────────────
+
+export type ShopServiceItem = {
+  id: string;
+  name: string;
+  shortDescription?: string | null;
+  deviceType?: string | null;
+  issueCategory?: string | null;
+  pricingType?: string | null;
+  basePrice?: number | null;
+  estimatedDaysMin?: number | null;
+  estimatedDaysMax?: number | null;
+};
+
+export type SparePartItem = {
+  id: string;
+  name: string;
+  description?: string | null;
+  deviceType?: string | null;
+  brand?: string | null;
+  basePrice?: number | null;
+};
+
+export type AiServiceSuggestionItem = {
+  id: string;
+  name: string;
+  shortDescription?: string | null;
+  deviceType?: string | null;
+  issueCategory?: string | null;
+  pricingType?: string | null;
+  basePrice?: number | null;
+  estimatedDaysMin?: number | null;
+  estimatedDaysMax?: number | null;
+  status?: string;
+};
+
+export type VendorShopProfileData = {
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string | null;
+    logoUrl?: string | null;
+    bannerUrl?: string | null;
+    address: string;
+    city?: string | null;
+    area?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    phone?: string | null;
+    email?: string | null;
+    ratingAvg: number;
+    reviewCount: number;
+    isPublic: boolean;
+    setupComplete: boolean;
+    inspectionFee?: number | null;
+    baseLaborFee?: number | null;
+    pickupFee?: number | null;
+    expressFee?: number | null;
+    specialties: string[];
+    aiSuggestionsEnabled: boolean;
+    services: ShopServiceItem[];
+    spareParts?: SparePartItem[];
+    aiSuggestions?: AiServiceSuggestionItem[];
+  };
+};
+
+export async function getVendorShopProfile(token: string): Promise<VendorShopProfileData> {
+  return authedRequest<VendorShopProfileData>("/vendor/shop-profile", token);
+}
+
+export async function addVendorService(token: string, data: {
+  name: string;
+  shortDescription?: string;
+  deviceType?: string;
+  issueCategory?: string;
+  pricingType?: string;
+  basePrice?: number | null;
+  estimatedDaysMin?: number | null;
+  estimatedDaysMax?: number | null;
+}) {
+  return authedRequest("/vendor/shop-profile/services", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeVendorService(token: string, serviceId: string) {
+  return authedRequest(`/vendor/shop-profile/services/${serviceId}`, token, {
+    method: "DELETE",
+  });
+}
+
+export async function addVendorSparePart(token: string, data: {
+  name: string;
+  description?: string;
+  deviceType?: string;
+  brand?: string;
+  basePrice?: number | null;
+}) {
+  return authedRequest("/vendor/shop-profile/spare-parts", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateVendorSparePart(token: string, sparePartId: string, data: {
+  name?: string;
+  description?: string;
+  deviceType?: string;
+  brand?: string;
+  basePrice?: number | null;
+}) {
+  return authedRequest(`/vendor/shop-profile/spare-parts/${sparePartId}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function removeVendorSparePart(token: string, sparePartId: string) {
+  return authedRequest(`/vendor/shop-profile/spare-parts/${sparePartId}`, token, {
+    method: "DELETE",
+  });
+}
+
+export async function generateAiServiceSuggestions(token: string) {
+  return authedRequest<{ message: string }>("/vendor/shop-profile/ai-suggestions/generate", token, {
+    method: "POST",
+  });
+}
+
+export async function updateAiPreferences(token: string, data: { aiSuggestionsEnabled: boolean }) {
+  return authedRequest("/vendor/shop-profile/ai-suggestions/preferences", token, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function acceptAiServiceSuggestion(token: string, suggestionId: string) {
+  return authedRequest(`/vendor/shop-profile/ai-suggestions/${suggestionId}/accept`, token, {
+    method: "POST",
+  });
+}
+
+export async function rejectAiServiceSuggestion(token: string, suggestionId: string) {
+  return authedRequest(`/vendor/shop-profile/ai-suggestions/${suggestionId}/reject`, token, {
+    method: "POST",
+  });
 }
