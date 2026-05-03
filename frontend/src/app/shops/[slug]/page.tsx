@@ -16,6 +16,8 @@ import {
   getShopBySlug,
   getShopReviews,
   type Shop,
+  type ShopServiceItem,
+  type SparePartItem,
 } from "@/lib/api";
 import { pushLocalNotification } from "@/lib/notifications";
 
@@ -71,6 +73,8 @@ type ShopDetails = Shop & {
   phone?: string | null;
   email?: string | null;
   specialties?: string[];
+  services?: ShopServiceItem[];
+  spareParts?: SparePartItem[];
 };
 
 function getServiceSummary(service: string) {
@@ -296,8 +300,10 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   const [submittingReview, setSubmittingReview] = useState(false);
   const [deletingReview, setDeletingReview] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
+  const [activeTab, setActiveTab] = useState<"services" | "spareParts" | "reviews">("services");
   const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(null);
+  const [servicePage, setServicePage] = useState(1);
+  const [sparePartPage, setSparePartPage] = useState(1);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
   const [selectedReviewText, setSelectedReviewText] = useState<string | null>(null);
@@ -314,12 +320,18 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
     setLoadingShop(true);
     getShopBySlug(slug)
-      .then((data) =>
+      .then((data) => {
         setShop({
           ...data,
           specialties: data.specialties ?? [],
-        }),
-      )
+        });
+        
+        if (data.categories?.includes("SPARE_PARTS") && !data.categories?.includes("IN_SHOP_REPAIR")) {
+          setActiveTab("spareParts");
+        } else {
+          setActiveTab("services");
+        }
+      })
       .catch(() => setShop(null))
       .finally(() => setLoadingShop(false));
 
@@ -359,6 +371,14 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   }, [slug, token]);
 
   const serviceItems = useMemo(() => {
+    if (shop?.services && shop.services.length > 0) {
+      return shop.services.map((s) => ({
+        name: s.name,
+        summary: s.shortDescription || getServiceSummary(s.name).summary,
+        estimate: s.basePrice || getServiceSummary(s.name).estimate,
+      }));
+    }
+
     const items =
       shop?.specialties && shop.specialties.length > 0
         ? shop.specialties
@@ -381,6 +401,17 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
         estimate: estimate !== undefined && !isNaN(estimate) ? estimate : summaryData.estimate,
       };
     });
+  }, [shop]);
+
+  const sparePartItems = useMemo(() => {
+    if (shop?.spareParts && shop.spareParts.length > 0) {
+      return shop.spareParts.map((p) => ({
+        name: `${p.name} ${p.brand ? `(${p.brand})` : ""}`,
+        summary: p.description || "No description provided",
+        estimate: p.basePrice || 0,
+      }));
+    }
+    return [];
   }, [shop]);
 
   const ratingSummary = useMemo(() => {
@@ -832,12 +863,22 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0">
           <div className="mb-4 md:mb-6 flex overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--muted-foreground)] scrollbar-hide">
-            <button
-              onClick={() => { setActiveTab("services"); setShowAllReviews(false); }}
-              className={`px-5 py-3.5 transition ${activeTab === "services" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
-            >
-              Services
-            </button>
+            {(shop.categories?.includes("IN_SHOP_REPAIR") || serviceItems.length > 0) && (
+              <button
+                onClick={() => { setActiveTab("services"); setShowAllReviews(false); setServicePage(1); }}
+                className={`px-5 py-3.5 transition ${activeTab === "services" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+              >
+                Services
+              </button>
+            )}
+            {(shop.categories?.includes("SPARE_PARTS") || sparePartItems.length > 0) && (
+              <button
+                onClick={() => { setActiveTab("spareParts"); setShowAllReviews(false); setSparePartPage(1); }}
+                className={`px-5 py-3.5 transition ${activeTab === "spareParts" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+              >
+                Spare Parts
+              </button>
+            )}
             <button
               onClick={() => { setActiveTab("reviews"); setShowAllReviews(false); setReviewPage(1); }}
               className={`px-5 py-3.5 transition ${activeTab === "reviews" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
@@ -855,8 +896,14 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:block lg:space-y-4">
-                {serviceItems.map((item) => (
+              {!serviceItems.length ? (
+                <div className="py-12 text-center text-[var(--muted-foreground)] bg-[var(--mint-50)] rounded-2xl border border-dashed border-[var(--border)]">
+                  Services Not Listed Yet
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:block lg:space-y-4">
+                    {serviceItems.slice((servicePage - 1) * 3, servicePage * 3).map((item) => (
                   <article
                     key={item.name}
                     className="group flex flex-col justify-between rounded-xl md:rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition hover:-translate-y-0.5 hover:shadow-md lg:flex-row lg:items-start lg:justify-between lg:hover:shadow-sm lg:hover:-translate-y-0 lg:p-5"
@@ -882,18 +929,119 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                       </div>
                     </div>
                     
-                    <div className="lg:flex lg:items-center lg:gap-3 lg:pl-6 lg:mt-0 lg:self-center">
+                      <div className="lg:flex lg:items-center lg:gap-3 lg:pl-6 lg:mt-0 lg:self-center">
+                        <button
+                          type="button"
+                          onClick={() => handleAddService(item)}
+                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white lg:mt-0 lg:h-11 lg:w-auto lg:px-6"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+                          Add
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                  </div>
+                  {serviceItems.length > 3 && (
+                    <div className="mt-6 flex items-center justify-center gap-2">
                       <button
-                        type="button"
-                        onClick={() => handleAddService(item)}
-                        className="mt-4 w-full rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white lg:mt-0 lg:h-11 lg:w-auto lg:inline-flex lg:items-center lg:px-6"
+                        onClick={() => setServicePage(p => Math.max(1, p - 1))}
+                        disabled={servicePage === 1}
+                        className="px-3 py-1 rounded border border-[var(--border)] disabled:opacity-50 text-[var(--foreground)] hover:bg-[var(--mint-50)]"
                       >
-                        Add to cart
+                        Prev
+                      </button>
+                      <span className="text-sm font-medium text-[var(--muted-foreground)]">
+                        Page {servicePage} of {Math.ceil(serviceItems.length / 3)}
+                      </span>
+                      <button
+                        onClick={() => setServicePage(p => Math.min(Math.ceil(serviceItems.length / 3), p + 1))}
+                        disabled={servicePage >= Math.ceil(serviceItems.length / 3)}
+                        className="px-3 py-1 rounded border border-[var(--border)] disabled:opacity-50 text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                      >
+                        Next
                       </button>
                     </div>
-                  </article>
-                ))}
+                  )}
+                </>
+              )}
+            </section>
+          ) : activeTab === "spareParts" ? (
+            <section className="rounded-2xl md:rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-4 md:p-5 shadow-sm">
+              <div className="mb-4 md:mb-5">
+                <h2 className="text-xl md:text-3xl font-bold text-[var(--foreground)]">Available spare parts</h2>
+                <p className="mt-1 text-sm md:text-base text-[var(--muted-foreground)]">
+                  Purchase high-quality parts directly from this shop.
+                </p>
               </div>
+
+              {!sparePartItems.length ? (
+                <div className="py-12 text-center text-[var(--muted-foreground)] bg-[var(--mint-50)] rounded-2xl border border-dashed border-[var(--border)]">
+                  Spare Parts Not Listed Yet
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:block lg:space-y-4">
+                    {sparePartItems.slice((sparePartPage - 1) * 3, sparePartPage * 3).map((item) => (
+                      <article
+                        key={item.name}
+                        className="group flex flex-col justify-between rounded-xl md:rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition hover:-translate-y-0.5 hover:shadow-md lg:flex-row lg:items-start lg:justify-between lg:hover:shadow-sm lg:hover:-translate-y-0 lg:p-5"
+                      >
+                        <div className="lg:flex lg:flex-1 lg:items-start lg:justify-between lg:gap-4">
+                          <div className="lg:min-w-0">
+                            <h3 className="font-bold text-[var(--foreground)] lg:text-xl lg:font-semibold">{item.name}</h3>
+                            <p className="mt-1 text-xs md:text-sm text-[var(--muted-foreground)] lg:mt-2 lg:leading-6">
+                              {item.summary}
+                            </p>
+                            <p className="mt-3 text-lg md:text-xl font-extrabold text-[var(--accent-dark)] lg:hidden">
+                              ৳{item.estimate.toLocaleString("en-BD")}
+                            </p>
+                          </div>
+                          
+                          <div className="hidden lg:block lg:shrink-0 lg:text-right">
+                            <div className="text-lg font-bold text-[var(--foreground)]">
+                              ৳{item.estimate.toLocaleString("en-BD")}
+                            </div>
+                            <div className="text-xs text-[var(--muted-foreground)]">Price</div>
+                          </div>
+                        </div>
+                        
+                        <div className="lg:flex lg:items-center lg:gap-3 lg:pl-6 lg:mt-0 lg:self-center">
+                          <button
+                            type="button"
+                            onClick={() => handleAddService(item)}
+                            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white lg:mt-0 lg:h-11 lg:w-auto lg:px-6"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+                            Add
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  {sparePartItems.length > 3 && (
+                    <div className="mt-6 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setSparePartPage(p => Math.max(1, p - 1))}
+                        disabled={sparePartPage === 1}
+                        className="px-3 py-1 rounded border border-[var(--border)] disabled:opacity-50 text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                      >
+                        Prev
+                      </button>
+                      <span className="text-sm font-medium text-[var(--muted-foreground)]">
+                        Page {sparePartPage} of {Math.ceil(sparePartItems.length / 3)}
+                      </span>
+                      <button
+                        onClick={() => setSparePartPage(p => Math.min(Math.ceil(sparePartItems.length / 3), p + 1))}
+                        disabled={sparePartPage >= Math.ceil(sparePartItems.length / 3)}
+                        className="px-3 py-1 rounded border border-[var(--border)] disabled:opacity-50 text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </section>
           ) : (
             <section className="space-y-6">

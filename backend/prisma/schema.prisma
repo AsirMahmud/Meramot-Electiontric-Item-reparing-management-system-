@@ -346,8 +346,8 @@ model Shop {
   isFeatured          Boolean @default(false)
   isActive            Boolean @default(true)
 
-  isPublic      Boolean @default(false)
-  setupComplete Boolean @default(false)
+  isPublic                  Boolean @default(false)
+  setupComplete             Boolean @default(false)
   liveNotificationsEnabled  Boolean @default(false)
   liveNotificationsPrompted Boolean @default(false)
 
@@ -391,6 +391,16 @@ model Shop {
   escrowLedgers       EscrowLedger[]
   supportTickets      SupportTicket[]
   carts               Cart[]
+
+  aiSuggestionsEnabled   Boolean   @default(true)
+  aiSuggestionFrequency  String    @default("WEEK") // HOUR | DAY | WEEK | MONTH | YEAR
+  lastAiSuggestionPingAt DateTime?
+
+  notifyRelevantByEmail Boolean @default(true)
+  notifyRelevantBySms   Boolean @default(false)
+
+  aiServiceSuggestions AiServiceSuggestion[]
+  spareParts           SparePart[]
 
   @@index([isActive, isFeatured])
   @@index([city, area])
@@ -443,6 +453,44 @@ model ShopService {
   @@index([deviceType, issueCategory])
 }
 
+model AiServiceSuggestion {
+  id             String   @id @default(cuid())
+  shopId         String
+  deviceType     String
+  issueCategory  String
+  suggestedName  String // AI-generated service name
+  suggestedDesc  String? // AI-generated short description
+  suggestedPrice Float? // Optional starting estimate
+  status         String   @default("PENDING") // PENDING | ACCEPTED | DISMISSED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, deviceType, issueCategory])
+  @@index([shopId, status])
+}
+
+model SparePart {
+  id          String   @id @default(cuid())
+  shopId      String
+  name        String
+  description String?
+  deviceType  String?
+  brand       String?
+  basePrice   Float?
+  inStock     Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isActive])
+  @@index([deviceType, brand])
+}
+
 model RepairRequest {
   id                 String        @id @default(cuid())
   userId             String
@@ -466,7 +514,7 @@ model RepairRequest {
   dropoffAddress     String?
   checkupFee         Float?
   quotedFinalAmount  Float?
-  aiSummary          String?   // Cached AI generated summary
+  aiSummary          String? // Cached AI generated summary
   approvedAt         DateTime?
   rejectedAt         DateTime?
   createdAt          DateTime      @default(now())

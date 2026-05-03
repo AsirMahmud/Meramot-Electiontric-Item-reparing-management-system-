@@ -9,6 +9,7 @@ import {
   submitVendorFinalQuote,
   updateVendorAssignedJobStatus,
   upsertVendorBid,
+  getBiddingRequests,
 } from "../controllers/vendor-request-controller.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
@@ -16,6 +17,7 @@ const router = Router();
 
 router.use(requireAuth);
 router.get("/dashboard", getVendorDashboard);
+router.get("/bidding-requests", getBiddingRequests);
 router.get("/analytics", getVendorAnalytics);
 router.get("/my-bids", getVendorMyBids);
 router.post("/:requestId/bids", upsertVendorBid);

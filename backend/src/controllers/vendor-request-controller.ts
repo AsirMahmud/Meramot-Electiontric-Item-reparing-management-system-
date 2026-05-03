@@ -384,7 +384,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
           }
         : {};
 
-    const biddingRequests = await prisma.repairRequest.findMany({
+    const relevantRequestCount = await prisma.repairRequest.count({
       where: {
         status: RequestStatus.BIDDING,
         bids: { none: { shopId: shop.id } },
@@ -398,97 +398,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
           },
         ],
       },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        deviceType: true,
-        brand: true,
-        model: true,
-        issueCategory: true,
-        problem: true,
-        mode: true,
-        preferredPickup: true,
-        deliveryType: true,
-        status: true,
-        aiSummary: true,
-        createdAt: true,
-        requestedShopId: true,
-        _count: { select: { bids: true } },
-        bids: {
-          where: { shopId: shop.id },
-          take: 1,
-          select: {
-            id: true,
-            partsCost: true,
-            laborCost: true,
-            totalCost: true,
-            estimatedDays: true,
-            notes: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
     });
-
-    // Build a map of lowest bid per request for competitive context
-    const requestIds = biddingRequests.map((r) => r.id);
-    const lowestBids = await prisma.bid.groupBy({
-      by: ["repairRequestId"],
-      where: { repairRequestId: { in: requestIds }, status: BidStatus.ACTIVE },
-      _min: { totalCost: true },
-    });
-    const lowestBidMap = new Map(
-      lowestBids.map((lb) => [lb.repairRequestId, lb._min.totalCost])
-    );
-
-    const relevantRequests = biddingRequests
-      .map((request) => {
-        const isExplicitlyRequested = request.requestedShopId === shop.id;
-        const relevance = isExplicitlyRequested 
-          ? { isRelevant: true, score: 100, reasons: ["Customer directly requested your shop"] }
-          : buildRelevance(request, shop.specialties);
-        const myBid = request.bids[0] ?? null;
-
-        if (!relevance.isRelevant && !myBid) {
-          return null;
-        }
-
-        return {
-          id: request.id,
-          title: request.title,
-          description: request.description,
-          deviceType: request.deviceType,
-          brand: request.brand,
-          model: request.model,
-          issueCategory: request.issueCategory,
-          problem: request.problem,
-          mode: request.mode,
-          preferredPickup: request.preferredPickup,
-          deliveryType: request.deliveryType,
-          status: request.status,
-          createdAt: request.createdAt,
-          bidCount: request._count.bids,
-          lowestBidAmount: lowestBidMap.get(request.id) ?? null,
-          myBid,
-          relevanceScore: relevance.score,
-          matchReasons: relevance.reasons,
-          isExplicitlyRequested,
-        };
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const left = a as NonNullable<typeof a>;
-        const right = b as NonNullable<typeof b>;
-        if (right.relevanceScore !== left.relevanceScore) {
-          return right.relevanceScore - left.relevanceScore;
-        }
-        return right.createdAt.getTime() - left.createdAt.getTime();
-      });
 
     const myBids = await prisma.bid.findMany({
       where: { shopId: shop.id },
@@ -616,7 +526,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
       application,
       shop,
       stats: {
-        relevantRequestCount: relevantRequests.length,
+        relevantRequestCount,
         activeBidCount: myBids.filter((bid) => bid.status === BidStatus.ACTIVE).length,
         assignedJobCount: assignedJobs.length,
         waitingApprovalCount: assignedJobs.filter(
@@ -626,7 +536,6 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
         pendingOrderCount: pendingOrders.length,
       },
       pendingOrders,
-      relevantRequests,
       myBids,
       assignedJobs,
     });
@@ -909,6 +818,29 @@ export async function upsertVendorBid(req: AuthedRequest, res: Response) {
         updatedAt: true,
       },
     });
+
+    // Auto-learn skills from bid participation
+    const request = await prisma.repairRequest.findUnique({
+      where: { id: requestId },
+      select: { deviceType: true, issueCategory: true }
+    });
+
+    if (request) {
+      const newSkills: string[] = [];
+      if (request.deviceType && !shop.specialties.includes(request.deviceType)) {
+        newSkills.push(request.deviceType);
+      }
+      if (request.issueCategory && !shop.specialties.includes(request.issueCategory)) {
+        newSkills.push(request.issueCategory);
+      }
+
+      if (newSkills.length > 0) {
+        await prisma.shop.update({
+          where: { id: shop.id },
+          data: { specialties: { push: newSkills } }
+        });
+      }
+    }
 
     return res.status(existingBid ? 200 : 201).json({
       message: existingBid ? "Bid updated successfully" : "Bid placed successfully",
@@ -1570,6 +1502,144 @@ export async function declineExplicitRequest(req: AuthedRequest, res: Response) 
     });
   } catch (error) {
     console.error("declineExplicitRequest error:", error);
+    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function getBiddingRequests(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const filter = (req.query.filter as string) === "all" ? "all" : "relevant";
+    const sort = (req.query.sort as string) === "oldest" ? "asc" : "desc";
+
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    if (role !== "VENDOR") return res.status(403).json({ message: "Vendor access only" });
+
+    const { shop } = await getVendorContext(userId);
+
+    let whereClause: any = {
+      status: RequestStatus.BIDDING,
+      bids: { none: { shopId: shop.id } },
+      OR: [
+        { requestedShopId: null },
+        { requestedShopId: shop.id },
+      ],
+    };
+
+    if (filter === "relevant") {
+      if (!shop.specialties || shop.specialties.length === 0) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+
+      const specialtyTokens = shop.specialties
+        .flatMap((s: string) =>
+          s.toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter((t: string) => t.length > 1),
+        );
+      const uniqueTokens = Array.from(new Set(specialtyTokens));
+
+      const specialtyFilter = uniqueTokens.length > 0
+        ? {
+            OR: uniqueTokens.flatMap((token: string) => [
+              { deviceType: { contains: token, mode: "insensitive" as const } },
+              { brand: { contains: token, mode: "insensitive" as const } },
+              { issueCategory: { contains: token, mode: "insensitive" as const } },
+              { title: { contains: token, mode: "insensitive" as const } },
+              { problem: { contains: token, mode: "insensitive" as const } },
+            ]),
+          }
+        : {};
+
+      whereClause = {
+        ...whereClause,
+        OR: [
+          {
+            requestedShopId: null,
+            ...(Object.keys(specialtyFilter).length > 0 ? specialtyFilter : {}),
+          },
+          {
+            requestedShopId: shop.id,
+          },
+        ],
+      };
+    }
+
+    const total = await prisma.repairRequest.count({ where: whereClause });
+    const requests = await prisma.repairRequest.findMany({
+      where: whereClause,
+      orderBy: { createdAt: sort },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deviceType: true,
+        brand: true,
+        model: true,
+        issueCategory: true,
+        problem: true,
+        mode: true,
+        preferredPickup: true,
+        deliveryType: true,
+        status: true,
+        aiSummary: true,
+        createdAt: true,
+        requestedShopId: true,
+        _count: { select: { bids: true } },
+      },
+    });
+
+    const requestIds = requests.map((r) => r.id);
+    const lowestBids = await prisma.bid.groupBy({
+      by: ["repairRequestId"],
+      where: { repairRequestId: { in: requestIds }, status: BidStatus.ACTIVE },
+      _min: { totalCost: true },
+    });
+    const lowestBidMap = new Map(
+      lowestBids.map((lb) => [lb.repairRequestId, lb._min.totalCost])
+    );
+
+    const data = requests.map((reqItem) => {
+      const isExplicitlyRequested = reqItem.requestedShopId === shop.id;
+      const relevance = isExplicitlyRequested 
+        ? { score: 100, reasons: ["Customer directly requested your shop"] }
+        : buildRelevance(reqItem, shop.specialties);
+
+      return {
+        id: reqItem.id,
+        title: reqItem.title,
+        description: reqItem.description,
+        deviceType: reqItem.deviceType,
+        brand: reqItem.brand,
+        model: reqItem.model,
+        issueCategory: reqItem.issueCategory,
+        problem: reqItem.problem,
+        mode: reqItem.mode,
+        preferredPickup: reqItem.preferredPickup,
+        deliveryType: reqItem.deliveryType,
+        status: reqItem.status,
+        createdAt: reqItem.createdAt,
+        bidCount: reqItem._count.bids,
+        lowestBidAmount: lowestBidMap.get(reqItem.id) ?? null,
+        relevanceScore: relevance.score,
+        matchReasons: relevance.reasons,
+        isExplicitlyRequested,
+      };
+    });
+
+    return res.json({
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error("getBiddingRequests error:", error);
     if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }

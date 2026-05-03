@@ -14,6 +14,7 @@ import aiChatHistoryRoutes from "./ai-chat-history-routes.js";
 import vendorApplicationRoutes from "./vendor-application-routes.js";
 import vendorRequestRoutes from "./vendor-request-routes.js";
 import vendorStatusRoutes from "./vendor-status-routes.js";
+import { vendorShopProfileRoutes } from "./vendor-shop-profile-routes.js";
 import uploadRoutes from "./upload-routes.js";
 import invoiceRoutes from "./invoice-routes.js";
 
@@ -54,6 +55,7 @@ router.use("/ai-chat", aiChatHistoryRoutes);
 router.use("/vendor/applications", vendorApplicationRoutes);
 router.use("/vendor/application-status", vendorStatusRoutes);
 router.use("/vendor/requests", vendorRequestRoutes);
+router.use("/vendor/shop-profile", vendorShopProfileRoutes);
 router.use("/uploads", uploadRoutes);
 router.use(invoiceRoutes);
 

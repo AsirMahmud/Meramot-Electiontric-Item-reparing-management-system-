@@ -692,7 +692,7 @@ export type VendorDashboardData = {
     user: { name?: string | null; email?: string | null; phone?: string | null };
     payments: Array<{ method?: string | null; status: string; amount: number }>;
   }>;
-  relevantRequests: Array<{
+  relevantRequests?: Array<{
     id: string;
     title: string;
     description?: string | null;
@@ -875,6 +875,42 @@ export async function respondToFinalQuote(
 
 export function getVendorDashboard(token: string) {
   return authedRequest<VendorDashboardData>("/vendor/requests/dashboard", token);
+}
+
+export type BiddingRequestsResponse = {
+  data: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    issueCategory?: string | null;
+    problem: string;
+    aiSummary?: string | null;
+    mode: string;
+    preferredPickup: boolean;
+    deliveryType?: string | null;
+    status: string;
+    createdAt: string;
+    bidCount: number;
+    lowestBidAmount?: number | null;
+    relevanceScore: number;
+    matchReasons: string[];
+    myBid?: BidItem | null;
+    isExplicitlyRequested?: boolean;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export function getBiddingRequests(token: string, page = 1, limit = 20, filter = "relevant", sort = "desc") {
+  return authedRequest<BiddingRequestsResponse>(
+    `/vendor/requests/bidding-requests?page=${page}&limit=${limit}&filter=${filter}&sort=${sort}`,
+    token
+  );
 }
 
 export function getVendorAnalytics(token: string) {

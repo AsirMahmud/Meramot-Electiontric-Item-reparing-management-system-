@@ -272,6 +272,31 @@ export async function getShopBySlug(req: Request, res: Response) {
       categories: true,
       specialties: true,
       createdAt: true,
+      services: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          shortDescription: true,
+          deviceType: true,
+          issueCategory: true,
+          pricingType: true,
+          basePrice: true,
+        }
+      },
+      spareParts: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          deviceType: true,
+          brand: true,
+          basePrice: true,
+          inStock: true,
+        }
+      }
     },
   });
 

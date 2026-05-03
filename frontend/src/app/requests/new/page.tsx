@@ -93,6 +93,7 @@ function NewRequestPageInner() {
     deviceType: "Laptop",
     brand: "",
     model: "",
+    displaySize: "",
     issueCategory: "Checkup and diagnosis",
     problem: "",
     mode: shopSlug ? "DIRECT_REPAIR" : "CHECKUP_AND_REPAIR",
@@ -355,7 +356,7 @@ function NewRequestPageInner() {
                     description: "",
                     deviceType: form.deviceType,
                     brand: form.brand,
-                    model: form.model,
+                    model: form.deviceType === "Laptop" && form.displaySize.trim() ? `${form.model} (${form.displaySize})` : form.model,
                     issueCategory: form.issueCategory,
                     problem: form.problem,
                     mode: form.mode,
@@ -476,6 +477,17 @@ function NewRequestPageInner() {
                   </span>
                 )}
               </div>
+
+              {form.deviceType === "Laptop" && (
+                <div className="relative md:col-span-2">
+                  <input
+                    value={form.displaySize}
+                    onChange={(e) => setForm((prev) => ({ ...prev, displaySize: e.target.value }))}
+                    className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]"
+                    placeholder="Display Size (e.g. 15.6&quot;)"
+                  />
+                </div>
+              )}
 
               {/* AI Assistant Suggestions spanning both columns */}
               <div className="md:col-span-2">

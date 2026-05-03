@@ -14,6 +14,8 @@ import {
   updateVendorNotificationPreferences,
   acceptPendingOrder,
   rejectPendingOrder,
+  getBiddingRequests,
+  type BiddingRequestsResponse,
   type FinalQuoteItem,
   type VendorDashboardData,
 } from "@/lib/api";
@@ -98,7 +100,7 @@ function getQuoteRows(items?: FinalQuoteItem[] | null): QuoteRowDraft[] {
 
 function buildBidDraft(
   dashboard: VendorDashboardData,
-  requestItem: VendorDashboardData["relevantRequests"][number]
+  requestItem: any
 ): BidDraft {
   const existingParts: PartRow[] =
     typeof requestItem.myBid?.partsCost === "number" && requestItem.myBid.partsCost > 0
@@ -189,6 +191,12 @@ export default function VendorDashboardPage() {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
 
+  const [biddingData, setBiddingData] = useState<BiddingRequestsResponse | null>(null);
+  const [biddingPage, setBiddingPage] = useState(1);
+  const [biddingFilter, setBiddingFilter] = useState("relevant");
+  const [biddingSort, setBiddingSort] = useState("desc");
+  const [loadingBidding, setLoadingBidding] = useState(false);
+
   const loadDashboard = useCallback(async () => {
     if (!token) {
       setDashboard(null);
@@ -201,12 +209,6 @@ export default function VendorDashboardPage() {
       const data = await getVendorDashboard(token);
       setDashboard(data);
       setFlash(null);
-
-      const nextBidDrafts: Record<string, BidDraft> = {};
-      for (const requestItem of data.relevantRequests) {
-        nextBidDrafts[requestItem.id] = buildBidDraft(data, requestItem);
-      }
-      setBidDrafts(nextBidDrafts);
 
       const nextJobStatuses: Record<string, string> = {};
       const nextFinalQuoteDrafts: Record<string, FinalQuoteDraft> = {};
@@ -227,6 +229,25 @@ export default function VendorDashboardPage() {
     }
   }, [token]);
 
+  const loadBiddingRequests = useCallback(async (page: number, filter: string, sort: string, currentDashboard: VendorDashboardData | null) => {
+    if (!token || !currentDashboard) return;
+    try {
+      setLoadingBidding(true);
+      const data = await getBiddingRequests(token, page, 5, filter, sort);
+      setBiddingData(data);
+      
+      const nextBidDrafts: Record<string, BidDraft> = {};
+      for (const requestItem of data.data) {
+        nextBidDrafts[requestItem.id] = buildBidDraft(currentDashboard, requestItem);
+      }
+      setBidDrafts((prev) => ({ ...prev, ...nextBidDrafts }));
+    } catch (error) {
+      console.error("Could not load bidding requests:", error);
+    } finally {
+      setLoadingBidding(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (status === "loading") return;
 
@@ -242,6 +263,12 @@ export default function VendorDashboardPage() {
 
     void loadDashboard();
   }, [loadDashboard, role, router, session, status]);
+
+  useEffect(() => {
+    if (dashboard) {
+      void loadBiddingRequests(biddingPage, biddingFilter, biddingSort, dashboard);
+    }
+  }, [dashboard, biddingPage, biddingFilter, biddingSort, loadBiddingRequests]);
 
   useEffect(() => {
     if (dashboard && dashboard.shop.setupComplete && dashboard.shop.liveNotificationsPrompted === false) {
@@ -350,7 +377,7 @@ export default function VendorDashboardPage() {
     const totalOffer = partsCost + laborCost;
 
     // Build contextual message
-    const requestItem = dashboard?.relevantRequests.find((r) => r.id === requestId);
+    const requestItem = biddingData?.data.find((r) => r.id === requestId);
     const bidCount = requestItem?.bidCount ?? 0;
     const lowestBid = requestItem?.lowestBidAmount ?? null;
 
@@ -397,6 +424,7 @@ export default function VendorDashboardPage() {
       });
       setFlash({ type: "success", text: "Offer saved successfully." });
       await loadDashboard();
+      if (dashboard) void loadBiddingRequests(biddingPage, biddingFilter, biddingSort, dashboard);
     } catch (error) {
       setPendingKey(null);
       setFlash({
@@ -419,6 +447,7 @@ export default function VendorDashboardPage() {
       await (await import("@/lib/api")).declineExplicitRequest(token, requestId);
       setFlash({ type: "success", text: "Request declined successfully." });
       await loadDashboard();
+      if (dashboard) void loadBiddingRequests(biddingPage, biddingFilter, biddingSort, dashboard);
     } catch (error) {
       setPendingKey(null);
       setFlash({
@@ -631,6 +660,12 @@ export default function VendorDashboardPage() {
             >
               Edit shop setup
             </Link>
+            <Link
+              href="/vendor/shop-profile"
+              className="flex-1 rounded-full border border-[#214c34] bg-[#214c34] px-4 py-2.5 text-center text-sm font-semibold text-white md:flex-none md:px-5 md:py-3"
+            >
+              Manage Services & Parts
+            </Link>
           </div>
         </div>
 
@@ -830,7 +865,31 @@ export default function VendorDashboardPage() {
         <section id="relevant-requests" className="mt-6 scroll-mt-6 md:mt-8">
           <div className="mb-3 flex flex-col gap-2 md:mb-4 md:flex-row md:items-center md:justify-between md:gap-3">
             <div>
-              <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Relevant repair requests</h2>
+              <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Repair requests</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <select
+                  value={biddingFilter}
+                  onChange={(e) => {
+                    setBiddingPage(1);
+                    setBiddingFilter(e.target.value);
+                  }}
+                  className="rounded-full border border-[#cfe0c6] bg-white px-3 py-1 text-sm outline-none font-medium text-[#214c34]"
+                >
+                  <option value="all">All Requests</option>
+                  <option value="relevant">Relevant to My Skills</option>
+                </select>
+                <select
+                  value={biddingSort}
+                  onChange={(e) => {
+                    setBiddingPage(1);
+                    setBiddingSort(e.target.value);
+                  }}
+                  className="rounded-full border border-[#cfe0c6] bg-white px-3 py-1 text-sm outline-none font-medium text-[#214c34]"
+                >
+                  <option value="desc">Newest First</option>
+                  <option value="asc">Oldest First</option>
+                </select>
+              </div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-full border border-[#cfe0c6]">
@@ -862,16 +921,22 @@ export default function VendorDashboardPage() {
               </label>
               <button
                 type="button"
-                onClick={() => void loadDashboard()}
-                className="w-full rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34] sm:w-auto md:py-3"
+                onClick={() => void loadBiddingRequests(biddingPage, biddingFilter, biddingSort, dashboard)}
+                disabled={loadingBidding}
+                className="w-full rounded-full border border-[#214c34] bg-white px-5 py-2.5 text-sm font-semibold text-[#214c34] sm:w-auto md:py-3 disabled:opacity-50"
               >
-                Refresh
+                {loadingBidding ? "Loading..." : "Refresh"}
               </button>
             </div>
           </div>
 
-          <div className="space-y-5">
-            {dashboard.relevantRequests.map((requestItem) => {
+          <div className="space-y-5 relative">
+            {loadingBidding && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-[2rem]">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#214c34] border-t-transparent" />
+              </div>
+            )}
+            {biddingData?.data.map((requestItem) => {
               const draft = bidDrafts[requestItem.id] || buildBidDraft(dashboard, requestItem);
               const isSubmitting = pendingKey === `bid:${requestItem.id}`;
               const partsTotal = draft.parts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0);
@@ -1145,11 +1210,35 @@ export default function VendorDashboardPage() {
               );
             })}
 
-            {!dashboard.relevantRequests.length ? (
+            {(!biddingData?.data || !biddingData.data.length) ? (
               <div className="rounded-[1.5rem] bg-white p-5 text-sm text-[#355541] shadow-sm md:rounded-[2rem] md:p-8">
-                No repair requests currently match your configured skill tags. Update your specialties if you want to broaden what you see.
+                No repair requests currently match your filters.
               </div>
             ) : null}
+
+            {biddingData && biddingData.totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  disabled={biddingPage === 1 || loadingBidding}
+                  onClick={() => setBiddingPage(biddingPage - 1)}
+                  className="rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#214c34] disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-medium text-[#355541]">
+                  Page {biddingPage} of {biddingData.totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={biddingPage === biddingData.totalPages || loadingBidding}
+                  onClick={() => setBiddingPage(biddingPage + 1)}
+                  className="rounded-full border border-[#cfe0c6] bg-white px-4 py-2 text-sm font-semibold text-[#214c34] disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </section>
 

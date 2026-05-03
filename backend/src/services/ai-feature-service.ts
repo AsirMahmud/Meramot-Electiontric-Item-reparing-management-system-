@@ -179,3 +179,67 @@ Format: { "issueCategory": "...", "isNew": false }`;
     return { ok: false, issueCategory: null };
   }
 }
+
+export async function suggestVendorServices(input: {
+  specialties: string[];
+  existingServiceNames: string[];
+}) {
+  if (!env.groqApiKey) {
+    return { ok: false, suggestions: [] };
+  }
+
+  const systemContent = `You are a business assistant for electronics repair shops.
+Based on the shop's specialties (device types, issue categories) and their current services, suggest 3 to 5 new, relevant repair services they could offer.
+Make sure NOT to suggest services they already offer.
+Provide the output strictly as a JSON array of objects. Do not use markdown blocks.
+Each object must have:
+- "suggestedName" (string, professional name of the service)
+- "deviceType" (string, e.g., "Mobile Phone", "Laptop", "Appliance")
+- "issueCategory" (string, e.g., "Screen or display", "Battery or charging", "Motherboard repair")
+- "suggestedDesc" (string, short 1-sentence description)
+- "suggestedPrice" (number, a reasonable starting base price in BDT, or null if it varies wildly)
+
+Format:
+{
+  "suggestions": [
+    {
+      "suggestedName": "iPhone Screen Replacement",
+      "deviceType": "Mobile Phone",
+      "issueCategory": "Screen or display",
+      "suggestedDesc": "High-quality screen replacement for iPhones.",
+      "suggestedPrice": 2500
+    }
+  ]
+}`;
+
+  const userPrompt = `Specialties: ${input.specialties.join(", ") || "General Repair"}\nExisting Services: ${input.existingServiceNames.join(", ") || "None"}`;
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.groqApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) return { ok: false, suggestions: [] };
+
+    const content = data.choices[0].message.content.trim();
+    const parsed = JSON.parse(content);
+    return { ok: true, suggestions: parsed.suggestions || [] };
+  } catch (err) {
+    console.error("suggestVendorServices error:", err);
+    return { ok: false, suggestions: [] };
+  }
+}
