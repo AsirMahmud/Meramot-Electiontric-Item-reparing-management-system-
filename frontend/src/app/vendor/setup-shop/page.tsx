@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { MapPin, ImagePlus, X } from "lucide-react";
+import { MapPin, ImagePlus, Loader2, X } from "lucide-react";
 import { completeVendorShopSetup, getVendorApplicationStatus, getShops } from "@/lib/api";
-import { UploadDropzone } from "@/lib/uploadthing";
+import { useUploadThing } from "@/lib/uploadthing";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import type { StoredLocation } from "@/components/location/types";
 import { forwardGeocode } from "@/components/location/location-utils";
@@ -92,6 +92,26 @@ export default function VendorSetupShopPage() {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const { startUpload } = useUploadThing("shopLogoUploader");
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setFormError("");
+    try {
+      const res = await startUpload([file]);
+      if (res?.[0]?.ufsUrl) {
+        setLogoUrl(res[0].ufsUrl);
+      }
+    } catch (err) {
+      setFormError(`Logo upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
    useEffect(() => {
     if (status === "loading") return;
 
@@ -363,40 +383,24 @@ if (app) {
                       <X size={14} />
                     </button>
                   </>
+                ) : logoUploading ? (
+                  <div className="flex h-full w-full flex-col items-center justify-center text-accent-dark">
+                    <Loader2 size={24} className="mb-1 animate-spin" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Uploading…</span>
+                  </div>
                 ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground">
+                  <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-muted-foreground transition-colors hover:text-accent-dark">
                     <ImagePlus size={24} className="mb-1" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Logo</span>
-                  </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                  </label>
                 )}
               </div>
-              <div className="flex-1 text-center sm:text-left">
+              <div className="text-center sm:text-left">
                 <p className="text-sm font-medium text-slate-700 md:text-lg">Shop Logo (Optional)</p>
                 <p className="mt-1 max-w-sm text-xs leading-relaxed text-slate-500 md:text-sm">
                   Upload an optional logo or photo to make your shop stand out. A square image works best.
                 </p>
-                {!logoUrl && (
-                  <div className="mt-3">
-                    <UploadDropzone
-                      endpoint="shopLogoUploader"
-                      onClientUploadComplete={(res) => {
-                        if (res?.[0]?.ufsUrl) {
-                          setLogoUrl(res[0].ufsUrl);
-                        }
-                      }}
-                      onUploadError={(err) => {
-                        setFormError(`Logo upload failed: ${err.message}`);
-                      }}
-                      config={{ mode: "auto" }}
-                      appearance={{
-                        container: "border-2 border-dashed border-border rounded-2xl bg-[var(--mint-50)] p-3 cursor-pointer hover:border-accent-dark transition",
-                        label: "text-xs font-semibold text-accent-dark",
-                        allowedContent: "text-[10px] text-slate-500",
-                        button: "bg-accent-dark text-white text-xs font-bold rounded-xl px-3 py-1.5 ut-uploading:bg-accent-dark/60",
-                      }}
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
