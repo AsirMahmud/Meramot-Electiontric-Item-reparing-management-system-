@@ -43,29 +43,30 @@ export async function generateAiRepairReply(input: AiChatInput) {
     };
   }
 
-  if (!env.groqApiKey) {
-    throw new Error("GROQ_API_KEY is missing");
+  if (!env.geminiApiKey) {
+    throw new Error("GEMINI_API_KEY is missing");
   }
 
-  const messages = [
-    { role: "system", content: SYSTEM_PROMPT },
+  const contents = [
+    { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+    { role: "model", parts: [{ text: "Understood. I am Meramot AI. How can I help you today?" }] },
     ...(input.history ?? []).map((turn) => ({
-      role: turn.role,
-      content: turn.text,
+      role: turn.role === "assistant" ? "model" : "user",
+      parts: [{ text: turn.text }],
     })),
-    { role: "user", content: input.message },
+    { role: "user", parts: [{ text: input.message }] },
   ];
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.geminiApiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${env.groqApiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages,
-      temperature: 0.4,
+      contents,
+      generationConfig: {
+        temperature: 0.4,
+      },
     }),
   });
 
@@ -75,12 +76,12 @@ export async function generateAiRepairReply(input: AiChatInput) {
     throw new Error(
       data?.error?.message ||
         data?.message ||
-        `Groq request failed with status ${response.status}`
+        `Gemini request failed with status ${response.status}`
     );
   }
 
   const reply =
-    data?.choices?.[0]?.message?.content?.trim() ||
+    data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
     "Sorry, I could not generate a response right now.";
 
   return {
