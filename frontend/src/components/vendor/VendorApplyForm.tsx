@@ -14,6 +14,7 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
 import { ImagePlus, Loader2, MapPin, X } from "lucide-react";
 import { validateEmail } from "@/lib/validate-email";
+import { validateBDPhone } from "@/lib/validate-phone";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { StoredLocation } from "@/components/location/types";
 
@@ -243,9 +244,8 @@ export default function VendorApplyForm() {
       const emailError = validateEmail(form.businessEmail);
       if (emailError) throw new Error(emailError);
 
-      if (!form.phone.trim()) {
-        throw new Error("Phone is required.");
-      }
+      const phoneError = validateBDPhone(form.phone);
+      if (phoneError) throw new Error(phoneError);
 
       if (!form.shopName.trim()) {
         throw new Error("Shop name is required.");
@@ -412,7 +412,9 @@ export default function VendorApplyForm() {
             <label htmlFor="vendorBusinessEmail" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Business email</label>
             <input
               id="vendorBusinessEmail"
-              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
+              className={`rounded-2xl border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3 ${
+                form.businessEmail && validateEmail(form.businessEmail) ? "border-red-400" : "border-border"
+              }`}
               placeholder="Business email"
               type="email"
               name="vendorBusinessEmail"
@@ -422,13 +424,18 @@ export default function VendorApplyForm() {
                 setForm((prev) => ({ ...prev, businessEmail: e.target.value }))
               }
             />
+            {form.businessEmail && validateEmail(form.businessEmail) && (
+              <p className="text-[11px] text-red-500 pl-1 mt-0.5">{validateEmail(form.businessEmail)}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
             <label htmlFor="vendorPhone" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Phone</label>
             <input
               id="vendorPhone"
-              className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
+              className={`rounded-2xl border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3 ${
+                form.phone && validateBDPhone(form.phone) ? "border-red-400" : "border-border"
+              }`}
               placeholder="01XXXXXXXXX"
               type="tel"
               pattern="^(?:\+?8801|01)[3-9]\d{8}$"
@@ -438,6 +445,9 @@ export default function VendorApplyForm() {
               value={form.phone}
               onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
             />
+            {form.phone && validateBDPhone(form.phone) && (
+              <p className="text-[11px] text-red-500 pl-1 mt-0.5">{validateBDPhone(form.phone)}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">

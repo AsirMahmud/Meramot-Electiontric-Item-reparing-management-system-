@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MapPin, ImagePlus, Loader2, X } from "lucide-react";
 import { completeVendorShopSetup, getVendorApplicationStatus, getShops } from "@/lib/api";
 import { useUploadThing } from "@/lib/uploadthing";
+import { validateBDPhone } from "@/lib/validate-phone";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import type { StoredLocation } from "@/components/location/types";
 import { forwardGeocode } from "@/components/location/location-utils";
@@ -268,7 +269,8 @@ if (app) {
 
     function validateForm() {
     if (!shopName.trim()) return "Shop name is required";
-    if (!phone.trim()) return "Phone number is required";
+    const phoneError = validateBDPhone(phone);
+    if (phoneError) return phoneError;
     if (!address.trim()) return "Address is required";
     if (!courierPickup && !inShopRepair && !spareParts) {
       return "Select at least one service option";
