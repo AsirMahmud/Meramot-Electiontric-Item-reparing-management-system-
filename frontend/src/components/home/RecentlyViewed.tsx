@@ -8,7 +8,7 @@ export default function RecentlyViewed() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
           Recently viewed
         </p>
-        <h2 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
+        <h2 className="text-lg font-bold text-[var(--foreground)] md:text-2xl lg:text-3xl">
           Jump back into previous repair searches
         </h2>
       </div>
@@ -18,7 +18,7 @@ export default function RecentlyViewed() {
           <Link
             key={item.label}
             href={item.href}
-            className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm text-[var(--foreground)] shadow-sm transition hover:bg-[var(--mint-50)]"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium leading-none text-[var(--foreground)] shadow-sm transition hover:bg-[var(--mint-50)]"
           >
             {item.label}
           </Link>

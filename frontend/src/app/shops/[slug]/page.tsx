@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import { formatServiceTitle } from "@/lib/utils";
 import LocationPickerModal from "@/components/location/LocationPickerModal";
 import { useSelectedLocation } from "@/components/location/useSelectedLocation";
 import type { StoredLocation } from "@/components/location/types";
 import {
   addServiceToCart,
   createReview,
+  deleteReview,
   getReviewEligibility,
   getShopBySlug,
   getShopReviews,
@@ -282,6 +284,7 @@ function addGuestServiceToCart(shop: ShopDetails, item: { name: string; estimate
 export default function ShopDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState("");
   const [shop, setShop] = useState<ShopDetails | null>(null);
+  const [loadingShop, setLoadingShop] = useState(true);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [eligibility, setEligibility] = useState<ReviewEligibilityState | null>(null);
   const [score, setScore] = useState(5);
@@ -291,10 +294,13 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   const [reviewToast, setReviewToast] = useState("");
   const [addingService, setAddingService] = useState<string | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(
-  null
-);
+  const [activeTab, setActiveTab] = useState<"services" | "reviews">("services");
+  const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [selectedReviewText, setSelectedReviewText] = useState<string | null>(null);
   const { data: session } = useSession();
   const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
   const { selectedLocation, saveLocation } = useSelectedLocation(!!session?.user);
@@ -306,6 +312,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
   useEffect(() => {
     if (!slug) return;
 
+    setLoadingShop(true);
     getShopBySlug(slug)
       .then((data) =>
         setShop({
@@ -313,7 +320,8 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           specialties: data.specialties ?? [],
         }),
       )
-      .catch(() => setShop(null));
+      .catch(() => setShop(null))
+      .finally(() => setLoadingShop(false));
 
     getShopReviews(slug).then(setReviews).catch(() => setReviews([]));
   }, [slug]);
@@ -356,10 +364,23 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
         ? shop.specialties
         : ["General diagnostics", "Battery replacement", "Screen repair"];
 
-    return items.map((item) => ({
-      name: item,
-      ...getServiceSummary(item),
-    }));
+    return items.map((item) => {
+      let name = item;
+      let estimate = undefined;
+      
+      if (item.includes("|")) {
+        const parts = item.split("|");
+        name = parts[0];
+        estimate = Number(parts[1]);
+      }
+
+      const summaryData = getServiceSummary(name);
+      return {
+        name: formatServiceTitle(name),
+        summary: summaryData.summary,
+        estimate: estimate !== undefined && !isNaN(estimate) ? estimate : summaryData.estimate,
+      };
+    });
   }, [shop]);
 
   const ratingSummary = useMemo(() => {
@@ -395,12 +416,18 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
     setSubmittingReview(true);
     setMessage("");
 
+    const finalReviewText = reviewText.trim();
+    const payload = { 
+      score, 
+      ...(finalReviewText ? { review: finalReviewText } : {}) 
+    };
+
     try {
       if (existingReview?.id && existingReview.canEdit) {
-        await updateReviewRequest(shop.slug, existingReview.id, { score, review: reviewText }, token);
+        await updateReviewRequest(shop.slug, existingReview.id, payload, token);
         setReviewToast("Review updated successfully.");
       } else {
-        await createReview(shop.slug, { score, review: reviewText }, token);
+        await createReview(shop.slug, payload, token);
         setReviewToast("Review submitted successfully.");
 
         pushLocalNotification({
@@ -415,6 +442,24 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
       setMessage(error instanceof Error ? error.message : "Could not save review.");
     } finally {
       setSubmittingReview(false);
+    }
+  }
+
+  async function handleDeleteReview(reviewId: string) {
+    if (!token || !shop) return;
+    if (!window.confirm("Are you sure you want to delete your review?")) return;
+
+    setDeletingReview(true);
+    try {
+      await deleteReview(shop.slug, reviewId, token);
+      setReviewToast("Review deleted successfully.");
+      await refreshReviewsAndEligibility();
+      setScore(5);
+      setReviewText("");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not delete review.");
+    } finally {
+      setDeletingReview(false);
     }
   }
 
@@ -616,10 +661,10 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
     }
   }
 
-  if (!shop) {
+  if (loadingShop) {
     return (
       <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        <Navbar />
+        <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
         <div className="mx-auto max-w-6xl px-4 py-10 text-[var(--foreground)]">
           Loading shop...
         </div>
@@ -627,13 +672,80 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
     );
   }
 
+  if (!shop) {
+    return (
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
+        <div className="mx-auto max-w-6xl px-4 py-10 text-[var(--foreground)]">
+          Shop not found or could not be loaded.
+        </div>
+      </main>
+    );
+  }
+
+  const WriteReviewForm = (
+    <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
+        {isEditingReview ? "Edit your review" : "Write a review"}
+      </p>
+      <h2 className="mt-2 text-3xl font-bold text-[var(--foreground)]">
+        Rate this shop
+      </h2>
+
+      {!session?.user && (
+        <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
+          Log in to review this shop.
+        </p>
+      )}
+
+      {session?.user && eligibility?.hasExistingReview && !existingReview?.canEdit && (
+        <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
+          You already reviewed this shop. The 6-month edit window has expired.
+        </p>
+      )}
+
+      {session?.user && (!eligibility?.hasExistingReview || existingReview?.canEdit) && (
+        <form className="mt-5 space-y-4" onSubmit={handleReviewSubmit}>
+          <StarInput value={score} onChange={setScore} />
+
+          <textarea
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            rows={5}
+            className="w-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent-dark)]"
+            placeholder="Tell others about your experience"
+          />
+
+          {existingReview?.canEdit && existingReview.editExpiresAt && (
+            <p className="rounded-2xl bg-[var(--mint-50)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
+              You can edit this review until {formatDate(existingReview.editExpiresAt)}.
+            </p>
+          )}
+
+          <button
+            disabled={submittingReview}
+            className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95 disabled:opacity-60"
+          >
+            {submittingReview
+              ? "Saving..."
+              : isEditingReview
+                ? "Update review"
+                : "Submit review"}
+          </button>
+        </form>
+      )}
+
+      {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
+    </section>
+  );
+
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <main className="min-h-screen bg-[var(--background)] pb-24 lg:pb-0">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
       {cartToast && (
-        <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+        <div className="pointer-events-none fixed inset-x-0 top-20 z-[100] flex justify-center px-4">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
             {cartToast}
           </div>
         </div>
@@ -641,7 +753,7 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       {reviewToast && (
         <div className="pointer-events-none fixed inset-x-0 top-20 z-[101] flex justify-center px-4">
-          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
             {reviewToast}
           </div>
         </div>
@@ -657,38 +769,61 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
             <span className="text-[var(--accent-dark)]">{shop.name}</span>
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
-            <div className="h-[120px] w-[120px] rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)]" />
+          <div className="mt-4 md:mt-5 grid gap-4 md:gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
+            
+            <div className="flex items-start gap-4 lg:contents">
+              {shop.logoUrl ? (
+                <div className="h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 overflow-hidden rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] lg:row-span-2">
+                  <img src={shop.logoUrl} alt={shop.name} className="h-full w-full object-cover" />
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 lg:h-[120px] lg:w-[120px] shrink-0 items-center justify-center rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)] dark:bg-[#15201A] lg:row-span-2">
+                  <span className="text-3xl md:text-4xl font-bold text-[var(--accent-dark)] opacity-40">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
 
-            <div>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
-              </p>
+              <div className="min-w-0 flex-1 lg:col-start-2 lg:row-start-1">
+                <p className="text-xs md:text-sm text-[var(--muted-foreground)] line-clamp-2">
+                  {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
+                </p>
 
-              <h1 className="mt-2 text-4xl font-bold tracking-tight text-[var(--foreground)]">
-                {shop.name}
-              </h1>
+                <h1 className="mt-1 text-2xl md:text-4xl font-bold tracking-tight text-[var(--foreground)] leading-tight">
+                  {shop.name}
+                </h1>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--foreground)]">
-                <span>⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
-                <span>{shop.address}</span>
-                {shop.phone ? <span>{shop.phone}</span> : null}
-                {shop.email ? <span>{shop.email}</span> : null}
+                <div className="mt-1.5 md:mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:text-sm text-[var(--foreground)]">
+                  <span className="font-medium text-yellow-600 dark:text-yellow-500">⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
+                  <span className="text-[var(--muted-foreground)]">{shop.address}</span>
+                </div>
               </div>
+            </div>
 
-              <p className="mt-4 max-w-3xl text-[var(--muted-foreground)]">
+            <div className="text-sm md:text-base text-[var(--muted-foreground)] lg:col-start-2 lg:row-start-2">
+              <p className="line-clamp-3 lg:line-clamp-none">
                 {shop.description ||
                   "Professional device repair support with diagnostics, updates, and service handling from this shop."}
               </p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium lg:text-sm">
+                {shop.phone && <span>📞 {shop.phone}</span>}
+                {shop.email && <span>✉️ {shop.email}</span>}
+              </div>
             </div>
 
-            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
-              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white">
+            <div className="hidden lg:block rounded-2xl md:rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm lg:col-start-3 lg:row-span-2">
+              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-[var(--accent-foreground)] shadow-sm hover:opacity-95 transition">
                 Go to cart
               </Link>
               <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
                 Add one or more services below, then finish checkout in your cart.
               </p>
+            </div>
+            
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:hidden">
+              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3.5 text-[15px] font-bold text-[var(--accent-foreground)] shadow-sm hover:opacity-95 transition">
+                Go to cart
+              </Link>
             </div>
           </div>
         </div>
@@ -696,113 +831,161 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0">
-          <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-medium text-[var(--muted-foreground)]">
-            <span className="border-b-4 border-[var(--accent-dark)] pb-2 text-[var(--foreground)]">Services</span>
-            <span className="pb-2">Reviews</span>
+          <div className="mb-4 md:mb-6 flex overflow-x-auto border-b border-[var(--border)] bg-[var(--card)] text-sm font-medium text-[var(--muted-foreground)] scrollbar-hide">
+            <button
+              onClick={() => { setActiveTab("services"); setShowAllReviews(false); }}
+              className={`px-5 py-3.5 transition ${activeTab === "services" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Services
+            </button>
+            <button
+              onClick={() => { setActiveTab("reviews"); setShowAllReviews(false); setReviewPage(1); }}
+              className={`px-5 py-3.5 transition ${activeTab === "reviews" ? "border-b-2 border-[var(--accent-dark)] text-[var(--foreground)]" : "hover:text-[var(--foreground)]"}`}
+            >
+              Reviews ({shop.reviewCount ?? 0})
+            </button>
           </div>
 
-          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
-              <p className="mt-2 text-[var(--muted-foreground)]">
-                Add services to cart first, then choose schedule, payment method, and address during checkout.
-              </p>
-            </div>
+          {activeTab === "services" ? (
+            <section className="rounded-2xl md:rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-4 md:p-5 shadow-sm">
+              <div className="mb-4 md:mb-5">
+                <h2 className="text-xl md:text-3xl font-bold text-[var(--foreground)]">Available services</h2>
+                <p className="mt-1 text-sm md:text-base text-[var(--muted-foreground)]">
+                  Add services to cart first, then choose schedule, payment method, and address during checkout.
+                </p>
+              </div>
 
-            <div className="space-y-4">
-              {serviceItems.map((item) => (
-                <article key={item.name} className="flex flex-col gap-4 rounded-[1.5rem] border border-[var(--border)] p-4 transition hover:shadow-sm md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className="text-xl font-semibold text-[var(--foreground)]">{item.name}</h3>
-                        <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:block lg:space-y-4">
+                {serviceItems.map((item) => (
+                  <article
+                    key={item.name}
+                    className="group flex flex-col justify-between rounded-xl md:rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 transition hover:-translate-y-0.5 hover:shadow-md lg:flex-row lg:items-start lg:justify-between lg:hover:shadow-sm lg:hover:-translate-y-0 lg:p-5"
+                  >
+                    <div className="lg:flex lg:flex-1 lg:items-start lg:justify-between lg:gap-4">
+                      <div className="lg:min-w-0">
+                        <h3 className="font-bold text-[var(--foreground)] lg:text-xl lg:font-semibold">{item.name}</h3>
+                        <p className="mt-1 text-xs md:text-sm text-[var(--muted-foreground)] lg:mt-2 lg:leading-6">
+                          {item.summary}
+                        </p>
+                        {/* Price on mobile: */}
+                        <p className="mt-3 text-lg md:text-xl font-extrabold text-[var(--accent-dark)] lg:hidden">
+                          ৳{item.estimate.toLocaleString("en-BD")}
+                        </p>
                       </div>
-
-                      <div className="shrink-0 text-right">
+                      
+                      {/* Price on desktop: */}
+                      <div className="hidden lg:block lg:shrink-0 lg:text-right">
                         <div className="text-lg font-bold text-[var(--foreground)]">
                           ৳{item.estimate.toLocaleString("en-BD")}
                         </div>
                         <div className="text-xs text-[var(--muted-foreground)]">starting estimate</div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 md:pl-4">
-                    <button
-                      type="button"
-                      onClick={() => void handleAddService(item)}
-                      className="inline-flex h-11 items-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-white"
-                    >
-                      {addingService === item.name ? "Adding..." : "Add to cart"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <section className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
-            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
-                  Customer reviews
-                </p>
-                <h2 className="mt-2 text-3xl font-bold text-[var(--foreground)]">
-                  What customers are saying
-                </h2>
-              </div>
-
-              <div className="rounded-[1.5rem] bg-[var(--mint-50)] px-5 py-4 text-right">
-                <div className="text-4xl font-black text-[var(--foreground)]">
-                  {ratingSummary.average.toFixed(1)}
-                </div>
-                <StarDisplay value={Math.round(ratingSummary.average)} />
-                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                  {reviews.length} review{reviews.length === 1 ? "" : "s"}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-              <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-50)] p-4">
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const count = ratingSummary.counts[star - 1] || 0;
-                  const percentage = reviews.length ? (count / reviews.length) * 100 : 0;
-
-                  return (
-                    <div key={star} className="mb-3 flex items-center gap-3 last:mb-0">
-                      <span className="w-8 text-sm font-semibold text-[var(--foreground)]">{star} ★</span>
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--mint-200)]">
-                        <div className="h-full rounded-full bg-yellow-500" style={{ width: `${percentage}%` }} />
-                      </div>
-                      <span className="w-6 text-right text-xs text-[var(--muted-foreground)]">{count}</span>
+                    
+                    <div className="lg:flex lg:items-center lg:gap-3 lg:pl-6 lg:mt-0 lg:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleAddService(item)}
+                        className="mt-4 w-full rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-bold text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white lg:mt-0 lg:h-11 lg:w-auto lg:inline-flex lg:items-center lg:px-6"
+                      >
+                        Add to cart
+                      </button>
                     </div>
-                  );
-                })}
+                  </article>
+                ))}
               </div>
+            </section>
+          ) : (
+            <section className="space-y-6">
+              {showAllReviews ? (
+                <div className="mb-6 flex flex-col-reverse items-start justify-between gap-4 border-b border-[var(--border)] pb-4 md:flex-row md:items-center">
+                  <button onClick={() => setShowAllReviews(false)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] shadow-sm transition hover:bg-[var(--mint-50)]">
+                    <svg className="h-5 w-5 text-[var(--accent-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    Back to shop profile
+                  </button>
+                  <h2 className="text-2xl font-bold text-[var(--foreground)]">All Reviews</h2>
+                </div>
+              ) : (
+                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
+                  <h2 className="mb-4 text-3xl font-bold text-[var(--foreground)]">Customer reviews</h2>
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                    <div className="flex shrink-0 flex-col items-center justify-center md:w-32">
+                      <div className="text-5xl font-extrabold tracking-tighter text-[var(--foreground)]">
+                        {ratingSummary.average.toFixed(1)}
+                      </div>
+                      <StarDisplay value={Math.round(ratingSummary.average)} />
+                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                        {shop?.reviewCount ?? 0} review{(shop?.reviewCount ?? 0) === 1 ? "" : "s"}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 space-y-1.5">
+                      {[5, 4, 3, 2, 1].map((star, idx) => {
+                        const count = ratingSummary.counts[4 - idx] || 0;
+                        const total = reviews.length || 1;
+                        const percentage = (count / total) * 100;
+
+                        return (
+                          <div key={star} className="flex items-center gap-3">
+                            <span className="w-12 text-sm font-semibold text-[var(--muted-foreground)]">{star} stars</span>
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
+                              <div
+                                className="h-full bg-yellow-500"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="w-6 text-right text-xs text-[var(--muted-foreground)]">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
-                {reviews.length === 0 && (
-                  <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-[var(--muted-foreground)]">
-                    No reviews yet.
+                {reviews.filter(r => r.review).length === 0 && !showAllReviews && (
+                  <p className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
+                    No written reviews yet.
                   </p>
                 )}
 
-                {reviews.map((item) => {
+                {(() => {
+                  const filteredReviews = showAllReviews
+                    ? reviews.filter(r => r.review || existingReview?.id === r.id)
+                    : reviews.filter(r => r.review || existingReview?.id === r.id).slice(0, 3);
+                  const reviewsPerPage = 5;
+                  const totalReviewPages = Math.ceil(filteredReviews.length / reviewsPerPage);
+                  const pagedReviews = showAllReviews
+                    ? filteredReviews.slice((reviewPage - 1) * reviewsPerPage, reviewPage * reviewsPerPage)
+                    : filteredReviews;
+
+                  return (
+                    <>
+                {pagedReviews.map((item) => {
                   const isMine = existingReview?.id === item.id;
                   return (
                     <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <p className="font-bold text-[var(--foreground)]">
                               {item.user?.name || item.user?.username || "Customer"}
                             </p>
                             {isMine && (
-                              <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
-                                Your review
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
+                                  Your review
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteReview(item.id)}
+                                  disabled={deletingReview}
+                                  className="text-xs font-medium text-red-500 underline hover:text-red-700 disabled:opacity-50"
+                                >
+                                  {deletingReview ? "Deleting..." : "Delete"}
+                                </button>
+                              </div>
                             )}
                           </div>
                           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
@@ -814,14 +997,93 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
                       </div>
 
                       {item.review ? (
-                        <p className="mt-4 leading-7 text-[var(--muted-foreground)]">{item.review}</p>
+                        <div
+                          className="mt-4 cursor-pointer rounded-xl bg-[var(--mint-50)] p-3 transition hover:bg-[var(--mint-100)] active:scale-[0.99]"
+                          onClick={() => setSelectedReviewText(item.review!)}
+                        >
+                          <p className="line-clamp-3 leading-7 text-[var(--muted-foreground)]">
+                            {item.review}
+                          </p>
+                          <p className="mt-1 text-[11px] font-bold uppercase text-[var(--accent-dark)] opacity-80">
+                            Read full review
+                          </p>
+                        </div>
                       ) : null}
                     </article>
                   );
                 })}
+
+                {/* Pagination controls for All Reviews */}
+                {showAllReviews && totalReviewPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <button
+                      onClick={() => setReviewPage((p) => Math.max(1, p - 1))}
+                      disabled={reviewPage === 1}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)] disabled:opacity-40"
+                    >
+                      ← Prev
+                    </button>
+                    {Array.from({ length: Math.min(totalReviewPages, 5) }, (_, i) => {
+                      let page: number;
+                      if (totalReviewPages <= 5) {
+                        page = i + 1;
+                      } else if (reviewPage <= 3) {
+                        page = i + 1;
+                      } else if (reviewPage >= totalReviewPages - 2) {
+                        page = totalReviewPages - 4 + i;
+                      } else {
+                        page = reviewPage - 2 + i;
+                      }
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setReviewPage(page)}
+                          className={`h-9 w-9 rounded-xl text-sm font-bold transition ${
+                            reviewPage === page
+                              ? "bg-[var(--accent-dark)] text-[var(--accent-foreground)]"
+                              : "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setReviewPage((p) => Math.min(totalReviewPages, p + 1))}
+                      disabled={reviewPage === totalReviewPages}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)] disabled:opacity-40"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+
+                {showAllReviews && (
+                  <p className="text-center text-xs text-[var(--muted-foreground)] pt-1">
+                    Page {reviewPage} of {totalReviewPages} · {filteredReviews.length} reviews
+                  </p>
+                )}
+                    </>
+                  );
+                })()}
+
+                {!showAllReviews && reviews.filter(r => r.review).length > 3 && (
+                  <button
+                    onClick={() => { setShowAllReviews(true); setReviewPage(1); }}
+                    className="mt-2 w-full rounded-[1.5rem] border-2 border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+                  >
+                    See all {reviews.filter(r => r.review).length} written reviews
+                  </button>
+                )}
               </div>
-            </div>
-          </section>
+
+              {!showAllReviews && (
+                <div className="xl:hidden pt-2">
+                  {WriteReviewForm}
+                </div>
+              )}
+            </section>
+          )}
         </section>
 
         {locationModalOpen && (
@@ -835,61 +1097,29 @@ export default function ShopDetailsPage({ params }: { params: Promise<{ slug: st
           />
         )}
 
-        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
-              {isEditingReview ? "Edit your review" : "Write a review"}
-            </p>
-            <h2 className="mt-2 text-3xl font-bold text-[var(--foreground)]">
-              Rate this shop
-            </h2>
-
-            {!session?.user && (
-              <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
-                Log in to review this shop.
-              </p>
-            )}
-
-            {session?.user && eligibility?.hasExistingReview && !existingReview?.canEdit && (
-              <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
-                You already reviewed this shop. The 6-month edit window has expired.
-              </p>
-            )}
-
-            {session?.user && (!eligibility?.hasExistingReview || existingReview?.canEdit) && (
-              <form className="mt-5 space-y-4" onSubmit={handleReviewSubmit}>
-                <StarInput value={score} onChange={setScore} />
-
-                <textarea
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  rows={5}
-                  className="w-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent-dark)]"
-                  placeholder="Tell others about your experience"
-                />
-
-                {existingReview?.canEdit && existingReview.editExpiresAt && (
-                  <p className="rounded-2xl bg-[var(--mint-50)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
-                    You can edit this review until {formatDate(existingReview.editExpiresAt)}.
-                  </p>
-                )}
-
-                <button
-                  disabled={submittingReview}
-                  className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
-                >
-                  {submittingReview
-                    ? "Saving..."
-                    : isEditingReview
-                      ? "Update review"
-                      : "Submit review"}
-                </button>
-              </form>
-            )}
-
-            {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
-          </section>
+        <aside className="hidden xl:block space-y-6 xl:sticky xl:top-6 xl:self-start">
+          {WriteReviewForm}
         </aside>
+        {selectedReviewText && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setSelectedReviewText(null)}>
+            <div className="w-full max-w-md rounded-3xl bg-[var(--background)] p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between border-b border-[var(--border)] pb-3">
+                <h3 className="text-xl font-bold text-[var(--foreground)]">Review Details</h3>
+                <button
+                  onClick={() => setSelectedReviewText(null)}
+                  className="rounded-full bg-[var(--mint-100)] p-2 text-[var(--accent-dark)] transition hover:bg-[var(--accent-dark)] hover:text-white"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto pr-2">
+                <p className="leading-7 text-[var(--foreground)] whitespace-pre-wrap">
+                  {selectedReviewText}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
