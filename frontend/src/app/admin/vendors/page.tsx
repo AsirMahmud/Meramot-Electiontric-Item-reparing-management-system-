@@ -48,7 +48,7 @@ export default function AdminVendorsPage() {
     // Poll every 15 seconds to check for data concurrency
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=100`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=1000`, {
           credentials: "include",
           headers: getAuthHeaders(token),
         });
@@ -73,7 +73,7 @@ export default function AdminVendorsPage() {
 
   const fetchVendors = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=100`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=1000`, {
         credentials: "include",
         headers: getAuthHeaders(token),
       });
