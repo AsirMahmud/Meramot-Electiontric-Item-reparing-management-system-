@@ -232,13 +232,29 @@ export async function initiateSslCommerzPayment(req: AuthenticatedRequest, res: 
     if (repairRequestId) {
       const request = await prisma.repairRequest.findUnique({
         where: { id: repairRequestId },
-        select: { id: true, userId: true },
+        select: { id: true, userId: true, quotedFinalAmount: true },
       });
 
       if (!request || request.userId !== req.user.id) {
         return res.status(404).json({
           success: false,
           message: "Repair request not found",
+        });
+      }
+
+      if (request.quotedFinalAmount !== null) {
+        // FRAUD PREVENTION: Ensure the frontend didn't manipulate the payment amount
+        if (Math.abs(amount - request.quotedFinalAmount) > 0.01) {
+          console.warn(`Fraud attempt detected: User ${req.user.id} tried to pay ${amount} for request ${repairRequestId} which costs ${request.quotedFinalAmount}`);
+          return res.status(400).json({
+            success: false,
+            message: `Payment amount mismatch. Order total is ৳${request.quotedFinalAmount}, but you requested to pay ৳${amount}.`,
+          });
+        }
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot initiate payment for a request that has no final quoted amount.",
         });
       }
     }
