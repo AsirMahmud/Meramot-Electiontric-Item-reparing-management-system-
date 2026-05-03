@@ -7,10 +7,7 @@ export type SearchState = {
   voucher: boolean;
   freeDelivery: boolean;
   deals: boolean;
-  featured: boolean;
   maxDistanceKm: number;
-  lat?: number | null;
-  lng?: number | null;
 };
 
 export const defaultSearchState: SearchState = {
@@ -20,7 +17,6 @@ export const defaultSearchState: SearchState = {
   voucher: false,
   freeDelivery: false,
   deals: false,
-  featured: false,
   maxDistanceKm: 15,
 };
 
@@ -32,8 +28,6 @@ export function normalizeSearchState(input: Partial<SearchState>): SearchState {
     category: input.category ?? "",
     sort: (input.sort as SearchState["sort"]) ?? defaultSearchState.sort,
     maxDistanceKm: Number.isFinite(input.maxDistanceKm) ? Math.max(1, Number(input.maxDistanceKm)) : defaultSearchState.maxDistanceKm,
-    lat: typeof input.lat === "number" ? input.lat : undefined,
-    lng: typeof input.lng === "number" ? input.lng : undefined,
   };
 }
 
@@ -42,11 +36,11 @@ export function toShopQuery(state: SearchState): ShopQuery {
     q: state.q || undefined,
     category: state.category || undefined,
     sort: state.sort,
-    featured: state.featured || undefined,
+    voucher: state.voucher || undefined,
+    freeDelivery: state.freeDelivery || undefined,
+    deals: state.deals || undefined,
     maxDistanceKm: state.maxDistanceKm,
-    take: 500,
-    lat: state.lat,
-    lng: state.lng,
+    take: 24,
   };
 }
 
@@ -84,62 +78,32 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
     const score = relevanceScore(shop, state.q);
     if (state.q && score === 0) return false;
     if (state.category && !(shop.categories ?? []).includes(state.category)) return false;
+    if (state.voucher && !shop.hasVoucher) return false;
+    if (state.freeDelivery && !shop.freeDelivery) return false;
+    if (state.deals && !shop.hasDeals) return false;
     if (typeof shop.distanceKm === "number" && shop.distanceKm > state.maxDistanceKm) return false;
     return true;
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    // Promo sorting (checked promos bubble to top)
-    if (state.voucher) {
-      if (a.hasVoucher && !b.hasVoucher) return -1;
-      if (!a.hasVoucher && b.hasVoucher) return 1;
-    }
-    if (state.freeDelivery) {
-      if (a.freeDelivery && !b.freeDelivery) return -1;
-      if (!a.freeDelivery && b.freeDelivery) return 1;
-    }
-    if (state.deals) {
-      if (a.hasDeals && !b.hasDeals) return -1;
-      if (!a.hasDeals && b.hasDeals) return 1;
-    }
-
     if (state.sort === "price") {
-      const getPrice = (s: any) => {
-        if (s.offerSummary) {
-          const parsed = parseInt(s.offerSummary.replace(/\D/g, ""), 10);
-          if (!isNaN(parsed)) return parsed;
-        }
-        return s.inspectionFee ?? ((s.priceLevel || 1) * 150);
-      };
-      
-      const priceA = getPrice(a);
-      const priceB = getPrice(b);
-      
-      if (priceA !== priceB) return priceA - priceB;
-      
-      const laborA = a.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
-      const laborB = b.baseLaborFee ?? Number.MAX_SAFE_INTEGER;
-      if (laborA !== laborB) return laborA - laborB;
-
-      if ((a.priceLevel || 1) !== (b.priceLevel || 1)) return (a.priceLevel || 1) - (b.priceLevel || 1);
+      if (a.priceLevel !== b.priceLevel) return a.priceLevel - b.priceLevel;
       return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
     }
 
     if (state.sort === "distance") {
-      const distDiff = (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
-      if (distDiff !== 0) return distDiff;
-      return (a.etaMinutes ?? Number.MAX_SAFE_INTEGER) - (b.etaMinutes ?? Number.MAX_SAFE_INTEGER);
+      return (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER);
     }
 
     if (state.sort === "topRated") {
-      if ((b.ratingAvg ?? 0) !== (a.ratingAvg ?? 0)) return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
-      return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
+      if (b.ratingAvg !== a.ratingAvg) return b.ratingAvg - a.ratingAvg;
+      return b.reviewCount - a.reviewCount;
     }
 
     const scoreDiff = relevanceScore(b, state.q) - relevanceScore(a, state.q);
     if (scoreDiff !== 0) return scoreDiff;
     if ((a.distanceKm ?? 999) !== (b.distanceKm ?? 999)) return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
-    return (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0);
+    return b.ratingAvg - a.ratingAvg;
   });
 
   return sorted;

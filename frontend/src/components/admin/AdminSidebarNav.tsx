@@ -59,34 +59,37 @@ export default function AdminSidebarNav({ onNavClick }: { onNavClick?: () => voi
             pathname === item.href ||
             (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavClick}
-              className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                isActive
-                  ? "bg-[#DCEAD7] dark:bg-[#233027] text-[var(--accent-dark)] dark:text-[#5BD881]"
-                  : "text-[var(--foreground)] dark:text-[#E4FCD5] hover:bg-[var(--mint-100)] dark:hover:bg-[#1C251F] hover:text-[var(--accent-dark)] dark:hover:text-[#5BD881]"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavClick}
+                className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-mint-200 text-accent-dark dark:bg-mint-100 dark:text-accent-dark"
+                    : "text-foreground hover:bg-mint-100 hover:text-accent-dark dark:text-card-foreground dark:hover:bg-mint-300 dark:hover:text-accent-dark"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
         })}
       </nav>
 
-      <div className="rounded-2xl border border-[var(--border)] dark:border-[#2F4034] bg-white/70 dark:bg-[#1C251F]/90 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)] dark:text-[#4F6C5B]">
+      <div className="rounded-2xl border border-border bg-card/70 dark:bg-card/90 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Signed in as
         </p>
-        <p className="mt-2 text-sm font-semibold text-[var(--accent-dark)] dark:text-[#2E5B3D]">{adminLabel}</p>
+
+        <p className="mt-2 text-sm font-semibold text-accent-dark">
+          {adminLabel}
+        </p>
 
         <button
           type="button"
           onClick={handleLogout}
           disabled={loggingOut}
-          className="mt-4 w-full rounded-2xl border border-[#C7D7C2] dark:border-[#2F4034] bg-white dark:bg-[#171F1A] px-4 py-3 text-sm font-semibold text-[var(--foreground)] dark:text-[#E4FCD5] transition hover:bg-[var(--mint-100)] dark:hover:bg-[#233027] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-mint-100 dark:hover:bg-mint-200/10 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loggingOut ? "Signing out..." : "Sign out"}
         </button>

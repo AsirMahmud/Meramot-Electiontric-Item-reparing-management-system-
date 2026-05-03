@@ -1,7 +1,6 @@
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "./types";
 
 const REVERSE_GEOCODE_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
-const FORWARD_GEOCODE_ENDPOINT = "https://nominatim.openstreetmap.org/search";
 
 export function buildLocationLabel(location: StoredLocation | null) {
   if (!location) return "Choose your location";
@@ -93,48 +92,5 @@ export async function reverseGeocode(lat: number, lng: number): Promise<StoredLo
       lng,
       source: "map",
     };
-  }
-}
-
-export async function forwardGeocode(query: string): Promise<StoredLocation | null> {
-  try {
-    const res = await fetch(
-      `${FORWARD_GEOCODE_ENDPOINT}?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1`
-    );
-
-    if (!res.ok) throw new Error("Forward geocode failed");
-
-    const data = await res.json();
-    if (!data || data.length === 0) return null;
-
-    const match = data[0];
-    const lat = parseFloat(match.lat);
-    const lng = parseFloat(match.lon);
-    
-    const addressParts = match.address ?? {};
-    const city =
-      addressParts.city ||
-      addressParts.town ||
-      addressParts.state_district ||
-      addressParts.county ||
-      "";
-
-    const area =
-      addressParts.suburb ||
-      addressParts.neighbourhood ||
-      addressParts.quarter ||
-      addressParts.road ||
-      "";
-
-    return {
-      address: match.display_name || query,
-      city,
-      area,
-      lat,
-      lng,
-      source: "map",
-    };
-  } catch {
-    return null;
   }
 }

@@ -271,7 +271,7 @@ export default function AdminVendorsPage() {
   if (loading && vendors.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-[var(--muted-foreground)] animate-pulse">Loading vendor applications...</p>
+        <p className="text-muted-foreground animate-pulse">Loading vendor applications...</p>
       </div>
     );
   }
@@ -309,26 +309,26 @@ export default function AdminVendorsPage() {
 
       <div>
         <h2 className="text-xl font-bold text-[var(--accent-dark)] md:text-2xl">Vendors</h2>
-        <p className="mt-1 text-xs text-[var(--muted-foreground)] md:text-sm">
+        <p className="mt-1 text-xs text-muted-foreground md:text-sm">
           Approve, reject, and monitor vendor shops on the platform.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
-        <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
-          <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Total Vendors</p>
+        <div className="rounded-[1.25rem] border border-border bg-card text-card-foreground p-3 shadow-sm md:rounded-2xl md:p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground md:text-xs">Total Vendors</p>
           <p className="mt-1 text-lg font-bold text-[var(--accent-dark)] md:text-2xl">{totalVendors}</p>
         </div>
-        <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
-          <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Pending</p>
+        <div className="rounded-[1.25rem] border border-border bg-card text-card-foreground p-3 shadow-sm md:rounded-2xl md:p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground md:text-xs">Pending</p>
           <p className="mt-1 text-lg font-bold text-amber-600 md:text-2xl">{pendingVendors.length}</p>
         </div>
-        <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
-          <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Approved</p>
-          <p className="mt-1 text-lg font-bold text-emerald-600 md:text-2xl">{approvedVendors}</p>
+        <div className="rounded-[1.25rem] border border-border bg-card text-card-foreground p-3 shadow-sm md:rounded-2xl md:p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground md:text-xs">Approved</p>
+          <p className="mt-1 text-lg font-bold text-accent-dark md:text-2xl">{approvedVendors}</p>
         </div>
-        <div className="rounded-[1.25rem] border border-[var(--border)] bg-white dark:bg-[#1C251F] p-3 shadow-sm md:rounded-2xl md:p-4">
-          <p className="text-[10px] font-semibold uppercase text-[var(--muted-foreground)] md:text-xs">Rejected</p>
+        <div className="rounded-[1.25rem] border border-border bg-card text-card-foreground p-3 shadow-sm md:rounded-2xl md:p-4">
+          <p className="text-[10px] font-semibold uppercase text-muted-foreground md:text-xs">Rejected</p>
           <p className="mt-1 text-lg font-bold text-rose-600 md:text-2xl">{rejectedVendors}</p>
         </div>
       </div>
@@ -362,7 +362,7 @@ function PendingSection({
     <section>
       <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">Pending Approvals ({vendors.length})</h3>
       {vendors.length === 0 ? (
-        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-muted-foreground md:rounded-3xl md:p-8 md:text-sm">
           No pending vendor applications.
         </div>
       ) : (
@@ -377,7 +377,7 @@ function PendingSection({
             totalPages={table.totalPages}
             onPageChange={table.setCurrentPage}
           />
-          <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-border bg-card shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
               <colgroup>
                 <col style={{ width: "28%" }} />
@@ -385,7 +385,7 @@ function PendingSection({
                 <col style={{ width: "20%" }} />
                 <col style={{ width: "28%" }} />
               </colgroup>
-              <thead className="border-b border-[var(--border)] bg-[var(--card)]">
+              <thead className="border-b border-border bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
@@ -395,16 +395,16 @@ function PendingSection({
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
                 {table.paged.map((vendor) => (
-                  <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
+                  <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-card/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{vendor.shopName}</p>
-                      <p className="text-[9px] text-[var(--muted-foreground)] md:text-xs">Applicant: {vendor.user?.name || vendor.user?.username}</p>
+                      <p className="text-[9px] text-muted-foreground md:text-xs">Applicant: {vendor.user?.name || vendor.user?.username}</p>
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="line-clamp-1">{vendor.businessEmail}</p>
-                      <p className="text-[var(--muted-foreground)] line-clamp-1">{vendor.phone}</p>
+                      <p className="text-muted-foreground line-clamp-1">{vendor.phone}</p>
                     </td>
-                    <td className="px-4 py-3 text-[var(--muted-foreground)] md:px-6 md:py-4">
+                    <td className="px-4 py-3 text-muted-foreground md:px-6 md:py-4">
                       <span className="md:hidden">{new Date(vendor.createdAt).toLocaleDateString()}</span>
                       <span className="hidden md:inline">{new Date(vendor.createdAt).toLocaleString()}</span>
                     </td>
@@ -412,7 +412,7 @@ function PendingSection({
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-emerald-500 bg-[var(--mint-100)] px-3 py-1.5 text-center text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-border bg-[var(--mint-100)] px-3 py-1.5 text-center text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-2 md:text-xs"
                         >
                           View
                         </Link>
@@ -476,7 +476,7 @@ function AllVendorsSection({
     <section>
       <h3 className="mb-3 text-base font-bold text-[var(--accent-dark)] md:mb-4 md:text-lg">All Vendors ({vendors.length})</h3>
       {vendors.length === 0 ? (
-        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-[var(--muted-foreground)] md:rounded-3xl md:p-8 md:text-sm">
+        <div className="rounded-[1.5rem] border border-dashed border-[#C7D7C2] bg-[var(--card)] p-6 text-center text-xs text-muted-foreground md:rounded-3xl md:p-8 md:text-sm">
           No verified vendors found.
         </div>
       ) : (
@@ -503,7 +503,7 @@ function AllVendorsSection({
             totalPages={table.totalPages}
             onPageChange={table.setCurrentPage}
           />
-          <div className="overflow-x-auto rounded-[1.5rem] border border-[var(--border)] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
+          <div className="overflow-x-auto rounded-[1.5rem] border border-border bg-card shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] dark:bg-[#1C251F] md:rounded-3xl">
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
               <colgroup>
                 <col style={{ width: "20%" }} />
@@ -514,7 +514,7 @@ function AllVendorsSection({
                 <col style={{ width: "8%" }} />
                 <col style={{ width: "26%" }} />
               </colgroup>
-              <thead className="border-b border-[var(--border)] bg-[var(--card)]">
+              <thead className="border-b border-border bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
@@ -527,14 +527,14 @@ function AllVendorsSection({
               </thead>
               <tbody className="divide-y divide-[#Eef5Ea] dark:divide-white/10">
                 {table.paged.map((vendor) => (
-                  <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-white/5">
+                  <tr key={vendor.id} className="transition-colors hover:bg-[var(--card)] dark:hover:bg-card/5">
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="font-bold text-[var(--accent-dark)] line-clamp-2 md:line-clamp-none">{vendor.shopName}</p>
-                      <p className="text-[9px] text-[var(--muted-foreground)] md:text-xs">Applicant: {vendor.user?.name || vendor.user?.username}</p>
+                      <p className="text-[9px] text-muted-foreground md:text-xs">Applicant: {vendor.user?.name || vendor.user?.username}</p>
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="line-clamp-1">{vendor.businessEmail}</p>
-                      <p className="text-[var(--muted-foreground)] line-clamp-1">{vendor.phone}</p>
+                      <p className="text-muted-foreground line-clamp-1">{vendor.phone}</p>
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       {vendor.shop ? (
@@ -553,7 +553,7 @@ function AllVendorsSection({
                       <span
                         className={`inline-block rounded-lg px-2 py-0.5 text-[8px] font-bold md:px-3 md:py-1 md:text-xs ${
                           vendor.status === "APPROVED"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "bg-mint-200 text-emerald-800"
                             : vendor.status === "REJECTED"
                             ? "bg-rose-100 text-rose-800"
                             : "bg-slate-100 text-slate-800"
@@ -568,7 +568,7 @@ function AllVendorsSection({
                           {vendor.shop.isActive ? "Active" : "Suspended"}
                         </span>
                       ) : (
-                        <span className="font-medium text-[var(--muted-foreground)]">—</span>
+                        <span className="font-medium text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
@@ -582,20 +582,20 @@ function AllVendorsSection({
                           }`}
                         >
                           <span
-                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform md:h-4 md:w-4 ${
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-card transition-transform md:h-4 md:w-4 ${
                               vendor.shop.isFeatured ? "translate-x-5 md:translate-x-6" : "translate-x-1"
                             }`}
                           />
                         </button>
                       ) : (
-                        <span className="font-medium text-[var(--muted-foreground)]">—</span>
+                        <span className="font-medium text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right md:px-6 md:py-4">
                       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
                         <Link
                           href={`/admin/vendors/${vendor.id}`}
-                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-emerald-500 bg-[var(--mint-100)] px-3 py-1.5 text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
+                          className="inline-flex w-full items-center justify-center rounded-lg border-2 border-border bg-[var(--mint-100)] px-3 py-1.5 text-[10px] font-bold text-[var(--accent-dark)] transition hover:bg-[#D7E2D2] md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs"
                         >
                           View
                         </Link>
@@ -607,7 +607,7 @@ function AllVendorsSection({
                             className={`inline-flex w-full items-center justify-center rounded-lg border px-3 py-1.5 text-[10px] font-bold transition disabled:opacity-50 md:w-auto md:rounded-xl md:px-3 md:py-1 md:text-xs ${
                               vendor.shop.isActive 
                                 ? "border-[#8A2A2A] text-[#8A2A2A] hover:bg-[#FDEAEA] dark:border-red-500 dark:text-red-400 dark:hover:bg-red-500/10" 
-                                : "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white hover:opacity-90"
+                                : "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-mint-100 hover:opacity-90"
                             }`}
                           >
                             {vendor.shop.isActive ? "Suspend" : "Restore"}
