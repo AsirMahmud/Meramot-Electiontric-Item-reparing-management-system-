@@ -1912,3 +1912,9 @@ export async function saveAiChatMessage(
     body: JSON.stringify({ role, text }),
   });
 }
+
+export async function deleteAiChatSession(sessionId: string, token?: string) {
+  return authedRequest(`/ai-chat/sessions/${sessionId}`, token, {
+    method: "DELETE",
+  });
+}

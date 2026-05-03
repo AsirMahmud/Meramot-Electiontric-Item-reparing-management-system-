@@ -14,6 +14,7 @@ import {
   createAiChatSession,
   getAiChatSessions,
   saveAiChatMessage,
+  deleteAiChatSession,
 } from "@/lib/api";
 
 type Message = {
@@ -346,6 +347,35 @@ export default function AiChatPage() {
     }
   }
 
+  async function handleDeleteChat() {
+    if (!activeChat) return;
+
+    if (window.confirm("Are you sure you want to delete this chat?")) {
+      const isDraftOrGuest = activeChat.id.startsWith("draft-chat") || activeChat.id.startsWith("guest-chat");
+
+      if (isLoggedIn && !isDraftOrGuest) {
+        try {
+          await deleteAiChatSession(activeChat.id, token);
+        } catch (error) {
+          console.error("Failed to delete chat", error);
+          setHistoryError("Failed to delete chat on the server.");
+          return;
+        }
+      }
+
+      setChatSessions((prev) => {
+        const remaining = prev.filter((chat) => chat.id !== activeChat.id);
+        if (remaining.length === 0) {
+          const defaultChat = createDefaultChat();
+          setActiveChatId(defaultChat.id);
+          return [defaultChat];
+        }
+        setActiveChatId(remaining[0].id);
+        return remaining;
+      });
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
@@ -425,7 +455,12 @@ export default function AiChatPage() {
                   )}
                 </div>
 
-                <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] sm:flex md:h-12 md:w-12">
+                <button
+                  type="button"
+                  onClick={handleDeleteChat}
+                  title="Delete Chat"
+                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] transition hover:bg-red-100 hover:text-red-600 sm:flex md:h-12 md:w-12"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -440,7 +475,7 @@ export default function AiChatPage() {
                       d="M9.75 3.75h4.5m-7.5 4.5h10.5m-9 4.5h7.5M8.25 21h7.5a2.25 2.25 0 0 0 2.25-2.25V8.121a2.25 2.25 0 0 0-.659-1.591l-1.871-1.871A2.25 2.25 0 0 0 13.879 4H8.25A2.25 2.25 0 0 0 6 6.25v12.5A2.25 2.25 0 0 0 8.25 21Z"
                     />
                   </svg>
-                </div>
+                </button>
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto py-4 md:space-y-5 md:py-6">
