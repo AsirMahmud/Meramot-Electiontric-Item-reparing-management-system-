@@ -16,6 +16,7 @@ const navItems = [
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/finance", label: "Finance Ledger" },
+  { href: "/delivery-admin", label: "Live Delivery Dispatch" },
 ];
 
 export default function AdminSidebarNav({ onNavClick }: { onNavClick?: () => void }) {
