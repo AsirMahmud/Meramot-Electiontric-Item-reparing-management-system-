@@ -536,6 +536,43 @@ export type DeliverySummary = {
   scheduledAt?: string | null;
 };
 
+export type RefundItem = {
+  id: string;
+  amount: number;
+  reason?: string | null;
+  status: string;
+  processedAt?: string | null;
+  createdAt: string;
+};
+
+export type PaymentItem = {
+  id: string;
+  amount: number;
+  currency: string;
+  method?: string | null;
+  status: string;
+  transactionRef?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+  refunds: RefundItem[];
+};
+
+export type DisputeItem = {
+  id: string;
+  status: string;
+  resolution?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+};
+
+export type TicketItem = {
+  id: string;
+  subject: string;
+  status: string;
+  priority?: string | null;
+  createdAt: string;
+};
+
 export type OrderItem = {
   id: string;
   title: string;
@@ -546,6 +583,7 @@ export type OrderItem = {
   issueCategory?: string | null;
   problem: string;
   mode: string;
+  source?: string;
   status: string;
   preferredPickup: boolean;
   deliveryType?: string | null;
@@ -555,6 +593,9 @@ export type OrderItem = {
   createdAt: string;
   updatedAt?: string;
   bids: BidItem[];
+  payments: PaymentItem[];
+  disputeCases: DisputeItem[];
+  supportTickets: TicketItem[];
   repairJob?: {
     id: string;
     status: string;
@@ -562,6 +603,8 @@ export type OrderItem = {
     finalQuotedAmount?: number | null;
     finalQuoteItems?: FinalQuoteItem[] | null;
     customerApproved?: boolean | null;
+    startedAt?: string | null;
+    completedAt?: string | null;
     acceptedBid?: BidItem | null;
     shop: {
       id: string;
@@ -629,7 +672,23 @@ export type VendorDashboardData = {
     assignedJobCount: number;
     waitingApprovalCount: number;
     completedJobCount: number;
+    pendingOrderCount: number;
   };
+  pendingOrders: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    deviceType: string;
+    brand?: string | null;
+    model?: string | null;
+    problem: string;
+    mode: string;
+    source?: string;
+    quotedFinalAmount?: number | null;
+    createdAt: string;
+    user: { name?: string | null; email?: string | null; phone?: string | null };
+    payments: Array<{ method?: string | null; status: string; amount: number }>;
+  }>;
   relevantRequests: Array<{
     id: string;
     title: string;
@@ -794,6 +853,25 @@ export function getVendorDashboard(token: string) {
 
 export function getVendorAnalytics(token: string) {
   return authedRequest<VendorAnalyticsData>("/vendor/requests/analytics", token);
+}
+
+export function acceptPendingOrder(token: string, requestId: string) {
+  return authedRequest(
+    `/vendor/requests/${encodeURIComponent(requestId)}/accept`,
+    token,
+    { method: "PATCH" }
+  );
+}
+
+export function rejectPendingOrder(token: string, requestId: string, reason?: string) {
+  return authedRequest(
+    `/vendor/requests/${encodeURIComponent(requestId)}/reject`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
+    }
+  );
 }
 
 export function submitVendorBid(

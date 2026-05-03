@@ -565,6 +565,38 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
       },
     });
 
+    // Fetch pending direct orders waiting for this vendor's acceptance
+    const pendingOrders = await prisma.repairRequest.findMany({
+      where: {
+        status: RequestStatus.PENDING,
+        repairJob: { shopId: shop.id },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deviceType: true,
+        brand: true,
+        model: true,
+        issueCategory: true,
+        problem: true,
+        mode: true,
+        source: true,
+        preferredPickup: true,
+        deliveryType: true,
+        quotedFinalAmount: true,
+        createdAt: true,
+        user: {
+          select: { name: true, email: true, phone: true },
+        },
+        payments: {
+          take: 1,
+          select: { method: true, status: true, amount: true },
+        },
+      },
+    });
+
     return res.json({
       application,
       shop,
@@ -576,7 +608,9 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
           (job) => job.status === RepairJobStatus.WAITING_APPROVAL,
         ).length,
         completedJobCount,
+        pendingOrderCount: pendingOrders.length,
       },
+      pendingOrders,
       relevantRequests,
       myBids,
       assignedJobs,
@@ -1215,6 +1249,177 @@ export async function getVendorMyBids(req: AuthedRequest, res: Response) {
       return res.status(error.statusCode).json({ message: error.message });
     }
 
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+/* ── Vendor Accept / Reject Pending Direct Orders ──────────── */
+
+export async function acceptPendingRequest(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const requestId = req.params.requestId as string;
+
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    if (role !== "VENDOR") return res.status(403).json({ message: "Vendor access only" });
+
+    const { shop } = await getVendorContext(userId);
+
+    const existing = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        status: RequestStatus.PENDING,
+        repairJob: { shopId: shop.id },
+      },
+      select: {
+        id: true,
+        title: true,
+        user: { select: { email: true, name: true } },
+        repairJob: { select: { id: true } },
+      },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Pending request not found for your shop" });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.ASSIGNED,
+          approvedAt: new Date(),
+        },
+      });
+
+      if (existing.repairJob?.id) {
+        await tx.repairJob.update({
+          where: { id: existing.repairJob.id },
+          data: { status: RepairJobStatus.CREATED },
+        });
+      }
+
+      return request;
+    });
+
+    if (existing.user.email) {
+      await sendOrderStatusEmail({
+        to: existing.user.email,
+        customerName: existing.user.name,
+        orderRef: existing.title,
+        status: result.status,
+        shopName: shop.name,
+      }).catch((err) => console.error("accept pending email failed:", err));
+    }
+
+    return res.json({
+      message: "Order accepted successfully",
+      request: { id: result.id, status: result.status },
+    });
+  } catch (error) {
+    console.error("acceptPendingRequest error:", error);
+    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function rejectPendingRequest(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const requestId = req.params.requestId as string;
+
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    if (role !== "VENDOR") return res.status(403).json({ message: "Vendor access only" });
+
+    const { shop } = await getVendorContext(userId);
+
+    const existing = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        status: RequestStatus.PENDING,
+        repairJob: { shopId: shop.id },
+      },
+      select: {
+        id: true,
+        title: true,
+        user: { select: { email: true, name: true } },
+        repairJob: { select: { id: true } },
+        payments: {
+          where: { status: "PAID" },
+          select: { id: true, amount: true, method: true },
+        },
+      },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Pending request not found for your shop" });
+    }
+
+    const { reason } = req.body as { reason?: string };
+
+    const result = await prisma.$transaction(async (tx) => {
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.REJECTED,
+          rejectedAt: new Date(),
+        },
+      });
+
+      if (existing.repairJob?.id) {
+        await tx.repairJob.update({
+          where: { id: existing.repairJob.id },
+          data: { status: RepairJobStatus.CANCELLED },
+        });
+      }
+
+      // Auto-create refund records for any online payments that were already paid
+      const refunds = [];
+      for (const payment of existing.payments) {
+        if (payment.method !== "CASH") {
+          const refund = await tx.refund.create({
+            data: {
+              paymentId: payment.id,
+              amount: payment.amount,
+              reason: reason?.trim() || "Vendor declined the order",
+              status: "PENDING",
+            },
+          });
+          refunds.push(refund);
+
+          // Mark payment as refunded
+          await tx.payment.update({
+            where: { id: payment.id },
+            data: { status: "REFUNDED" },
+          });
+        }
+      }
+
+      return { request, refunds };
+    });
+
+    if (existing.user.email) {
+      await sendOrderStatusEmail({
+        to: existing.user.email,
+        customerName: existing.user.name,
+        orderRef: existing.title,
+        status: result.request.status,
+        shopName: shop.name,
+      }).catch((err) => console.error("reject pending email failed:", err));
+    }
+
+    return res.json({
+      message: result.refunds.length > 0
+        ? "Order rejected. Refund has been initiated for online payment."
+        : "Order rejected.",
+      request: { id: result.request.id, status: result.request.status },
+      refunds: result.refunds,
+    });
+  } catch (error) {
+    console.error("rejectPendingRequest error:", error);
+    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }

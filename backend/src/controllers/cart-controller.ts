@@ -439,7 +439,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
           deliveryType: selectedDeliveryType,
           checkupFee: serviceCharge,
           quotedFinalAmount: totalAmount,
-          status: RequestStatus.ASSIGNED,
+          status: RequestStatus.PENDING,
         },
       });
 

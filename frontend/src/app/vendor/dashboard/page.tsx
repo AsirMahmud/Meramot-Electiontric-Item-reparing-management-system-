@@ -11,6 +11,8 @@ import {
   submitVendorFinalQuote,
   updateVendorJobStatus,
   updateVendorNotificationPreferences,
+  acceptPendingOrder,
+  rejectPendingOrder,
   type FinalQuoteItem,
   type VendorDashboardData,
 } from "@/lib/api";
@@ -283,6 +285,12 @@ export default function VendorDashboardPage() {
         scrollTo: "relevant-requests",
       },
       {
+        label: "Pending direct orders",
+        value: String(dashboard?.stats.pendingOrderCount ?? 0),
+        description: "Direct service requests waiting for your approval.",
+        scrollTo: "pending-orders",
+      },
+      {
         label: "Active offers",
         value: String(activeBidCount),
         description: "Offers you can still update while customer decision is pending.",
@@ -301,7 +309,7 @@ export default function VendorDashboardPage() {
         href: "/vendor/jobs",
       },
     ],
-    [activeBidCount, activeRequestCount, totalOpenJobs, waitingApprovalCount]
+    [activeBidCount, activeRequestCount, totalOpenJobs, waitingApprovalCount, dashboard?.stats.pendingOrderCount]
   );
 
   function handleBidClick(requestId: string) {
@@ -476,6 +484,47 @@ export default function VendorDashboardPage() {
       setFlash({
         type: "error",
         text: error instanceof Error ? error.message : "Could not submit the final quote.",
+      });
+    }
+  }
+
+  async function handleAcceptOrder(orderId: string) {
+    if (!token) {
+      setFlash({ type: "error", text: "Please sign in again to continue." });
+      return;
+    }
+    try {
+      setPendingKey(`accept-order:${orderId}`);
+      await acceptPendingOrder(token, orderId);
+      setFlash({ type: "success", text: "Direct order accepted. The repair job is now active." });
+      await loadDashboard();
+    } catch (error) {
+      setPendingKey(null);
+      setFlash({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not accept the order.",
+      });
+    }
+  }
+
+  async function handleRejectOrder(orderId: string) {
+    if (!token) {
+      setFlash({ type: "error", text: "Please sign in again to continue." });
+      return;
+    }
+    const reason = window.prompt("Reason for declining this order (optional):");
+    if (reason === null) return; // cancelled
+    
+    try {
+      setPendingKey(`reject-order:${orderId}`);
+      await rejectPendingOrder(token, orderId, reason);
+      setFlash({ type: "success", text: "Order declined. Any upfront payments will be refunded." });
+      await loadDashboard();
+    } catch (error) {
+      setPendingKey(null);
+      setFlash({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not decline the order.",
       });
     }
   }
@@ -668,6 +717,73 @@ export default function VendorDashboardPage() {
             </div>
           </article>
         </section>
+
+        {dashboard.pendingOrders?.length > 0 && (
+          <section id="pending-orders" className="mt-6 scroll-mt-6 md:mt-8">
+            <div className="mb-3 md:mb-4">
+              <h2 className="text-xl font-bold text-[#173726] md:text-2xl">Pending direct orders</h2>
+              <p className="text-sm text-[#5b7262]">Customers have directly chosen your shop and paid upfront. Accept to begin work, or decline to refund them.</p>
+            </div>
+            <div className="space-y-4">
+              {dashboard.pendingOrders.map(order => {
+                const isAccepting = pendingKey === `accept-order:${order.id}`;
+                const isRejecting = pendingKey === `reject-order:${order.id}`;
+                
+                return (
+                  <article key={order.id} className="rounded-[1.5rem] bg-white p-4 shadow-sm border border-purple-100 md:rounded-[2rem] md:p-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="max-w-2xl">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-lg font-bold text-[#173726] md:text-xl">{order.title}</h3>
+                          <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">
+                            Action required
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-[#355541]">
+                          {order.deviceType} {order.brand ? `• ${order.brand}` : ""} {order.model ? `• ${order.model}` : ""}
+                        </p>
+                        <p className="mt-2 text-sm text-[#5b7262]">{order.problem}</p>
+                        
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptOrder(order.id)}
+                            disabled={isAccepting || isRejecting}
+                            className="rounded-full bg-[#214c34] px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                          >
+                            {isAccepting ? "Accepting..." : "Accept order"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectOrder(order.id)}
+                            disabled={isAccepting || isRejecting}
+                            className="rounded-full border border-red-200 bg-red-50 text-red-700 px-6 py-2 text-sm font-semibold disabled:opacity-50"
+                          >
+                            {isRejecting ? "Declining..." : "Decline order"}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid gap-3 rounded-2xl bg-purple-50 p-4 text-sm text-[#355541] lg:min-w-[280px]">
+                        <div>
+                          <p className="font-semibold text-[#173726]">Customer details</p>
+                          <p className="mt-1">{order.user.name}</p>
+                          <p>{order.user.phone}</p>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#173726]">Payment info</p>
+                          <p className="mt-1">Initial total: {formatMoney(order.quotedFinalAmount)}</p>
+                          <p>Status: {formatStatus(order.payments?.[0]?.status || "PENDING")}</p>
+                          <p>Method: {order.payments?.[0]?.method || "N/A"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section id="relevant-requests" className="mt-6 scroll-mt-6 md:mt-8">
           <div className="mb-3 flex flex-col gap-2 md:mb-4 md:flex-row md:items-center md:justify-between md:gap-3">

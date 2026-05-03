@@ -109,7 +109,7 @@ export async function createRepairRequest(req: AuthedRequest, res: Response) {
           deliveryType: normalizeDeliveryType(
             typeof deliveryType === "string" ? deliveryType : undefined,
           ),
-          status: isDirectFlow ? RequestStatus.ASSIGNED : RequestStatus.BIDDING,
+          status: isDirectFlow ? RequestStatus.PENDING : RequestStatus.BIDDING,
         },
       });
 
@@ -232,6 +232,7 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
         issueCategory: true,
         problem: true,
         mode: true,
+        source: true,
         status: true,
         preferredPickup: true,
         deliveryType: true,
@@ -263,6 +264,50 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
             },
           },
         },
+        payments: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            method: true,
+            status: true,
+            transactionRef: true,
+            paidAt: true,
+            createdAt: true,
+            refunds: {
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                amount: true,
+                reason: true,
+                status: true,
+                processedAt: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+        disputeCases: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            resolution: true,
+            resolvedAt: true,
+            createdAt: true,
+          },
+        },
+        supportTickets: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            subject: true,
+            status: true,
+            priority: true,
+            createdAt: true,
+          },
+        },
         repairJob: {
           select: {
             id: true,
@@ -271,6 +316,8 @@ export async function listMyRequests(req: AuthedRequest, res: Response) {
             finalQuotedAmount: true,
             finalQuoteItems: true,
             customerApproved: true,
+            startedAt: true,
+            completedAt: true,
             acceptedBid: {
               select: {
                 id: true,
@@ -384,14 +431,11 @@ export async function acceptRequestBid(req: AuthedRequest, res: Response) {
         },
       });
 
-      await tx.bid.updateMany({
+      // Delete all losing bids from DB — vendors will only see the winner
+      await tx.bid.deleteMany({
         where: {
           repairRequestId: requestId,
           id: { not: bidId },
-          status: BidStatus.ACTIVE,
-        },
-        data: {
-          status: BidStatus.DECLINED,
         },
       });
 

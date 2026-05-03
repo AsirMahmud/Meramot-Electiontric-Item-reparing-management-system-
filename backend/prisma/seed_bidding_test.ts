@@ -374,8 +374,8 @@ async function main() {
     });
 
     if (existing) {
-      skipped++;
-      continue;
+      await prisma.repairJob.deleteMany({ where: { repairRequestId: existing.id } });
+      await prisma.repairRequest.delete({ where: { id: existing.id } });
     }
 
     await prisma.repairRequest.create({

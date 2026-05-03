@@ -141,9 +141,9 @@ export default function AdminRepairRequestsPage() {
           <div className="mb-4 grid grid-cols-2 gap-2 md:mb-6 md:grid-cols-3 lg:grid-cols-6 md:gap-3">
             {[
               { label: "Total", value: requests.length, color: "var(--accent-dark)" },
-              { label: "Pending", value: requests.filter(r => ["DRAFT", "PENDING"].includes(r.status)).length, color: "#3b82f6" },
+              { label: "Pending", value: requests.filter(r => r.status === "PENDING").length, color: "#3b82f6" },
               { label: "Bidding", value: requests.filter(r => r.status === "BIDDING").length, color: "#9333ea" },
-              { label: "In Progress", value: requests.filter(r => ["ASSIGNED", "PICKUP_SCHEDULED", "PICKED_UP", "AT_SHOP", "DIAGNOSING", "WAITING_APPROVAL", "REPAIRING", "RETURN_SCHEDULED", "RETURNING"].includes(r.status)).length, color: "#f97316" },
+              { label: "In Progress", value: requests.filter(r => !["DRAFT", "PENDING", "BIDDING", "COMPLETED", "CANCELLED", "REJECTED"].includes(r.status)).length, color: "#f97316" },
               { label: "Completed", value: requests.filter(r => r.status === "COMPLETED").length, color: "#22c55e" },
               { label: "Cancelled", value: requests.filter(r => ["CANCELLED", "REJECTED"].includes(r.status)).length, color: "#ef4444" },
             ].map((stat) => (

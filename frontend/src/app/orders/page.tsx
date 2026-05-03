@@ -61,6 +61,125 @@ function canRespondToFinalQuote(order: OrderItem) {
   );
 }
 
+// === NEW COMPONENTS ===
+
+function OrderProgressModal({ order, onClose }: { order: OrderItem; onClose: () => void }) {
+  const steps = [
+    { key: "PENDING", label: "Created" },
+    { key: "ASSIGNED", label: "Assigned" },
+    { key: "PICKED_UP", label: "In Transit" },
+    { key: "AT_SHOP", label: "At Shop" },
+    { key: "DIAGNOSING", label: "Inspecting" },
+    { key: "REPAIRING", label: "Repairing" },
+    { key: "COMPLETED", label: "Completed" },
+  ];
+
+  const currentIdx = steps.findIndex((s) => s.key === order.status);
+  const activeIdx = currentIdx >= 0 ? currentIdx : order.status === "BIDDING" ? 0 : steps.length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-[2rem] bg-[var(--background)] p-6 shadow-2xl md:p-8" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-[var(--foreground)]">Order Progress</h2>
+          <button onClick={onClose} className="rounded-full p-2 hover:bg-[var(--mint-50)] text-[var(--muted-foreground)]">&times;</button>
+        </div>
+        <div className="mt-8 space-y-6">
+          {steps.map((step, idx) => {
+            const isCompleted = idx < activeIdx;
+            const isCurrent = idx === activeIdx;
+            return (
+              <div key={step.key} className="flex items-center gap-4">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${
+                  isCompleted ? "bg-[var(--accent-dark)] text-white" : isCurrent ? "border-2 border-[var(--accent-dark)] text-[var(--accent-dark)]" : "bg-[var(--mint-50)] text-[var(--muted-foreground)]"
+                }`}>
+                  {isCompleted ? "✓" : idx + 1}
+                </div>
+                <div className={isCurrent ? "font-bold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}>
+                  {step.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {order.repairJob?.deliveries?.length ? (
+          <div className="mt-8 rounded-2xl bg-[var(--mint-50)] p-4 text-sm">
+            <p className="font-semibold text-[var(--foreground)]">Delivery Info</p>
+            {order.repairJob.deliveries.map(d => (
+              <div key={d.id} className="mt-2 text-[var(--muted-foreground)]">
+                <p>Status: {formatStatus(d.status)}</p>
+                {d.riderName && <p>Rider: {d.riderName} ({d.riderPhone})</p>}
+                {d.trackingCode && <p>Tracking: {d.trackingCode}</p>}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function OrderFinancials({ order }: { order: OrderItem }) {
+  if (!order.payments?.length) return null;
+  const payment = order.payments[0];
+
+  return (
+    <div className="rounded-3xl bg-[var(--mint-50)] p-5 text-sm text-[var(--muted-foreground)] mt-4">
+      <p className="font-semibold text-[var(--foreground)]">Financial Details</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-[var(--card)] p-4 border border-[var(--border)]">
+          <p className="font-semibold text-[var(--foreground)]">Payment</p>
+          <p className="mt-1">Method: {payment.method || "N/A"}</p>
+          <p>Status: {formatStatus(payment.status)}</p>
+          <p>Amount: {formatMoney(payment.amount)}</p>
+          {payment.transactionRef && <p className="text-xs break-all">Txn: {payment.transactionRef}</p>}
+        </div>
+        
+        {payment.refunds?.length > 0 && (
+          <div className="rounded-2xl bg-[var(--card)] p-4 border border-red-100 dark:border-red-900">
+            <p className="font-semibold text-red-600 dark:text-red-400">Refund</p>
+            {payment.refunds.map(r => (
+              <div key={r.id} className="mt-1">
+                <p>Amount: {formatMoney(r.amount)}</p>
+                <p>Status: {formatStatus(r.status)}</p>
+                {r.reason && <p className="text-xs mt-1">"{r.reason}"</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OrderSupport({ order }: { order: OrderItem }) {
+  return (
+    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <Link 
+        href={`/support/new?orderId=${order.id}`}
+        className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--mint-50)]"
+      >
+        Raise Support Ticket
+      </Link>
+      
+      {order.supportTickets?.length > 0 && (
+        <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800">
+          {order.supportTickets.length} active ticket(s)
+        </span>
+      )}
+      
+      {order.disputeCases?.length > 0 && (
+        <span className="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-800 border border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800">
+          Dispute {formatStatus(order.disputeCases[0].status)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// === EXISTING COMPONENTS MODIFIED ===
+
 function AcceptedBidSummary({ bid }: { bid?: BidItem | null }) {
   if (!bid) {
     return <p className="mt-2 text-sm text-[var(--muted-foreground)]">Accepted bid details will appear here once a bid is selected.</p>;
@@ -95,6 +214,7 @@ function OrdersPageInner() {
   const [emptyMessage, setEmptyMessage] = useState("Loading your requests...");
   const [flash, setFlash] = useState<FlashMessage | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [selectedOrderForProgress, setSelectedOrderForProgress] = useState<OrderItem | null>(null);
 
   const createdFlag = searchParams.get("created") === "1";
 
@@ -110,7 +230,7 @@ function OrdersPageInner() {
       setLoading(true);
       const data = await getMyOrders(token);
       setOrders(data);
-      setEmptyMessage(data.length ? "" : "No repair requests yet.");
+      setEmptyMessage(data.length ? "" : "No repair requests or orders yet.");
     } catch (error) {
       setOrders([]);
       setEmptyMessage(
@@ -215,13 +335,18 @@ function OrdersPageInner() {
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
+      
+      {selectedOrderForProgress && (
+        <OrderProgressModal order={selectedOrderForProgress} onClose={() => setSelectedOrderForProgress(null)} />
+      )}
+
       <div className="mx-auto max-w-6xl px-3 py-4 md:px-4 md:py-8">
         <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">Orders</p>
-            <h1 className="text-xl font-bold text-[var(--foreground)] md:text-3xl">Track your repair requests</h1>
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted-foreground)]">Orders & Requests</p>
+            <h1 className="text-xl font-bold text-[var(--foreground)] md:text-3xl">Track your orders</h1>
             <p className="mt-1 text-xs text-[var(--muted-foreground)] md:mt-2 md:text-sm">
-              Review vendor bids, accept or decline them, and respond to final diagnosis and quote once the device is inspected.
+              View your service orders, accept marketplace bids, and track repair progress.
             </p>
           </div>
           <Link
@@ -256,9 +381,14 @@ function OrdersPageInner() {
                   <div className="max-w-3xl">
                     <div className="flex flex-wrap items-center gap-3">
                       <h2 className="text-lg font-bold text-[var(--foreground)] md:text-2xl">{order.title}</h2>
-                      <span className="rounded-full bg-[var(--mint-100)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--accent-dark)]">
+                      <span className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] ${order.status === "BIDDING" ? "bg-[var(--mint-100)] text-[var(--accent-dark)]" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"}`}>
                         {formatStatus(order.status)}
                       </span>
+                      {order.source === "DIRECT_SERVICE" && (
+                        <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                          Cart Order
+                        </span>
+                      )}
                     </div>
                     <p className="mt-2 text-[var(--muted-foreground)]">
                       {order.deviceType}
@@ -267,6 +397,16 @@ function OrdersPageInner() {
                       {order.issueCategory ? ` • ${order.issueCategory}` : ""}
                     </p>
                     <p className="mt-3 text-sm text-[var(--muted-foreground)]">{order.problem}</p>
+                    
+                    <button 
+                      onClick={() => setSelectedOrderForProgress(order)}
+                      className="mt-4 text-sm font-semibold text-[var(--accent-dark)] hover:underline"
+                    >
+                      View Progress Timeline &rarr;
+                    </button>
+                    
+                    <OrderFinancials order={order} />
+                    <OrderSupport order={order} />
                   </div>
 
                   <div className="grid gap-3 rounded-3xl bg-[var(--mint-50)] p-5 text-sm text-[var(--muted-foreground)] lg:min-w-[280px]">
@@ -279,7 +419,7 @@ function OrdersPageInner() {
                     </div>
                     <div>
                       <p className="font-semibold text-[var(--foreground)]">Assigned shop</p>
-                      <p className="mt-2">{order.repairJob?.shop.name || "Waiting for vendor selection"}</p>
+                      <p className="mt-2">{order.repairJob?.shop.name || (order.status === "PENDING" ? "Waiting for vendor to accept" : "Waiting for vendor selection")}</p>
                       {order.repairJob?.shop.slug ? (
                         <Link
                           href={`/shops/${order.repairJob.shop.slug}`}
@@ -295,7 +435,7 @@ function OrdersPageInner() {
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 md:mt-5 md:grid-cols-3">
                   <div className="rounded-3xl bg-[var(--mint-50)] p-5 text-sm text-[var(--muted-foreground)]">
                     <p className="font-semibold text-[var(--foreground)]">Bids received</p>
-                    <p className="mt-2 text-2xl font-bold text-[var(--accent-dark)]">{order.bids.length}</p>
+                    <p className="mt-2 text-2xl font-bold text-[var(--accent-dark)]">{order.bids?.length || 0}</p>
                     <p className="mt-2">Final quote: {formatMoney(order.quotedFinalAmount)}</p>
                   </div>
                   <div className="rounded-3xl bg-[var(--mint-50)] p-5 text-sm text-[var(--muted-foreground)]">
@@ -305,8 +445,8 @@ function OrdersPageInner() {
                   </div>
                   <div className="rounded-3xl bg-[var(--mint-50)] p-5 text-sm text-[var(--muted-foreground)]">
                     <p className="font-semibold text-[var(--foreground)]">Latest delivery</p>
-                    <p className="mt-2">{order.repairJob?.deliveries[0] ? formatStatus(order.repairJob.deliveries[0].status) : "No delivery assigned yet"}</p>
-                    <p className="mt-2">{order.repairJob?.deliveries[0]?.trackingCode || "No tracking code yet"}</p>
+                    <p className="mt-2">{order.repairJob?.deliveries?.[0] ? formatStatus(order.repairJob.deliveries[0].status) : "No delivery assigned yet"}</p>
+                    <p className="mt-2">{order.repairJob?.deliveries?.[0]?.trackingCode || "No tracking code yet"}</p>
                   </div>
                 </div>
 

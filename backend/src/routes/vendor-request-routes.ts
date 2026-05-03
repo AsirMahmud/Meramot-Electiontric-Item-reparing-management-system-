@@ -1,8 +1,10 @@
 import { Router } from "express";
 import {
+  acceptPendingRequest,
   getVendorAnalytics,
   getVendorDashboard,
   getVendorMyBids,
+  rejectPendingRequest,
   submitVendorFinalQuote,
   updateVendorAssignedJobStatus,
   upsertVendorBid,
@@ -16,6 +18,8 @@ router.get("/dashboard", getVendorDashboard);
 router.get("/analytics", getVendorAnalytics);
 router.get("/my-bids", getVendorMyBids);
 router.post("/:requestId/bids", upsertVendorBid);
+router.patch("/:requestId/accept", acceptPendingRequest);
+router.patch("/:requestId/reject", rejectPendingRequest);
 router.patch("/jobs/:jobId/status", updateVendorAssignedJobStatus);
 router.patch("/jobs/:jobId/final-quote", submitVendorFinalQuote);
 
