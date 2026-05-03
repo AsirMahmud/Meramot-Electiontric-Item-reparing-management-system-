@@ -35,7 +35,7 @@ const DEVICE_TYPES = [
   "UPS",
   "E-Reader",
   "External Storage",
-  "Keyboard/Mouse",
+  "Keyboard",
   "Streaming Device",
   "Dash Cam",
   "GPS Device",
