@@ -33,7 +33,7 @@ Format: { "isAppliance": false, "isRubbish": false, "suggestions": [ { "brand": 
   const userPrompt = `Brand: ${input.brand}\nModel: ${input.model}`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${env.geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.geminiApiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -87,7 +87,7 @@ Structure the summary like this:
   const userPrompt = `Device Type: ${input.deviceType}\nBrand: ${input.brand}\nModel: ${input.model}\nIssue Category: ${input.issueCategory}\nUser Description: ${input.problem}`;
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${env.geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.geminiApiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
