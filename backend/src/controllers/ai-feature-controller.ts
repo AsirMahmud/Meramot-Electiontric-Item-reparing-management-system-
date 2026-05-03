@@ -41,10 +41,10 @@ export async function summarizeIssue(req: Request, res: Response) {
     }
 
     const result = await summarizeDeviceIssue({
-      deviceType: repairRequest.deviceType,
-      brand: repairRequest.brand,
-      model: repairRequest.model,
-      issueCategory: repairRequest.issueCategory,
+      deviceType: repairRequest.deviceType || "",
+      brand: repairRequest.brand || "",
+      model: repairRequest.model || "",
+      issueCategory: repairRequest.issueCategory || "",
       problem: repairRequest.problem
     });
 
