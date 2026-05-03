@@ -40,6 +40,7 @@ export default function DeliveryAdminDashboard() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [focusedPartnerId, setFocusedPartnerId] = useState<string | null>(null);
   const [orders, setOrders] = useState<DeliveryAdminOrder[]>([]);
+  const [hasNewData, setHasNewData] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [timeline, setTimeline] = useState<Array<{ code: string; title: string; at: string | null }>>([]);
   const [chatMessages, setChatMessages] = useState<DeliveryChatMessage[]>([]);
@@ -156,6 +157,33 @@ export default function DeliveryAdminDashboard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!token || loading) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const [s, p, a, payoutData, ordersData] = await Promise.all([
+          fetchDeliveryAdminStats(token),
+          fetchDeliveryAdminPartners(token, "PENDING"),
+          fetchDeliveryAdminPartners(token),
+          fetchDeliveryAdminPayoutRequests(token, "PENDING"),
+          fetchDeliveryAdminOrders(token),
+        ]);
+
+        const currentHash = `${stats?.pendingRegistrations}-${stats?.activeApprovedPartners}-${pending.length}-${allPartners.length}-${payoutRequests.length}-${orders.length}`;
+        const newHash = `${s.stats.pendingRegistrations}-${s.stats.activeApprovedPartners}-${p.partners.length}-${a.partners.length}-${payoutData.payouts?.length || 0}-${ordersData.deliveries?.length || 0}`;
+
+        if (currentHash !== newHash && stats !== null) {
+          setHasNewData(true);
+        }
+      } catch (error) {
+        // silently fail
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [token, loading, stats, pending.length, allPartners.length, payoutRequests.length, orders.length]);
 
   const mappablePartners = useMemo(
     () =>
@@ -369,7 +397,32 @@ export default function DeliveryAdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8 relative">
+        {hasNewData && (
+          <div className="sticky top-20 z-40 mb-6 rounded-xl border border-blue-500/50 bg-blue-900/30 p-4 shadow-lg backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-blue-800/50 p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-300">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-blue-100">Data was updated elsewhere</p>
+                <p className="text-xs text-blue-300">Another admin has made changes to this table. Please refresh to see the latest changes.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                setHasNewData(false);
+                load();
+              }}
+              className="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500 w-full sm:w-auto"
+            >
+              Refresh Data
+            </button>
+          </div>
+        )}
+
         {error ? (
           <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
             {error}

@@ -34,11 +34,42 @@ export default function AdminVendorsPage() {
   const [vendors, setVendors] = useState<VendorApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [hasNewData, setHasNewData] = useState(false);
 
   useEffect(() => {
     const token = (session?.user as any)?.accessToken;
     if (token) fetchVendors(token);
   }, [session]);
+
+  useEffect(() => {
+    const token = (session?.user as any)?.accessToken;
+    if (!token || loading) return;
+
+    // Poll every 15 seconds to check for data concurrency
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=100`, {
+          credentials: "include",
+          headers: getAuthHeaders(token),
+        });
+        const data = await res.json();
+        if (res.ok && data.applications) {
+          // Compare current vendors array length and statuses with the fetched data
+          // If there's a difference, it means someone else updated the table
+          const currentHash = vendors.map(v => `${v.id}-${v.status}`).sort().join("|");
+          const newHash = data.applications.map((v: any) => `${v.id}-${v.status}`).sort().join("|");
+          
+          if (currentHash !== newHash) {
+            setHasNewData(true);
+          }
+        }
+      } catch (error) {
+        // silently fail background polling
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [session, vendors, loading]);
 
   const fetchVendors = async (token: string) => {
     try {
@@ -253,7 +284,29 @@ export default function AdminVendorsPage() {
   const rejectedVendors = vendors.filter(v => v.status === "REJECTED").length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {hasNewData && (
+        <div className="sticky top-4 z-50 rounded-xl border border-blue-500 bg-blue-50 p-4 shadow-lg dark:border-blue-800 dark:bg-blue-900/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-800">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 dark:text-blue-300">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Data was updated elsewhere</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Another admin has made changes to this table. Please refresh to see the latest changes.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
+          >
+            Refresh Data
+          </button>
+        </div>
+      )}
+
       <div>
         <h2 className="text-xl font-bold text-[var(--accent-dark)] md:text-2xl">Vendors</h2>
         <p className="mt-1 text-xs text-[var(--muted-foreground)] md:text-sm">
