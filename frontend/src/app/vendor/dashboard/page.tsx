@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import AiSummary from "@/components/shared/AiSummary";
 import {
   getVendorDashboard,
   submitVendorBid,
@@ -775,6 +776,16 @@ export default function VendorDashboardPage() {
                         </p>
                         <p className="mt-2 text-sm text-[#5b7262]">{order.problem}</p>
                         
+                        <AiSummary 
+                          orderId={order.id}
+                          deviceType={order.deviceType}
+                          brand={order.brand}
+                          model={order.model}
+                          issueCategory={order.issueCategory}
+                          problem={order.problem}
+                          initialSummary={order.aiSummary}
+                        />
+                        
                         <div className="mt-4 flex flex-wrap gap-3">
                           <button
                             type="button"
@@ -883,6 +894,16 @@ export default function VendorDashboardPage() {
                         {requestItem.issueCategory ? ` • ${requestItem.issueCategory}` : ""}
                       </p>
                       <p className="mt-3 text-sm text-[#5b7262]">{requestItem.problem}</p>
+                      
+                      <AiSummary 
+                        orderId={requestItem.id}
+                        deviceType={requestItem.deviceType}
+                        brand={requestItem.brand}
+                        model={requestItem.model}
+                        issueCategory={requestItem.issueCategory}
+                        problem={requestItem.problem}
+                        initialSummary={requestItem.aiSummary}
+                      />
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         {requestItem.matchReasons.map((reason) => (
@@ -1166,6 +1187,16 @@ export default function VendorDashboardPage() {
                         {job.repairRequest.issueCategory ? ` • ${job.repairRequest.issueCategory}` : ""}
                       </p>
                       <p className="mt-3 text-sm text-[#5b7262]">{job.repairRequest.problem}</p>
+                      
+                      <AiSummary 
+                        orderId={job.repairRequest.id}
+                        deviceType={job.repairRequest.deviceType}
+                        brand={job.repairRequest.brand}
+                        model={job.repairRequest.model}
+                        issueCategory={job.repairRequest.issueCategory}
+                        problem={job.repairRequest.problem}
+                        initialSummary={job.repairRequest.aiSummary}
+                      />
                     </div>
 
                     <div className="grid gap-3 rounded-3xl bg-[#f6faf4] p-5 text-sm text-[#355541] xl:min-w-[280px]">

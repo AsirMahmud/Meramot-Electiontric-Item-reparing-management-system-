@@ -8,6 +8,8 @@ import { createRepairRequest } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
 import { pushLocalNotification } from "@/lib/notifications";
+import DeviceAiMatch from "@/components/requests/DeviceAiMatch";
+import { Sparkles, Loader2 } from "lucide-react";
 
 const DEVICE_TYPES = [
   "Laptop",

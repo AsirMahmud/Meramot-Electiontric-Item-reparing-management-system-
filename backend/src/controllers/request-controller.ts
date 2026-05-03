@@ -640,3 +640,38 @@ export async function updateRequestStatus(req: AuthedRequest, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function deleteRequest(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { requestId } = req.params;
+
+    const existing = await prisma.repairRequest.findFirst({
+      where: { id: requestId, userId },
+      include: {
+        payments: true,
+      },
+    });
+
+    if (!existing) return res.status(404).json({ message: "Request not found" });
+
+    if (existing.status !== RequestStatus.CANCELLED && existing.status !== RequestStatus.COMPLETED && existing.status !== RequestStatus.REJECTED && existing.status !== RequestStatus.RETURNED_TO_CUSTOMER) {
+      return res.status(400).json({ message: "You can only delete cancelled, completed, rejected, or returned requests." });
+    }
+
+    if (existing.payments.some(p => p.status === "PAID")) {
+      return res.status(400).json({ message: "Cannot delete requests that have active paid transactions." });
+    }
+
+    await prisma.repairRequest.delete({
+      where: { id: requestId },
+    });
+
+    return res.json({ message: "Request deleted successfully." });
+  } catch (error) {
+    console.error("deleteRequest error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}

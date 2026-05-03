@@ -17,13 +17,27 @@ export async function requireDeliveryAdminAuth(req: Request, res: Response, next
   }
 
   try {
-    const decoded = jwt.verify(token, env.jwtSecretDeliveryAdmin) as DeliveryAdminJwtPayload;
-    if (decoded.aud !== "delivery_admin" || !decoded.sub) {
-      return res.status(401).json({ message: "Invalid delivery admin token" });
+    let decoded: any;
+    let isAdmin = false;
+
+    try {
+      decoded = jwt.verify(token, env.jwtSecretDeliveryAdmin) as DeliveryAdminJwtPayload;
+      if (decoded.aud !== "delivery_admin" || !decoded.sub) {
+        throw new Error("Invalid delivery admin token");
+      }
+    } catch {
+      // Fallback: Check if it's a standard Main Admin token
+      decoded = jwt.verify(token, env.jwtSecret) as any;
+      if (!decoded.id && !decoded.sub) {
+        throw new Error("Invalid admin token");
+      }
+      isAdmin = true;
     }
 
+    const userId = decoded.sub || decoded.id;
+
     const user = await prisma.user.findUnique({
-      where: { id: decoded.sub },
+      where: { id: userId },
       select: { id: true, role: true, status: true },
     });
 
@@ -32,12 +46,12 @@ export async function requireDeliveryAdminAuth(req: Request, res: Response, next
     }
 
     if (user.status !== "ACTIVE") {
-      return res.status(403).json({ message: "Delivery admin account is not active" });
+      return res.status(403).json({ message: "Account is not active" });
     }
 
     req.deliveryAdminAuth = { userId: user.id };
     return next();
   } catch {
-    return res.status(401).json({ message: "Invalid or expired delivery admin token" });
+    return res.status(401).json({ message: "Invalid or expired authorization token" });
   }
 }

@@ -40,6 +40,7 @@ export const env = {
 
   enableAiChat: process.env.ENABLE_AI_CHAT === "true",
   groqApiKey: process.env.GROQ_API_KEY || "",
+  geminiApiKey: process.env.GEMINI_API_KEY || "",
   pusherAppId: process.env.PUSHER_APP_ID || "",
   pusherKey: process.env.PUSHER_KEY || "",
   pusherSecret: process.env.PUSHER_SECRET || "",

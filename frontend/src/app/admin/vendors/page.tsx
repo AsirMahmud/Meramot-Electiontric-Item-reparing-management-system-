@@ -34,15 +34,46 @@ export default function AdminVendorsPage() {
   const [vendors, setVendors] = useState<VendorApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [hasNewData, setHasNewData] = useState(false);
 
   useEffect(() => {
     const token = (session?.user as any)?.accessToken;
     if (token) fetchVendors(token);
   }, [session]);
 
+  useEffect(() => {
+    const token = (session?.user as any)?.accessToken;
+    if (!token || loading) return;
+
+    // Poll every 15 seconds to check for data concurrency
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=1000`, {
+          credentials: "include",
+          headers: getAuthHeaders(token),
+        });
+        const data = await res.json();
+        if (res.ok && data.applications) {
+          // Compare current vendors array length and statuses with the fetched data
+          // If there's a difference, it means someone else updated the table
+          const currentHash = vendors.map(v => `${v.id}-${v.status}`).sort().join("|");
+          const newHash = data.applications.map((v: any) => `${v.id}-${v.status}`).sort().join("|");
+          
+          if (currentHash !== newHash) {
+            setHasNewData(true);
+          }
+        }
+      } catch (error) {
+        // silently fail background polling
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [session, vendors, loading]);
+
   const fetchVendors = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=100`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/vendors?limit=1000`, {
         credentials: "include",
         headers: getAuthHeaders(token),
       });
@@ -253,7 +284,29 @@ export default function AdminVendorsPage() {
   const rejectedVendors = vendors.filter(v => v.status === "REJECTED").length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {hasNewData && (
+        <div className="sticky top-4 z-50 rounded-xl border border-blue-500 bg-blue-50 p-4 shadow-lg dark:border-blue-800 dark:bg-blue-900/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-800">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 dark:text-blue-300">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Data was updated elsewhere</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Another admin has made changes to this table. Please refresh to see the latest changes.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="whitespace-nowrap rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
+          >
+            Refresh Data
+          </button>
+        </div>
+      )}
+
       <div>
         <h2 className="text-xl font-bold text-[var(--accent-dark)] md:text-2xl">Vendors</h2>
         <p className="mt-1 text-xs text-muted-foreground md:text-sm">
@@ -407,7 +460,17 @@ function AllVendorsSection({
   onFeaturedToggle: (vendorId: string, shopId: string, isFeatured: boolean) => void;
   onDelete: (id: string) => void;
 }) {
-  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any);
+  const [sortBy, setSortBy] = useState<"date" | "rating">("date");
+
+  const customSortFn = sortBy === "rating"
+    ? (a: VendorApplication, b: VendorApplication, order: "asc" | "desc") => {
+        const ratingA = a.shop?.ratingAvg || 0;
+        const ratingB = b.shop?.ratingAvg || 0;
+        return order === "desc" ? ratingB - ratingA : ratingA - ratingB;
+      }
+    : undefined;
+
+  const table = useAdminTableState(vendors, ["shopName", "businessEmail", "phone", "user"] as any, "createdAt", customSortFn);
 
   return (
     <section>
@@ -418,12 +481,24 @@ function AllVendorsSection({
         </div>
       ) : (
         <>
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "date" | "rating")}
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto bg-white dark:bg-[#1C251F]"
+            >
+                <option value="date">Sort by Applied Date</option>
+                <option value="rating">Sort by Shop Rating</option>
+            </select>
+          </div>
           <AdminTableControls
             searchPlaceholder="Search vendors by name, email, phone…"
             searchQuery={table.searchQuery}
             onSearchChange={table.setSearchQuery}
             sortOrder={table.sortOrder}
             onSortToggle={table.toggleSort}
+            sortLabelDesc={sortBy === "rating" ? "Highest rating first" : "Newest first"}
+            sortLabelAsc={sortBy === "rating" ? "Lowest rating first" : "Oldest first"}
             currentPage={table.currentPage}
             totalPages={table.totalPages}
             onPageChange={table.setCurrentPage}
@@ -432,16 +507,18 @@ function AllVendorsSection({
             <table className="min-w-full text-left text-[10px] text-[var(--foreground)] md:text-sm" style={{ tableLayout: "fixed" }}>
               <colgroup>
                 <col style={{ width: "20%" }} />
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "12%" }} />
+                <col style={{ width: "16%" }} />
                 <col style={{ width: "10%" }} />
-                <col style={{ width: "28%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "10%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "26%" }} />
               </colgroup>
               <thead className="border-b border-border bg-[var(--card)]">
                 <tr>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Vendor Shop</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Contact</th>
+                  <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Rating</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">App Status</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Shop Status</th>
                   <th className="px-4 py-3 font-semibold md:px-6 md:py-4">Featured</th>
@@ -458,6 +535,19 @@ function AllVendorsSection({
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <p className="line-clamp-1">{vendor.businessEmail}</p>
                       <p className="text-muted-foreground line-clamp-1">{vendor.phone}</p>
+                    </td>
+                    <td className="px-4 py-3 md:px-6 md:py-4">
+                      {vendor.shop ? (
+                        <div className="flex items-center gap-1">
+                          <svg className="h-3 w-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          <span className="font-bold text-[var(--accent-dark)]">{vendor.shop.ratingAvg?.toFixed(1) || "0.0"}</span>
+                          <span className="text-[8px] text-[var(--muted-foreground)] md:text-[10px]">({vendor.shop.reviewCount || 0})</span>
+                        </div>
+                      ) : (
+                        <span className="text-[var(--muted-foreground)]">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 md:px-6 md:py-4">
                       <span
