@@ -347,15 +347,16 @@ export default function AiChatPage() {
     }
   }
 
-  async function handleDeleteChat() {
-    if (!activeChat) return;
+  async function handleDeleteChat(targetChatId?: string) {
+    const idToDelete = targetChatId || activeChat?.id;
+    if (!idToDelete) return;
 
     if (window.confirm("Are you sure you want to delete this chat?")) {
-      const isDraftOrGuest = activeChat.id.startsWith("draft-chat") || activeChat.id.startsWith("guest-chat");
+      const isDraftOrGuest = idToDelete.startsWith("draft-chat") || idToDelete.startsWith("guest-chat");
 
       if (isLoggedIn && !isDraftOrGuest) {
         try {
-          await deleteAiChatSession(activeChat.id, token);
+          await deleteAiChatSession(idToDelete, token);
         } catch (error) {
           console.error("Failed to delete chat", error);
           setHistoryError("Failed to delete chat on the server.");
@@ -364,13 +365,15 @@ export default function AiChatPage() {
       }
 
       setChatSessions((prev) => {
-        const remaining = prev.filter((chat) => chat.id !== activeChat.id);
+        const remaining = prev.filter((chat) => chat.id !== idToDelete);
         if (remaining.length === 0) {
           const defaultChat = createDefaultChat();
           setActiveChatId(defaultChat.id);
           return [defaultChat];
         }
-        setActiveChatId(remaining[0].id);
+        if (activeChatId === idToDelete) {
+          setActiveChatId(remaining[0].id);
+        }
         return remaining;
       });
     }
@@ -399,42 +402,68 @@ export default function AiChatPage() {
                   const selected = chat.id === activeChatId;
 
                   return (
-                    <button
-                      key={chat.id}
-                      type="button"
-                      onClick={() => setActiveChatId(chat.id)}
-                      className={`flex w-full items-start gap-3 rounded-[1.4rem] px-3 py-3 text-left transition ${
-                        selected
-                          ? "bg-[var(--mint-100)] shadow-sm"
-                          : "hover:bg-[var(--mint-50)]"
-                      }`}
-                    >
-                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--mint-200)] text-[var(--accent-dark)]">
+                    <div key={chat.id} className="group relative flex w-full items-center">
+                      <button
+                        type="button"
+                        onClick={() => setActiveChatId(chat.id)}
+                        className={`flex w-full items-start gap-3 rounded-[1.4rem] px-3 py-3 text-left transition pr-10 ${
+                          selected
+                            ? "bg-[var(--mint-100)] shadow-sm"
+                            : "hover:bg-[var(--mint-50)]"
+                        }`}
+                      >
+                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-200)] text-[var(--accent-dark)]">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="h-5 w-5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                            {chat.title}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                            {chat.subtitle}
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDeleteChat(chat.id);
+                        }}
+                        title="Delete chat"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-[var(--muted-foreground)] opacity-0 transition hover:bg-red-100 hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="1.8"
-                          className="h-5 w-5"
+                          className="h-4 w-4"
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.158 0c-.36-.05-.72-.09-1.08-.122m-1.08-.122a50.11 50.11 0 00-10.42 0m10.42 0L13.79 3.5a1.5 1.5 0 00-1.42-.9h-1.74a1.5 1.5 0 00-1.42.9L10.21 5.79"
                           />
                         </svg>
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--foreground)]">
-                          {chat.title}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                          {chat.subtitle}
-                        </p>
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
