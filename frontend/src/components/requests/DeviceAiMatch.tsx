@@ -22,12 +22,7 @@ export default function DeviceAiMatch({
   onSearchDeeper
 }: DeviceAiMatchProps) {
   if (checkingModel && activeField) {
-    return (
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-        <Loader2 size={14} className="animate-spin text-[var(--accent-dark)]" />
-        <span className="text-xs font-semibold text-[var(--accent-dark)] animate-pulse">Checking...</span>
-      </div>
-    );
+    return null;
   }
 
   if (isAppliance) {
