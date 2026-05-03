@@ -138,25 +138,47 @@ export default function AdminRepairRequestsPage() {
           />
 
           {/* Summary stats */}
-          <div className="mb-4 grid grid-cols-2 gap-2 md:mb-6 md:grid-cols-3 lg:grid-cols-6 md:gap-3">
+          <div className="mb-4 grid grid-cols-2 gap-2 md:mb-6 md:grid-cols-4 md:gap-4">
             {[
-              { label: "Total", value: requests.length, color: "var(--accent-dark)" },
-              { label: "Pending", value: requests.filter(r => r.status === "PENDING").length, color: "#3b82f6" },
-              { label: "Bidding", value: requests.filter(r => r.status === "BIDDING").length, color: "#9333ea" },
-              { label: "In Progress", value: requests.filter(r => !["DRAFT", "PENDING", "BIDDING", "COMPLETED", "CANCELLED", "REJECTED"].includes(r.status)).length, color: "#f97316" },
-              { label: "Completed", value: requests.filter(r => r.status === "COMPLETED").length, color: "#22c55e" },
-              { label: "Cancelled", value: requests.filter(r => ["CANCELLED", "REJECTED"].includes(r.status)).length, color: "#ef4444" },
+              { 
+                label: "Total Requests", 
+                value: requests.length, 
+                color: "var(--foreground)" 
+              },
+              { 
+                label: "Pending (Direct)", 
+                value: requests.filter(r => r.status === "PENDING").length, 
+                color: "#3b82f6",
+                desc: "Waiting for shop approval"
+              },
+              { 
+                label: "Bidding (Market)", 
+                value: requests.filter(r => r.status === "BIDDING").length, 
+                color: "#9333ea",
+                desc: "Waiting for customer decision"
+              },
+              { 
+                label: "Assigned & Active", 
+                value: requests.filter(r => !["DRAFT", "PENDING", "BIDDING", "CANCELLED", "REJECTED", "COMPLETED"].includes(r.status)).length, 
+                color: "#f97316",
+                desc: "Jobs currently in progress"
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 text-center md:p-4"
+                className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm md:p-5"
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] md:text-xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] md:text-xs">
                   {stat.label}
                 </p>
-                <p className="mt-1 text-xl font-bold md:text-2xl" style={{ color: stat.color }}>
+                <p className="mt-2 text-2xl font-black md:text-4xl" style={{ color: stat.color }}>
                   {stat.value}
                 </p>
+                {stat.desc && (
+                  <p className="mt-1 text-[10px] font-medium text-[var(--muted-foreground)] md:mt-2 md:text-xs">
+                    {stat.desc}
+                  </p>
+                )}
               </div>
             ))}
           </div>
