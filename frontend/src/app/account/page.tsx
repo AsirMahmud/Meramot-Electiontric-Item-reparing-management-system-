@@ -78,7 +78,7 @@ export default function AccountPage() {
             href="/"
             className="rounded-full border border-[var(--border)] bg-[var(--card)] px-5 py-2 text-sm font-semibold text-[var(--foreground)]"
           >
-            Back to home
+            Back to Home
           </Link>
         </div>
 

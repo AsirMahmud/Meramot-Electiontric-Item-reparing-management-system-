@@ -152,7 +152,7 @@ function ProfilePageInner() {
             href="/"
             className="rounded-full border border-[var(--border)] bg-[var(--card)] px-5 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--mint-50)]"
           >
-            Back to home
+            Back to Home
           </Link>
         </div>
 
