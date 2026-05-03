@@ -49,7 +49,7 @@ export async function suggestModel(req: Request, res: Response) {
     const model = typeof req.body?.model === "string" ? req.body.model.trim() : "";
     const deeperSearch = !!req.body?.deeperSearch;
 
-    if (!model) {
+    if (!model && !brand) {
       return res.json({ ok: false, suggestions: [] });
     }
 

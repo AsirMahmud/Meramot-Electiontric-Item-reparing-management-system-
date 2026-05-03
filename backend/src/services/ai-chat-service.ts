@@ -132,7 +132,7 @@ Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...
         Authorization: `Bearer ${env.groqApiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // Use 70b model for better JSON and reasoning
+        model: "llama-3.1-8b-instant", // Reverted to 8b-instant for better compatibility and rate limits
         messages,
         temperature: input.deeperSearch ? 0.6 : 0.2,
         response_format: { type: "json_object" }
