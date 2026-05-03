@@ -327,64 +327,83 @@ function NewRequestPageInner() {
               ))}
             </select>
 
-            <input
-              value={form.brand}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, brand: e.target.value }));
-                setDeeperSearch(false);
-              }}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              placeholder="Brand"
-            />
-
-            <div className="relative">
+            <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
               <input
-                value={form.model}
+                value={form.brand}
                 onChange={(e) => {
-                  setForm((prev) => ({ ...prev, model: e.target.value }));
+                  setForm((prev) => ({ ...prev, brand: e.target.value }));
                   setDeeperSearch(false);
                 }}
-                className={`w-full rounded-2xl border ${modelSuggestions.length > 0 ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
-                placeholder="Model"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]"
+                placeholder="Brand"
               />
-              {checkingModel && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
-                  checking...
-                </span>
-              )}
-              {isAppliance && !checkingModel && (
-                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-red-200 bg-red-50 p-3 shadow-lg dark:border-red-900/50 dark:bg-red-950/30">
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Sorry, we don't repair those :(</p>
-                </div>
-              )}
-              {modelSuggestions.length > 0 && !checkingModel && !isAppliance && (
-                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg max-h-64 overflow-y-auto">
-                  <p className="text-xs font-semibold text-[var(--muted-foreground)] mb-2">Did you mean this?</p>
-                  <div className="flex flex-col gap-2">
-                    {modelSuggestions.map((sug, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          setForm(prev => ({...prev, brand: sug.brand, model: sug.model}));
-                          setModelSuggestions([]);
-                        }}
-                        className="flex w-full flex-col items-start rounded-xl bg-[var(--mint-50)] px-3 py-2 text-left transition hover:bg-[var(--mint-100)]"
-                      >
-                        <span className="text-sm font-bold text-[var(--accent-dark)]">{sug.brand} {sug.model}</span>
-                        {sug.specs && <span className="text-xs text-[var(--muted-foreground)]">{sug.specs}</span>}
-                      </button>
-                    ))}
-                    {!deeperSearch && (
-                      <button
-                        type="button"
-                        onClick={() => setDeeperSearch(true)}
-                        className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--muted-foreground)] hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        None of these? Search deeper
-                      </button>
-                    )}
-                  </div>
+
+              <div className="relative">
+                <input
+                  value={form.model}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, model: e.target.value }));
+                    setDeeperSearch(false);
+                  }}
+                  className={`w-full rounded-2xl border ${modelSuggestions.length > 0 ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
+                  placeholder="Model"
+                />
+                {checkingModel && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
+                    checking...
+                  </span>
+                )}
+              </div>
+
+              {/* AI Assistant Suggestions spanning both columns */}
+              {(isAppliance || modelSuggestions.length > 0) && !checkingModel && (
+                <div className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm transition-all">
+                  {isAppliance ? (
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">⚠️</span>
+                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                          Sorry, we do not repair large home appliances like fridges or ovens.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--accent-dark)] mb-3">
+                        ✨ AI Assistant Match
+                      </p>
+                      <p className="text-sm font-semibold text-[var(--foreground)] mb-3">
+                        Did you mean one of these devices?
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {modelSuggestions.map((sug, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setForm(prev => ({...prev, brand: sug.brand, model: sug.model}));
+                              setModelSuggestions([]);
+                            }}
+                            className="flex flex-col items-start rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left transition hover:border-[var(--accent-dark)] hover:bg-[var(--mint-50)]"
+                          >
+                            <span className="text-sm font-bold text-[var(--foreground)]">{sug.brand} {sug.model}</span>
+                            {sug.specs && <span className="mt-1 text-xs text-[var(--muted-foreground)] line-clamp-2">{sug.specs}</span>}
+                          </button>
+                        ))}
+                      </div>
+                      {!deeperSearch && (
+                        <div className="mt-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setDeeperSearch(true)}
+                            className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--muted-foreground)] transition hover:bg-[var(--mint-50)] hover:text-[var(--foreground)]"
+                          >
+                            None of these? Search deeper
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

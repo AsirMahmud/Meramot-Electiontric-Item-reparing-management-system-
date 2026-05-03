@@ -285,6 +285,28 @@ function OrdersPageInner() {
     }
   }
 
+  async function handleDeleteRequest(orderId: string) {
+    if (!token) return;
+
+    if (!window.confirm("Are you sure you want to completely delete this order from your history? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      setPendingKey(`delete:${orderId}`);
+      const { deleteRequest } = await import("@/lib/api");
+      const res = await deleteRequest(token, orderId);
+      setFlash({ type: "success", text: res.message || "Order deleted successfully." });
+      await loadOrders();
+    } catch (error) {
+      setPendingKey(null);
+      setFlash({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not delete the order.",
+      });
+    }
+  }
+
   async function handleAcceptBid(orderId: string, bidId: string) {
     if (!token) return;
 
@@ -436,6 +458,16 @@ function OrdersPageInner() {
                           className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
                         >
                           {pendingKey === `cancel:${order.id}` ? "Cancelling..." : "Cancel Order"}
+                        </button>
+                      )}
+
+                      {(order.status === "CANCELLED" || order.status === "COMPLETED" || order.status === "REJECTED" || order.status === "RETURNED_TO_CUSTOMER") && (
+                        <button
+                          onClick={() => handleDeleteRequest(order.id)}
+                          disabled={pendingKey === `delete:${order.id}`}
+                          className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+                        >
+                          {pendingKey === `delete:${order.id}` ? "Deleting..." : "Delete Order"}
                         </button>
                       )}
                     </div>

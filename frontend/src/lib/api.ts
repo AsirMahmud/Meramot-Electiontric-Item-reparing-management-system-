@@ -843,6 +843,16 @@ export async function cancelRequest(token: string, requestId: string) {
   );
 }
 
+export async function deleteRequest(token: string, requestId: string) {
+  return authedRequest(
+    `/requests/${encodeURIComponent(requestId)}`,
+    token,
+    {
+      method: "DELETE",
+    }
+  );
+}
+
 export async function respondToFinalQuote(
   token: string,
   requestId: string,
