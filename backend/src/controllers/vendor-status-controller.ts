@@ -4,6 +4,55 @@ import prisma from "../models/prisma.js";
 import { env } from "../config/env.js";
 import { sendVendorWelcomeNotification } from "../services/vendor-onboarding-notify.js";
 
+/**
+ * Fire-and-forget: ask Gemini 2.5 Flash Lite to format a shop address
+ * into a clean, professional Bangladeshi address string, then persist it.
+ */
+async function formatAddressWithAI(applicationId: string, rawAddress: string) {
+  if (!env.geminiApiKey || !rawAddress.trim()) return;
+
+  try {
+    const prompt = `You are an address formatter for Bangladesh. Given this raw shop address, return ONLY a single clean, properly formatted address string (in English). Fix spelling, add proper punctuation, capitalise place names, and include city/area if present. Do NOT add fictional details. If the input is too vague to improve, return it as-is.\n\nRaw address: ${rawAddress}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${env.geminiApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 },
+        }),
+      }
+    );
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const formatted = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!formatted || formatted.length < 3) return;
+
+    await prisma.vendorApplication.update({
+      where: { id: applicationId },
+      data: { address: formatted },
+    });
+
+    // Also update the Shop record if it exists
+    const app = await prisma.vendorApplication.findUnique({
+      where: { id: applicationId },
+      select: { shop: { select: { id: true } } },
+    });
+    if (app?.shop?.id) {
+      await prisma.shop.update({
+        where: { id: app.shop.id },
+        data: { address: formatted },
+      });
+    }
+  } catch (err) {
+    console.error("[AI Address Format] Failed:", err);
+  }
+}
+
 type AuthPayload = {
   sub: string;
   role?: string;
@@ -93,6 +142,8 @@ export async function getVendorApplicationStatus(req: Request, res: Response) {
         address: true,
         city: true,
         area: true,
+        lat: true,
+        lng: true,
         specialties: true,
         courierPickup: true,
         inShopRepair: true,
@@ -180,6 +231,8 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
       address,
       city,
       area,
+      lat,
+      lng,
       specialties,
       courierPickup,
       inShopRepair,
@@ -194,6 +247,8 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
       address?: string;
       city?: string;
       area?: string;
+      lat?: number | string;
+      lng?: number | string;
       specialties?: string[] | string;
       courierPickup?: boolean;
       inShopRepair?: boolean;
@@ -215,12 +270,11 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
       !normalizedOwnerName ||
       !normalizedBusinessEmail ||
       !normalizedPhone ||
-      !normalizedShopName ||
-      !normalizedAddress
+      !normalizedShopName
     ) {
       return res.status(400).json({
         message:
-          "ownerName, businessEmail, phone, shopName, and address are required",
+          "ownerName, businessEmail, phone, and shopName are required",
       });
     }
 
@@ -289,6 +343,8 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
           address: normalizedAddress,
           city: normalizedCity,
           area: normalizedArea,
+          lat: lat !== undefined && lat !== null && lat !== "" ? Number(lat) : undefined,
+          lng: lng !== undefined && lng !== null && lng !== "" ? Number(lng) : undefined,
           specialties: normalizedSpecialties,
           courierPickup: Boolean(courierPickup),
           inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : true,
@@ -321,6 +377,11 @@ export async function updateVendorApplicationStatus(req: Request, res: Response)
         },
       });
     });
+
+    // Fire-and-forget: format the shop address using Gemini AI
+    if (normalizedAddress) {
+      formatAddressWithAI(updated.id, normalizedAddress).catch(() => {});
+    }
 
     return res.json({
       message:

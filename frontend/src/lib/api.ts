@@ -115,9 +115,11 @@ export type VendorApplicationPayload = {
   shopName: string;
   logoUrl?: string;
   tradeLicenseNo?: string;
-  address: string;
+  address?: string;
   city?: string;
   area?: string;
+  lat?: number | null;
+  lng?: number | null;
   specialties?: string[] | string;
   courierPickup?: boolean;
   inShopRepair?: boolean;

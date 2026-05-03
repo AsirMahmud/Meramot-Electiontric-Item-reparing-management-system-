@@ -6,7 +6,7 @@ import prisma from "../models/prisma.js";
 import { currentAdminPasskey } from "../services/admin-passkey-service.js";
 import { validateEmail } from "../utils/validate-email.js";
 import emailValidator from 'deep-email-validator';
-import emailValidator from 'deep-email-validator';
+import { env } from "../config/env.js";
 
 function parseCsvList(input?: string) {
   if (!input) return [];
@@ -14,6 +14,43 @@ function parseCsvList(input?: string) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/**
+ * Fire-and-forget: ask Gemini 2.5 Flash Lite to format a shop address
+ * into a clean, professional Bangladeshi address string, then persist it.
+ */
+async function formatAddressWithAI(applicationId: string, rawAddress: string) {
+  if (!env.geminiApiKey || !rawAddress.trim()) return;
+
+  try {
+    const prompt = `You are an address formatter for Bangladesh. Given this raw shop address, return ONLY a single clean, properly formatted address string (in English). Fix spelling, add proper punctuation, capitalise place names, and include city/area if present. Do NOT add fictional details. If the input is too vague to improve, return it as-is.\n\nRaw address: ${rawAddress}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${env.geminiApiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 },
+        }),
+      }
+    );
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const formatted = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!formatted || formatted.length < 3) return;
+
+    await prisma.vendorApplication.update({
+      where: { id: applicationId },
+      data: { address: formatted },
+    });
+  } catch (err) {
+    console.error("[AI Address Format] Failed:", err);
+  }
 }
 
 
@@ -70,6 +107,8 @@ export async function createVendorApplication(req: Request, res: Response) {
       address?: string;
       city?: string;
       area?: string;
+      lat?: number | string;
+      lng?: number | string;
       specialties?: string[] | string;
       courierPickup?: boolean;
       inShopRepair?: boolean;
@@ -86,12 +125,11 @@ export async function createVendorApplication(req: Request, res: Response) {
         !phone ||
         !password ||
         !confirmPassword ||
-        !shopName ||
-        !address
+        !shopName
       ) {
         return res.status(400).json({
           message:
-            "ownerName, businessEmail, phone, password, confirmPassword, shopName, and address are required",
+            "ownerName, businessEmail, phone, password, confirmPassword, and shopName are required",
         });
       }
 
@@ -107,10 +145,10 @@ export async function createVendorApplication(req: Request, res: Response) {
         });
       }
     } else {
-      if (!ownerName || !businessEmail || !phone || !shopName || !address) {
+      if (!ownerName || !businessEmail || !phone || !shopName) {
         return res.status(400).json({
           message:
-            "ownerName, businessEmail, phone, shopName, and address are required",
+            "ownerName, businessEmail, phone, and shopName are required",
         });
       }
     }
@@ -197,9 +235,11 @@ export async function createVendorApplication(req: Request, res: Response) {
           phone: phone.trim(),
           shopName: shopName.trim(),
           tradeLicenseNo: tradeLicenseNo?.trim() || null,
-          address: address.trim(),
+          address: address?.trim() || "",
           city: city?.trim() || null,
           area: area?.trim() || null,
+          lat: lat !== undefined && lat !== null && lat !== "" ? Number(lat) : null,
+          lng: lng !== undefined && lng !== null && lng !== "" ? Number(lng) : null,
           specialties: normalizedSpecialties,
           courierPickup: Boolean(courierPickup),
           inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : true,
@@ -220,6 +260,11 @@ export async function createVendorApplication(req: Request, res: Response) {
 
       return { user, application };
     });
+
+    // Fire-and-forget: format the shop address using Gemini AI
+    if (address?.trim()) {
+      formatAddressWithAI(result.application.id, address.trim()).catch(() => {});
+    }
 
     return res.status(201).json({
       message: "Vendor application submitted successfully",
