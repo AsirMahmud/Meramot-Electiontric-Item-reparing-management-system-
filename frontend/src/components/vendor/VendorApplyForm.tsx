@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
 import {
   createVendorApplication,
   getVendorApplicationStatus,
@@ -11,8 +12,20 @@ import {
 import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, MapPin, Search, X } from "lucide-react";
 import { validateEmail } from "@/lib/validate-email";
+import type { StoredLocation } from "@/components/location/types";
+import { DEFAULT_COORDS } from "@/components/location/types";
+import { forwardGeocode } from "@/components/location/location-utils";
+
+const MapPicker = dynamic(() => import("@/components/location/MapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[180px] w-full items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--mint-50)] text-xs text-muted-foreground sm:h-[320px]">
+      Loading map…
+    </div>
+  ),
+});
 
 const SPECIALTY_OPTIONS = [
   { value: "Smartphone Repair", label: "Smartphone Repair" },
@@ -91,6 +104,34 @@ export default function VendorApplyForm() {
   const [loadingExisting, setLoadingExisting] = useState(true);
   const [error, setError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [mapDraft, setMapDraft] = useState<StoredLocation | null>(null);
+  const [addressSearch, setAddressSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+
+  const handleMapDraftChange = useCallback((location: StoredLocation) => {
+    setMapDraft(location);
+    setForm((prev) => ({
+      ...prev,
+      address: location.address || prev.address,
+      city: location.city || prev.city,
+      area: location.area || prev.area,
+    }));
+  }, []);
+
+  async function handleAddressSearch() {
+    if (!addressSearch.trim()) return;
+    setSearching(true);
+    try {
+      const result = await forwardGeocode(addressSearch.trim());
+      if (result) {
+        handleMapDraftChange(result);
+        setMapDraft(result);
+      }
+    } finally {
+      setSearching(false);
+    }
+  }
 
   const passwordsMismatch =
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
@@ -448,8 +489,20 @@ export default function VendorApplyForm() {
             />
           </div>
 
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <label htmlFor="vendorBusinessAddress" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Business address</label>
+          {/* ── Business Location (Map + Address) ── */}
+          <div className="flex flex-col gap-2 md:col-span-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="vendorBusinessAddress" className="text-xs font-medium text-slate-600 pl-1 dark:text-slate-400">Business address</label>
+              <button
+                type="button"
+                onClick={() => setShowMap((v) => !v)}
+                className="flex items-center gap-1 rounded-xl bg-[var(--mint-50)] px-2.5 py-1 text-[11px] font-semibold text-[var(--accent-dark)] transition hover:bg-[var(--mint-100)] dark:bg-[#1a2e22] dark:text-[#A8D5A2]"
+              >
+                <MapPin size={13} />
+                {showMap ? "Hide map" : "Pick on map"}
+              </button>
+            </div>
+
             <input
               id="vendorBusinessAddress"
               className="rounded-2xl border border-border bg-white px-3.5 py-2.5 text-sm text-[var(--foreground)] dark:border-white/10 dark:bg-[#15201A] md:px-4 md:py-3"
@@ -459,6 +512,38 @@ export default function VendorApplyForm() {
               value={form.address}
               onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
             />
+
+            {showMap && (
+              <div className="space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-3 dark:border-white/5 dark:bg-[#15201A]">
+                {/* Search bar */}
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 rounded-xl border border-border bg-white px-3 py-2 text-xs text-[var(--foreground)] placeholder:text-muted-foreground dark:border-white/10 dark:bg-[#1C251F]"
+                    placeholder="Search address (e.g. Mirpur 10, Dhaka)…"
+                    value={addressSearch}
+                    onChange={(e) => setAddressSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddressSearch(); } }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddressSearch}
+                    disabled={searching}
+                    className="flex items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                  >
+                    <Search size={13} />
+                    {searching ? "…" : "Go"}
+                  </button>
+                </div>
+
+                <p className="pl-1 text-[10px] text-muted-foreground">Click on the map to pinpoint your shop location</p>
+
+                <MapPicker
+                  selectedLocation={null}
+                  draftLocation={mapDraft}
+                  onDraftChange={handleMapDraftChange}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
