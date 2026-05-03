@@ -12,19 +12,14 @@ import {
 import CreatableSelect from "react-select/creatable";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
-import { ImagePlus, MapPin, Search, X } from "lucide-react";
+import { ImagePlus, MapPin, X } from "lucide-react";
 import { validateEmail } from "@/lib/validate-email";
 import type { StoredLocation } from "@/components/location/types";
-import { forwardGeocode } from "@/components/location/location-utils";
 
-const MapPicker = dynamic(() => import("@/components/location/MapPicker"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[180px] w-full items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--mint-50)] text-xs text-muted-foreground sm:h-[320px]">
-      Loading map…
-    </div>
-  ),
-});
+const LocationPickerModal = dynamic(
+  () => import("@/components/location/LocationPickerModal"),
+  { ssr: false }
+);
 
 const SPECIALTY_OPTIONS = [
   { value: "Smartphone Repair", label: "Smartphone Repair" },
@@ -106,10 +101,9 @@ export default function VendorApplyForm() {
   const [error, setError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [mapDraft, setMapDraft] = useState<StoredLocation | null>(null);
-  const [addressSearch, setAddressSearch] = useState("");
-  const [searching, setSearching] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
 
-  const handleMapDraftChange = useCallback((location: StoredLocation) => {
+  const handleMapConfirm = useCallback(async (location: StoredLocation) => {
     setMapDraft(location);
     // Auto-fill city and area from map, but NOT the shop address text
     setForm((prev) => ({
@@ -118,20 +112,6 @@ export default function VendorApplyForm() {
       area: location.area || prev.area,
     }));
   }, []);
-
-  async function handleAddressSearch() {
-    if (!addressSearch.trim()) return;
-    setSearching(true);
-    try {
-      const result = await forwardGeocode(addressSearch.trim());
-      if (result) {
-        handleMapDraftChange(result);
-        setMapDraft(result);
-      }
-    } finally {
-      setSearching(false);
-    }
-  }
 
   const passwordsMismatch =
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
@@ -517,42 +497,38 @@ export default function VendorApplyForm() {
               Pin your shop's approximate location on the map. This is used for distance calculations, sorting, and ETA — it won't be shown publicly on your shop profile.
             </p>
 
-            {mapDraft?.lat && mapDraft?.lng && (
-              <div className="flex items-center gap-2 rounded-xl bg-green-50 px-3 py-2 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-300">
-                <MapPin size={13} />
-                📍 Location pinned — {mapDraft.area && mapDraft.city ? `${mapDraft.area}, ${mapDraft.city}` : `${mapDraft.lat.toFixed(4)}, ${mapDraft.lng.toFixed(4)}`}
-              </div>
-            )}
-
-            <div className="space-y-2 rounded-2xl border border-[var(--border)] bg-[var(--mint-50)] p-3 dark:border-white/5 dark:bg-[#15201A]">
-              {/* Search bar */}
-              <div className="flex gap-2">
-                <input
-                  className="flex-1 rounded-xl border border-border bg-white px-3 py-2 text-xs text-[var(--foreground)] placeholder:text-muted-foreground dark:border-white/10 dark:bg-[#1C251F]"
-                  placeholder="Search address (e.g. Mirpur 10, Dhaka)…"
-                  value={addressSearch}
-                  onChange={(e) => setAddressSearch(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddressSearch(); } }}
-                />
+            {mapDraft?.lat && mapDraft?.lng ? (
+              <div className="flex items-center justify-between gap-2 rounded-2xl border border-green-200 bg-green-50 px-3 py-2.5 dark:border-green-700/40 dark:bg-green-900/20 sm:px-4 sm:py-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-green-700 dark:text-green-300">
+                  <MapPin size={14} />
+                  <span>📍 Location pinned — {mapDraft.area && mapDraft.city ? `${mapDraft.area}, ${mapDraft.city}` : `${mapDraft.lat.toFixed(4)}, ${mapDraft.lng.toFixed(4)}`}</span>
+                </div>
                 <button
                   type="button"
-                  onClick={handleAddressSearch}
-                  disabled={searching}
-                  className="flex items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                  onClick={() => setShowMapModal(true)}
+                  className="shrink-0 rounded-xl bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-800 transition hover:bg-green-200 dark:bg-green-800/30 dark:text-green-200"
                 >
-                  <Search size={13} />
-                  {searching ? "…" : "Go"}
+                  Change
                 </button>
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowMapModal(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--mint-50)] px-4 py-4 text-sm font-semibold text-[var(--accent-dark)] transition hover:border-[var(--accent-dark)] hover:bg-[var(--mint-100)] dark:bg-[#1a2e22] dark:text-[#A8D5A2] sm:py-5"
+              >
+                <MapPin size={18} />
+                Pick shop location on map
+              </button>
+            )}
 
-              <p className="pl-1 text-[10px] text-muted-foreground">Click on the map to pinpoint your shop location</p>
-
-              <MapPicker
-                selectedLocation={null}
-                draftLocation={mapDraft}
-                onDraftChange={handleMapDraftChange}
+            {showMapModal && (
+              <LocationPickerModal
+                selectedLocation={mapDraft}
+                onClose={() => setShowMapModal(false)}
+                onConfirm={handleMapConfirm}
               />
-            </div>
+            )}
           </div>
 
           {/* ── 2. Shop Address (OPTIONAL at this stage) ── */}
