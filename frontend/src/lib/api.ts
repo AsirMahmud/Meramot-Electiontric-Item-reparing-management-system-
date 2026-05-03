@@ -708,6 +708,7 @@ export type VendorDashboardData = {
     relevanceScore: number;
     matchReasons: string[];
     myBid?: BidItem | null;
+    isExplicitlyRequested?: boolean;
   }>;
   myBids: BidItem[];
   assignedJobs: Array<{
@@ -870,6 +871,16 @@ export function rejectPendingOrder(token: string, requestId: string, reason?: st
     {
       method: "PATCH",
       body: JSON.stringify({ reason }),
+    }
+  );
+}
+
+export function declineExplicitRequest(token: string, requestId: string) {
+  return authedRequest(
+    `/vendor/requests/${encodeURIComponent(requestId)}/decline-explicit`,
+    token,
+    {
+      method: "PATCH",
     }
   );
 }

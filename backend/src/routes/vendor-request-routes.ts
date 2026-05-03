@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   acceptPendingRequest,
+  declineExplicitRequest,
   getVendorAnalytics,
   getVendorDashboard,
   getVendorMyBids,
@@ -20,6 +21,7 @@ router.get("/my-bids", getVendorMyBids);
 router.post("/:requestId/bids", upsertVendorBid);
 router.patch("/:requestId/accept", acceptPendingRequest);
 router.patch("/:requestId/reject", rejectPendingRequest);
+router.patch("/:requestId/decline-explicit", declineExplicitRequest);
 router.patch("/jobs/:jobId/status", updateVendorAssignedJobStatus);
 router.patch("/jobs/:jobId/final-quote", submitVendorFinalQuote);
 

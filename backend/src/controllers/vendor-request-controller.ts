@@ -476,6 +476,7 @@ export async function getVendorDashboard(req: AuthedRequest, res: Response) {
           myBid,
           relevanceScore: relevance.score,
           matchReasons: relevance.reasons,
+          isExplicitlyRequested,
         };
       })
       .filter(Boolean)
@@ -1436,6 +1437,52 @@ export async function rejectPendingRequest(req: AuthedRequest, res: Response) {
     });
   } catch (error) {
     console.error("rejectPendingRequest error:", error);
+    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function declineExplicitRequest(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const role = req.user?.role;
+    const requestId = req.params.requestId as string;
+
+    if (!userId) return res.status(401).json({ message: "Authentication required" });
+    if (role !== "VENDOR") return res.status(403).json({ message: "Vendor access only" });
+
+    const { shop } = await getVendorContext(userId);
+
+    const existing = await prisma.repairRequest.findFirst({
+      where: {
+        id: requestId,
+        status: RequestStatus.BIDDING,
+        requestedShopId: shop.id,
+      },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Explicit request not found or no longer in bidding" });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // Just mark the request as REJECTED. There is no repairJob yet and no payment to refund.
+      const request = await tx.repairRequest.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.REJECTED,
+          rejectedAt: new Date(),
+        },
+      });
+      return { request };
+    });
+
+    return res.json({
+      message: "Direct request declined successfully.",
+      request: { id: result.request.id, status: result.request.status },
+    });
+  } catch (error) {
+    console.error("declineExplicitRequest error:", error);
     if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }

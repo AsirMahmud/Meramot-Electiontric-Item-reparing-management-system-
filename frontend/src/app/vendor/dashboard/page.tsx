@@ -405,6 +405,28 @@ export default function VendorDashboardPage() {
     }
   }
 
+  async function handleDeclineExplicitRequest(requestId: string) {
+    if (!token) return;
+
+    if (!window.confirm("Are you sure you want to decline this request? The customer is explicitly waiting for your answer.")) {
+      return;
+    }
+
+    try {
+      setPendingKey(`decline-explicit:${requestId}`);
+      // Using the dynamically imported declineExplicitRequest API function
+      await (await import("@/lib/api")).declineExplicitRequest(token, requestId);
+      setFlash({ type: "success", text: "Request declined successfully." });
+      await loadDashboard();
+    } catch (error) {
+      setPendingKey(null);
+      setFlash({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not decline request.",
+      });
+    }
+  }
+
   async function handleJobStatusSubmit(jobId: string) {
     if (!token) {
       setFlash({ type: "error", text: "Please sign in again to continue." });
@@ -1063,18 +1085,30 @@ export default function VendorDashboardPage() {
                           ? `Last updated ${formatDate(requestItem.myBid.updatedAt)}`
                           : "You can revise your bid anytime while the request stays in bidding."}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => handleBidClick(requestItem.id)}
-                        disabled={isSubmitting}
-                        className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isSubmitting
-                          ? "Saving..."
-                          : requestItem.myBid
-                            ? "Update offer"
-                            : "Make offer"}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {requestItem.isExplicitlyRequested && !requestItem.myBid && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeclineExplicitRequest(requestItem.id)}
+                            disabled={isSubmitting || pendingKey === `decline-explicit:${requestItem.id}`}
+                            className="rounded-full border border-red-200 bg-white px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {pendingKey === `decline-explicit:${requestItem.id}` ? "Declining..." : "Decline request"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleBidClick(requestItem.id)}
+                          disabled={isSubmitting}
+                          className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isSubmitting
+                            ? "Saving..."
+                            : requestItem.myBid
+                              ? "Update offer"
+                              : "Make offer"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </article>
