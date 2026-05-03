@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { formatServiceTitle } from "@/lib/utils";
 import {
   checkoutCart,
   getMyCarts,
@@ -87,13 +85,9 @@ export default function CartPage() {
   const [busy, setBusy] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<StoredLocation | null>(null);
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
-
   const [scheduleType, setScheduleType] = useState<ScheduleType>("NOW");
   const [scheduledAt, setScheduledAt] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("SSLCOMMERZ");
-  const [preferredPickup, setPreferredPickup] = useState<boolean>(true);
   const [deliveryType, setDeliveryType] = useState<"REGULAR" | "EXPRESS">("REGULAR");
   const [addressMode, setAddressMode] = useState<AddressMode>("MANUAL");
   const [address, setAddress] = useState("");
@@ -102,6 +96,7 @@ export default function CartPage() {
   const [lat, setLat] = useState<number | undefined>(undefined);
   const [lng, setLng] = useState<number | undefined>(undefined);
   const [problemNote, setProblemNote] = useState("");
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   function applySelectedLocation(location: StoredLocation | null) {
     setSelectedLocation(location);
@@ -163,14 +158,6 @@ export default function CartPage() {
 
   const primaryCart = carts[0] || null;
 
-  useEffect(() => {
-    if (primaryCart && primaryCart.shop.categories) {
-      if (!primaryCart.shop.categories.includes("COURIER_PICKUP") && primaryCart.shop.categories.includes("IN_SHOP_REPAIR")) {
-        setPreferredPickup(false);
-      }
-    }
-  }, [primaryCart]);
-
   const subtotal = useMemo(() => {
     if (!primaryCart) return 0;
     return primaryCart.items.reduce(
@@ -190,9 +177,9 @@ export default function CartPage() {
   }, [primaryCart, subtotal]);
 
   const deliveryFee = useMemo(() => {
-    if (!primaryCart || !preferredPickup) return 0;
+    if (!primaryCart) return 0;
     return deliveryType === "EXPRESS" ? EXPRESS_DELIVERY_FEE : REGULAR_DELIVERY_FEE;
-  }, [primaryCart, deliveryType, preferredPickup]);
+  }, [primaryCart, deliveryType]);
 
   const total = subtotal + serviceCharge + deliveryFee;
   const shopRating = primaryCart?.shop.ratingAvg
@@ -300,14 +287,13 @@ export default function CartPage() {
           scheduleType,
           scheduledAt: scheduleType === "LATER" ? scheduledAt : undefined,
           paymentMethod,
-          preferredPickup,
           addressMode,
           address,
           city,
           area,
           lat,
           lng,
-          deliveryType: preferredPickup ? deliveryType : undefined,
+          deliveryType,
           problemNote,
         },
         token,
@@ -363,35 +349,35 @@ export default function CartPage() {
         firstName={session?.user?.name?.split(" ")[0]}
       />
 
-      <div className="mx-auto max-w-7xl px-3 py-4 md:px-6 md:py-8">
-        <section className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-gradient-to-br from-[var(--mint-50)] via-[var(--card)] to-[var(--background)] p-4 shadow-[0_24px_70px_rgba(67,100,64,0.14)] md:rounded-[2.5rem] md:p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 pb-32 md:px-6 xl:pb-8">
+        <section className="overflow-hidden rounded-[2.5rem] border border-[var(--border)] bg-gradient-to-br from-[var(--mint-50)] via-[var(--card)] to-[var(--background)] p-6 shadow-[0_24px_70px_rgba(67,100,64,0.14)] md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
                 Service checkout
               </p>
-              <h1 className="mt-2 text-2xl font-black tracking-tight text-[var(--foreground)] md:mt-3 md:text-4xl lg:text-5xl">
+              <h1 className="mt-3 text-2xl font-black tracking-tight text-[var(--foreground)] md:text-4xl xl:text-5xl">
                 Review your cart
               </h1>
-              <p className="mt-2 max-w-2xl text-xs text-[var(--muted-foreground)] md:mt-3 md:text-base">
+              <p className="mt-3 max-w-2xl text-base text-[var(--muted-foreground)]">
                 Confirm the services, pickup details, and payment method before the repair shop receives your order.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 overflow-hidden rounded-[1.25rem] border border-[var(--border)] bg-[var(--card)] shadow-sm md:rounded-[2rem]">
-              <div className="px-3 py-3 text-center md:px-5 md:py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Items</p>
-                <p className="mt-1 text-lg font-bold text-[var(--foreground)] md:text-2xl">{itemCount}</p>
+            <div className="grid grid-cols-3 overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--card)] shadow-sm">
+              <div className="px-5 py-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Items</p>
+                <p className="mt-1 text-2xl font-bold text-[var(--foreground)]">{itemCount}</p>
               </div>
-              <div className="border-x border-[var(--border)] px-3 py-3 text-center md:px-5 md:py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Shop</p>
-                <p className="mt-1 max-w-[90px] truncate text-xs font-bold text-[var(--foreground)] md:max-w-[130px] md:text-sm">
+              <div className="border-x border-[var(--border)] px-5 py-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Shop</p>
+                <p className="mt-1 max-w-[130px] truncate text-sm font-bold text-[var(--foreground)]">
                   {primaryCart?.shop.name || "—"}
                 </p>
               </div>
-              <div className="px-3 py-3 text-center md:px-5 md:py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)] md:text-xs">Total</p>
-                <p className="mt-1 text-lg font-bold text-[var(--accent-dark)] md:text-2xl">{formatMoney(total)}</p>
+              <div className="px-5 py-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Total</p>
+                <p className="mt-1 text-2xl font-bold text-[var(--accent-dark)]">{formatMoney(total)}</p>
               </div>
             </div>
           </div>
@@ -414,10 +400,9 @@ export default function CartPage() {
         ) : null}
 
         {primaryCart ? (
-          <>
-            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
             <section className="space-y-6">
-              <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 1 ? 'hidden md:block' : 'block'}`}>
+              <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
@@ -450,7 +435,7 @@ export default function CartPage() {
                         key={item.id}
                         className="rounded-[1.7rem] border border-[var(--border)] bg-[var(--background)] p-4 transition hover:-translate-y-0.5 hover:shadow-md"
                       >
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div className="min-w-0">
                             <div className="flex items-center gap-3">
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">
@@ -458,7 +443,7 @@ export default function CartPage() {
                               </div>
                               <div className="min-w-0">
                                 <h3 className="truncate text-lg font-bold text-[var(--foreground)]">
-                                  {formatServiceTitle(item.serviceName)}
+                                  {item.serviceName}
                                 </h3>
                                 <p className="mt-1 text-sm text-[var(--muted-foreground)]">
                                   {formatMoney(Number(item.price))} each · {formatMoney(lineTotal)} total
@@ -473,7 +458,7 @@ export default function CartPage() {
                             ) : null}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3 md:justify-end">
+                          <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <select
                               value={item.quantity}
                               disabled={busy}
@@ -503,8 +488,8 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className={`grid gap-6 lg:grid-cols-2 ${currentStep !== 2 && currentStep !== 3 ? 'hidden md:grid' : 'grid'}`}>
-                <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 2 ? 'hidden md:block' : 'block'}`}>
+              <div className="grid gap-4 lg:gap-6 lg:grid-cols-2">
+                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">⏱️</span>
                     <div>
@@ -546,44 +531,29 @@ export default function CartPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
                       Delivery speed
                     </p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                      {(!primaryCart.shop.categories || primaryCart.shop.categories.includes("COURIER_PICKUP")) && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => { setPreferredPickup(true); setDeliveryType("REGULAR"); }}
-                            className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "REGULAR")}`}
-                          >
-                            <div className="font-bold text-[var(--foreground)]">Regular</div>
-                            <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)}</div>
-                          </button>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryType("REGULAR")}
+                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(deliveryType === "REGULAR")}`}
+                      >
+                        <div className="font-bold text-[var(--foreground)]">Regular delivery</div>
+                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(REGULAR_DELIVERY_FEE)} courier fee</div>
+                      </button>
 
-                          <button
-                            type="button"
-                            onClick={() => { setPreferredPickup(true); setDeliveryType("EXPRESS"); }}
-                            className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(preferredPickup && deliveryType === "EXPRESS")}`}
-                          >
-                            <div className="font-bold text-[var(--foreground)]">Express</div>
-                            <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)}</div>
-                          </button>
-                        </>
-                      )}
-
-                      {primaryCart.shop.categories?.includes("IN_SHOP_REPAIR") && (
-                        <button
-                          type="button"
-                          onClick={() => setPreferredPickup(false)}
-                          className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(!preferredPickup)}`}
-                        >
-                          <div className="font-bold text-[var(--foreground)]">Walk-in</div>
-                          <div className="mt-1 text-sm text-[var(--muted-foreground)]">I will go to shop</div>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryType("EXPRESS")}
+                        className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${cardClass(deliveryType === "EXPRESS")}`}
+                      >
+                        <div className="font-bold text-[var(--foreground)]">Express delivery</div>
+                        <div className="mt-1 text-sm text-[var(--muted-foreground)]">{formatMoney(EXPRESS_DELIVERY_FEE)} courier fee</div>
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 3 ? 'hidden md:block' : 'block'}`}>
+                <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">💳</span>
                     <div>
@@ -620,35 +590,23 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className={`rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6 ${currentStep !== 4 ? 'hidden md:block' : 'block'}`}>
+              <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--mint-100)] text-lg">📍</span>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">Step 3</p>
-                      <h2 className="text-2xl font-bold text-[var(--foreground)]">
-                        {preferredPickup ? "Pickup location" : "Shop details"}
-                      </h2>
+                      <h2 className="text-2xl font-bold text-[var(--foreground)]">Pickup location</h2>
                     </div>
                   </div>
 
-                  {selectedLocation && preferredPickup ? (
+                  {selectedLocation ? (
                     <div className="rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-semibold text-[var(--accent-dark)]">
                       {locationLabel}
                     </div>
                   ) : null}
                 </div>
 
-                {!preferredPickup ? (
-                  <div className="mt-5 rounded-2xl bg-[var(--mint-50)] p-5 text-[var(--foreground)]">
-                    <h3 className="font-bold text-lg">You are walking into the shop!</h3>
-                    <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                      No delivery rider will be assigned. Please visit <strong>{primaryCart.shop.name}</strong> at:
-                    </p>
-                    <p className="mt-3 font-semibold text-base">{primaryCart.shop.address}</p>
-                  </div>
-                ) : (
-                  <>
                 <div className="mt-5 grid gap-3 md:grid-cols-3">
                   <button
                     type="button"
@@ -741,8 +699,6 @@ export default function CartPage() {
                     We will use the address saved in your profile. Use map/manual mode if this order needs a different pickup point.
                   </p>
                 )}
-                </>
-                )}
 
                 <label className="mt-5 block">
                   <span className="text-sm font-semibold text-[var(--foreground)]">Problem note</span>
@@ -757,115 +713,130 @@ export default function CartPage() {
               </div>
             </section>
 
-            <aside className={`h-fit rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_18px_50px_rgba(67,100,64,0.12)] md:p-6 xl:sticky xl:top-6 ${currentStep !== 5 ? 'hidden md:block' : 'block'}`}>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
-                Order summary
-              </p>
-              <h2 className="mt-2 text-2xl font-bold text-[var(--foreground)]">Ready to book?</h2>
+            <aside
+              className={`
+                fixed bottom-0 left-0 right-0 z-50
+                xl:static xl:h-fit xl:rounded-[2rem] xl:border xl:shadow-[0_18px_50px_rgba(67,100,64,0.12)] xl:p-6 xl:sticky xl:top-6
+              `}
+            >
+              {/* Mobile Drawer */}
+              <div className="xl:hidden fixed bottom-0 left-0 right-0 z-50 px-2">
+                <div
+                  className={`
+                    mx-auto max-w-md
+                    bg-[var(--card)] border border-[var(--border)]
+                    rounded-t-2xl
+                    overflow-hidden
+                    transition-all duration-300 ease-in-out
+                    flex flex-col
+                    ${summaryOpen ? "max-h-[75vh]" : "max-h-20"}
+                  `}
+                >
+                  {/* Handle */}
+                  <button
+                    onClick={() => setSummaryOpen(!summaryOpen)}
+                    className="flex flex-col items-center justify-center pt-2 pb-1 w-full"
+                  >
+                    <div className="h-1.5 w-12 rounded-full bg-[var(--border)] mb-2" />
+                    <p className="text-sm font-semibold text-[var(--foreground)]">
+                      {summaryOpen ? "Hide summary" : `View summary · ${formatMoney(total)}`}
+                    </p>
+                  </button>
 
-              <div className="mt-5 space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[var(--muted-foreground)]">Shop</span>
-                  <span className="max-w-[190px] truncate font-semibold text-[var(--foreground)]">{primaryCart.shop.name}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[var(--muted-foreground)]">Services</span>
-                  <span className="font-semibold text-[var(--foreground)]">{primaryCart.items.length}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[var(--muted-foreground)]">Items</span>
-                  <span className="font-semibold text-[var(--foreground)]">{itemCount}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[var(--muted-foreground)]">Pickup</span>
-                  <span className="font-semibold text-[var(--foreground)]">
-                    {!preferredPickup ? "Walk-in" : scheduleType === "NOW" ? "ASAP" : scheduledAt || "Not selected"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[var(--muted-foreground)]">Location</span>
-                  <span className="max-w-[190px] truncate font-semibold text-[var(--foreground)]">
-                    {!preferredPickup ? "Shop address" : addressMode === "PROFILE" ? "Profile address" : address || locationLabel}
-                  </span>
+                  {/* Content */}
+                  <div
+                    className={`flex-1 overflow-y-auto px-4 pb-6 transition ${
+                      summaryOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>{formatMoney(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Service charge</span>
+                        <span>{formatMoney(serviceCharge)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>
+                          {deliveryType === "EXPRESS" ? "Express delivery" : "Regular delivery"}
+                        </span>
+                        <span>{formatMoney(deliveryFee)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-lg mt-2">
+                        <span>Total</span>
+                        <span>{formatMoney(total)}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmOrder}
+                      disabled={busy}
+                      className="mt-4 mb-2 w-full rounded-full bg-[var(--accent-dark)] px-6 py-4 text-base font-bold text-white"
+                    >
+                      {busy
+                        ? "Processing..."
+                        : !isLoggedIn
+                        ? "Sign in to confirm order"
+                        : paymentMethod === "SSLCOMMERZ"
+                        ? "Confirm & pay"
+                        : "Confirm with cash"}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="my-5 border-t border-[var(--border)]" />
+              {/* Desktop (unchanged style) */}
+              <div className="hidden xl:block">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-foreground)]">
+                  Order summary
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-[var(--foreground)]">
+                  Ready to book?
+                </h2>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--muted-foreground)]">Subtotal</span>
-                  <span className="font-semibold text-[var(--foreground)]">{formatMoney(subtotal)}</span>
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>{formatMoney(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Service charge</span>
+                    <span>{formatMoney(serviceCharge)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>
+                      {deliveryType === "EXPRESS"
+                        ? "Express delivery"
+                        : "Regular delivery"}
+                    </span>
+                    <span>{formatMoney(deliveryFee)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total</span>
+                    <span>{formatMoney(total)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--muted-foreground)]">Service charge</span>
-                  <span className="font-semibold text-[var(--foreground)]">{formatMoney(serviceCharge)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--muted-foreground)]">
-                    {!preferredPickup ? "Walk-in / No delivery" : deliveryType === "EXPRESS" ? "Express delivery" : "Regular delivery"}
-                  </span>
-                  <span className="font-semibold text-[var(--foreground)]">{formatMoney(deliveryFee)}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-[var(--mint-100)] px-4 py-3">
-                  <span className="font-bold text-[var(--foreground)]">Total</span>
-                  <span className="text-xl font-black text-[var(--accent-dark)]">{formatMoney(total)}</span>
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleConfirmOrder}
-                disabled={busy}
-                className="mt-6 w-full rounded-full bg-[var(--accent-dark)] px-6 py-3.5 text-sm font-bold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-95 disabled:opacity-60"
-              >
-                {busy
-                  ? "Processing..."
-                  : !isLoggedIn
+                <button
+                  type="button"
+                  onClick={handleConfirmOrder}
+                  disabled={busy}
+                  className="mt-4 w-full rounded-full bg-[var(--accent-dark)] px-6 py-4 text-base font-bold text-white"
+                >
+                  {busy
+                    ? "Processing..."
+                    : !isLoggedIn
                     ? "Sign in to confirm order"
                     : paymentMethod === "SSLCOMMERZ"
-                      ? "Confirm & pay with SSLCommerz"
-                      : "Confirm with cash"}
-              </button>
-
-              {!isLoggedIn ? (
-                <p className="mt-3 text-center text-xs leading-5 text-[var(--muted-foreground)]">
-                  You can keep editing this cart as a guest. Final order creation needs login.
-                </p>
-              ) : null}
+                    ? "Confirm & pay"
+                    : "Confirm with cash"}
+                </button>
+              </div>
             </aside>
           </div>
-
-          {/* Mobile Navigation Controls */}
-          {primaryCart && (
-            <div className="md:hidden mt-6 flex items-center justify-between gap-4">
-              <button 
-                type="button" 
-                onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-                disabled={currentStep === 1}
-                className="rounded-full border border-[var(--border)] bg-[var(--card)] px-6 py-3 font-semibold text-[var(--foreground)] disabled:opacity-50 transition active:scale-95"
-              >
-                Back
-              </button>
-              
-              <div className="text-sm font-semibold text-[var(--muted-foreground)]">
-                Step {currentStep} of {totalSteps}
-              </div>
-
-              {currentStep < totalSteps ? (
-                <button 
-                  type="button" 
-                  onClick={() => setCurrentStep(prev => Math.min(totalSteps, prev + 1))}
-                  className="rounded-full bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] shadow-sm transition hover:opacity-95 active:scale-95"
-                >
-                  Next
-                </button>
-              ) : (
-                <div className="px-6 py-3 invisible">Next</div> /* Placeholder to keep alignment */
-              )}
-            </div>
-          )}
-          </>
         ) : (
           <div className="mt-6 rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-10 text-center shadow-sm">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--mint-100)] text-3xl">
@@ -878,7 +849,7 @@ export default function CartPage() {
             <button
               type="button"
               onClick={() => router.push("/shops")}
-              className="mt-6 rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-[var(--accent-foreground)] transition hover:opacity-95"
+              className="mt-6 rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-white transition hover:opacity-95"
             >
               Browse shops
             </button>

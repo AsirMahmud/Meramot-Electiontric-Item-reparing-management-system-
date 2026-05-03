@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { createRepairRequest, uploadImages } from "@/lib/api";
+import { createRepairRequest } from "@/lib/api";
 import { LOCATION_STORAGE_KEY, type StoredLocation } from "@/components/location/types";
 import { buildLocationLabel, parseStoredLocation } from "@/components/location/location-utils";
 import { pushLocalNotification } from "@/lib/notifications";
@@ -42,7 +42,7 @@ type CreateRepairRequestResult = {
   delivery?: unknown | null;
 };
 
-function NewRequestPageInner() {
+export default function NewRequestPage() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const shopSlug = searchParams.get("shop") || "";
@@ -51,18 +51,13 @@ function NewRequestPageInner() {
   const [message, setMessage] = useState("");
   const [toast, setToast] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [modelSuggestions, setModelSuggestions] = useState<{brand: string; model: string; specs: string}[]>([]);
-  const [checkingModel, setCheckingModel] = useState(false);
-  const [deeperSearch, setDeeperSearch] = useState(false);
-  const [isAppliance, setIsAppliance] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
     deviceType: "Laptop",
     brand: "",
     model: "",
-    issueCategory: "Checkup and diagnosis",
+    issueCategory: "Screen or display",
     problem: "",
     mode: shopSlug ? "DIRECT_REPAIR" : "CHECKUP_AND_REPAIR",
     preferredPickup: true,
@@ -142,65 +137,13 @@ function NewRequestPageInner() {
     return () => clearTimeout(timeout);
   }, [toast]);
 
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      const brand = form.brand.trim();
-      const model = form.model.trim();
-      
-      if (brand.length > 2 || model.length > 2) {
-        setCheckingModel(true);
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/suggest-model`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brand, model, deeperSearch })
-          });
-          const data = await res.json();
-          if (data.ok) {
-            if (data.isAppliance) {
-              setIsAppliance(true);
-              setModelSuggestions([]);
-              return;
-            }
-            setIsAppliance(false);
-            
-            if (data.suggestions && data.suggestions.length > 0) {
-              // Check if first suggestion is literally what they typed
-              const first = data.suggestions[0];
-              const lowerSug = first.model.toLowerCase();
-              const lowerMod = model.toLowerCase();
-              
-              if (lowerSug === lowerMod && data.suggestions.length === 1 && !deeperSearch) {
-                setModelSuggestions([]);
-              } else {
-                setModelSuggestions(data.suggestions);
-              }
-            } else {
-              setModelSuggestions([]);
-            }
-          } else {
-            setModelSuggestions([]);
-          }
-        } catch (err) {
-          setModelSuggestions([]);
-        } finally {
-          setCheckingModel(false);
-        }
-      } else {
-        setModelSuggestions([]);
-      }
-    }, 1200);
-
-    return () => clearTimeout(handler);
-  }, [form.brand, form.model, deeperSearch]);
-
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
       {toast && (
        <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-[var(--accent-foreground)] shadow-xl">
+         <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
            {toast}
          </div>
        </div>
@@ -249,12 +192,6 @@ function NewRequestPageInner() {
                   } | null;
                   delivery?: unknown | null;
                 };
-
-                let uploadedImageUrls: string[] = [];
-                if (files.length > 0) {
-                  const uploadResult = await uploadImages(files, token);
-                  uploadedImageUrls = uploadResult.imageUrls;
-                }
                 
                 const result = (await createRepairRequest(
                   {
@@ -278,7 +215,6 @@ function NewRequestPageInner() {
                     pickupLng: form.pickupLng,
                     contactPhone: form.contactPhone,
                     shopSlug: shopSlug || undefined,
-                    imageUrls: uploadedImageUrls,
                   },
                   token
                 )) as CreateRepairRequestResult;
@@ -329,65 +265,17 @@ function NewRequestPageInner() {
 
             <input
               value={form.brand}
-              onChange={(e) => {
-                setForm((prev) => ({ ...prev, brand: e.target.value }));
-                setDeeperSearch(false);
-              }}
+              onChange={(e) => setForm((prev) => ({ ...prev, brand: e.target.value }))}
               className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
               placeholder="Brand"
             />
 
-            <div className="relative">
-              <input
-                value={form.model}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, model: e.target.value }));
-                  setDeeperSearch(false);
-                }}
-                className={`w-full rounded-2xl border ${modelSuggestions.length > 0 ? 'border-[var(--accent-dark)]' : 'border-[var(--border)]'} bg-[var(--card)] px-4 py-3 outline-none focus:border-[var(--accent-dark)]`}
-                placeholder="Model"
-              />
-              {checkingModel && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--muted-foreground)]">
-                  checking...
-                </span>
-              )}
-              {isAppliance && !checkingModel && (
-                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-red-200 bg-red-50 p-3 shadow-lg dark:border-red-900/50 dark:bg-red-950/30">
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Sorry, we don't repair those :(</p>
-                </div>
-              )}
-              {modelSuggestions.length > 0 && !checkingModel && !isAppliance && (
-                <div className="absolute left-0 top-[110%] z-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg max-h-64 overflow-y-auto">
-                  <p className="text-xs font-semibold text-[var(--muted-foreground)] mb-2">Did you mean this?</p>
-                  <div className="flex flex-col gap-2">
-                    {modelSuggestions.map((sug, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          setForm(prev => ({...prev, brand: sug.brand, model: sug.model}));
-                          setModelSuggestions([]);
-                        }}
-                        className="flex w-full flex-col items-start rounded-xl bg-[var(--mint-50)] px-3 py-2 text-left transition hover:bg-[var(--mint-100)]"
-                      >
-                        <span className="text-sm font-bold text-[var(--accent-dark)]">{sug.brand} {sug.model}</span>
-                        {sug.specs && <span className="text-xs text-[var(--muted-foreground)]">{sug.specs}</span>}
-                      </button>
-                    ))}
-                    {!deeperSearch && (
-                      <button
-                        type="button"
-                        onClick={() => setDeeperSearch(true)}
-                        className="mt-1 flex w-full items-center justify-center rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--muted-foreground)] hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        None of these? Search deeper
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <input
+              value={form.model}
+              onChange={(e) => setForm((prev) => ({ ...prev, model: e.target.value }))}
+              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+              placeholder="Model"
+            />
 
             <select
               required
@@ -608,36 +496,9 @@ function NewRequestPageInner() {
             />
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]">
-                Upload Images (Max 4)
-              </label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files) {
-                    const selected = Array.from(e.target.files).slice(0, 4);
-                    setFiles(selected);
-                  }
-                }}
-                className="w-full rounded-2xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 file:mr-4 file:rounded-full file:border-0 file:bg-[var(--accent-dark)] file:px-4 file:py-2 file:text-sm file:font-bold file:text-[var(--accent-foreground)] hover:file:opacity-90"
-              />
-              {files.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2 text-sm text-[var(--muted-foreground)]">
-                  {files.map((f, i) => (
-                    <span key={i} className="inline-block rounded border border-[var(--border)] bg-[var(--card)] px-2 py-1 font-medium">
-                      {f.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
               <button
                 disabled={isSubmitting}
-                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-[var(--accent-foreground)] disabled:opacity-60"
+                className="rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {isSubmitting ? "Submitting..." : "Submit request"}
               </button>
@@ -648,15 +509,5 @@ function NewRequestPageInner() {
         </div>
       </div>
     </main>
-  );
-}
-
-import { Suspense } from "react";
-
-export default function NewRequestPage() {
-  return (
-    <Suspense fallback={<div>Loading page...</div>}>
-      <NewRequestPageInner />
-    </Suspense>
   );
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { PaymentMethod, RequestMode, RequestStatus, RepairJobStatus, DeliveryType, DeliveryDirection, DeliveryStatus, CartStatus, PaymentStatus } from "@prisma/client";
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
@@ -20,7 +19,6 @@ function calculateDeliveryFee(type?: "REGULAR" | "EXPRESS") {
 
 function normalizePaymentMethod(method?: string): PaymentMethod {
   if (method === "SSLCOMMERZ") return PaymentMethod.SSLCOMMERZ;
-  if (method === "BKASH") return PaymentMethod.BKASH;
   return PaymentMethod.CASH;
 }
 
@@ -53,7 +51,6 @@ export async function getMyActiveCarts(req: AuthedRequest, res: Response) {
             address: true,
             ratingAvg: true,
             reviewCount: true,
-            categories: true,
           },
         },
         items: {
@@ -108,12 +105,8 @@ export async function addItemToCart(req: AuthedRequest, res: Response) {
       });
     }
 
-    const shop = await prisma.shop.findFirst({
-      where: { 
-        slug: shopSlug.trim(),
-        isActive: true,
-        isPublic: true,
-      },
+    const shop = await prisma.shop.findUnique({
+      where: { slug: shopSlug.trim() },
       select: { id: true, slug: true, name: true },
     });
 
@@ -206,7 +199,6 @@ export async function addItemToCart(req: AuthedRequest, res: Response) {
             address: true,
             ratingAvg: true,
             reviewCount: true,
-            categories: true,
           },
         },
         items: true,
@@ -328,20 +320,18 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
       area,
       lat,
       lng,
-      preferredPickup = true,
       deliveryType,
       problemNote,
     } = req.body as {
       scheduleType?: "NOW" | "LATER";
       scheduledAt?: string;
-      paymentMethod?: "CASH" | "SSLCOMMERZ" | "BKASH";
+      paymentMethod?: "CASH" | "SSLCOMMERZ";
       addressMode?: "PROFILE" | "MANUAL" | "MAP";
       address?: string;
       city?: string;
       area?: string;
       lat?: number;
       lng?: number;
-      preferredPickup?: boolean;
       deliveryType?: "REGULAR" | "EXPRESS";
       problemNote?: string;
     };
@@ -387,7 +377,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
     );
     const selectedDeliveryType = deliveryType === "EXPRESS" ? DeliveryType.EXPRESS : DeliveryType.REGULAR;
     const serviceCharge = calculateServiceCharge(subtotal);
-    const deliveryFee = preferredPickup ? calculateDeliveryFee(selectedDeliveryType) : 0;
+    const deliveryFee = calculateDeliveryFee(deliveryType);
     const totalAmount = subtotal + serviceCharge + deliveryFee;
 
     const serviceLines = cart.items
@@ -439,11 +429,11 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
           problem: problemNote?.trim() || `Direct order services:\n${serviceLines}`,
           imageUrls: [],
           mode: RequestMode.DIRECT_REPAIR,
-          preferredPickup: preferredPickup,
-          deliveryType: preferredPickup ? selectedDeliveryType : null,
+          preferredPickup: true,
+          deliveryType: selectedDeliveryType,
           checkupFee: serviceCharge,
           quotedFinalAmount: totalAmount,
-          status: RequestStatus.PENDING,
+          status: RequestStatus.ASSIGNED,
         },
       });
 
@@ -455,7 +445,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
         },
       });
 
-      const delivery = preferredPickup ? await tx.delivery.create({
+      const delivery = await tx.delivery.create({
         data: {
           repairJobId: repairJob.id,
           direction: DeliveryDirection.TO_SHOP,
@@ -466,7 +456,7 @@ export async function checkoutCart(req: AuthedRequest, res: Response) {
           dropAddress: cart.shop.address,
           scheduledAt: pickupTime,
         },
-      }) : null;
+      });
       const payment =
         paymentMethod === "SSLCOMMERZ"
           ? null
