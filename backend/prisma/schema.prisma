@@ -310,6 +310,7 @@ model VendorApplication {
   inShopRepair      Boolean                 @default(true)
   spareParts        Boolean                 @default(false)
   notes             String?
+  logoUrl           String?
   status            VendorApplicationStatus @default(PENDING)
   reviewedByAdminId String?
   reviewedAt        DateTime?

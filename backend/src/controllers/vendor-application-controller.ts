@@ -98,6 +98,7 @@ export async function createVendorApplication(req: Request, res: Response) {
       inShopRepair,
       spareParts,
       notes,
+      logoUrl,
     } = req.body as {
       ownerName?: string;
       businessEmail?: string;
@@ -116,6 +117,7 @@ export async function createVendorApplication(req: Request, res: Response) {
       inShopRepair?: boolean;
       spareParts?: boolean;
       notes?: string;
+      logoUrl?: string;
     };
 
     // Authenticated users (e.g. existing CUSTOMER accounts) don't need a password
@@ -247,6 +249,7 @@ export async function createVendorApplication(req: Request, res: Response) {
           inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : true,
           spareParts: Boolean(spareParts),
           notes: notes?.trim() || null,
+          logoUrl: logoUrl?.trim() || null,
           status: "PENDING",
         },
         select: {
@@ -438,6 +441,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
             ...(application.spareParts ? ["SPARE_PARTS" as const] : []),
           ],
           specialties: application.specialties,
+          logoUrl: application.logoUrl || null,
           isActive: true,
           isPublic: false,
           setupComplete: false,
@@ -460,6 +464,7 @@ export async function approveVendorApplication(req: Request, res: Response) {
             ...(application.spareParts ? ["SPARE_PARTS" as const] : []),
           ],
           specialties: application.specialties,
+          logoUrl: application.logoUrl || null,
           isActive: true,
           isPublic: false,
           setupComplete: false,
@@ -538,6 +543,7 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
       inShopRepair,
       spareParts,
       notes,
+      logoUrl,
     } = req.body as {
       ownerName?: string;
       businessEmail?: string;
@@ -554,6 +560,7 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
       inShopRepair?: boolean;
       spareParts?: boolean;
       notes?: string;
+      logoUrl?: string;
     };
 
     const existing = await prisma.vendorApplication.findFirst({
@@ -591,6 +598,7 @@ export async function updateMyVendorApplication(req: Request, res: Response) {
         inShopRepair: typeof inShopRepair === "boolean" ? inShopRepair : existing.inShopRepair,
         spareParts: !!spareParts,
         notes: notes?.trim() || null,
+        logoUrl: logoUrl?.trim() || existing.logoUrl || null,
 
         status: "PENDING",
         rejectionReason: null,
