@@ -1,8 +1,7 @@
 import { Response } from "express";
-import { prisma } from "../lib/prisma.js";
+import prisma from "../models/prisma.js";
 import { suggestVendorServices } from "../services/ai-feature-service.js";
-import { AuthedRequest } from "../middleware/require-auth.js";
-import { isHttpError } from "../lib/errors.js";
+import { AuthenticatedRequest } from "../middleware/require-auth.js";
 
 async function getVendorContext(userId: string) {
   const application = await prisma.vendorApplication.findUnique({
@@ -18,7 +17,7 @@ async function getVendorContext(userId: string) {
   }
 
   const shop = await prisma.shop.findFirst({
-    where: { ownerId: userId },
+    where: { vendorApplicationId: application.id },
   });
 
   if (!shop) {
@@ -28,7 +27,7 @@ async function getVendorContext(userId: string) {
   return { application, shop };
 }
 
-export async function getVendorShopProfile(req: AuthedRequest, res: Response) {
+export async function getVendorShopProfile(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
@@ -58,12 +57,12 @@ export async function getVendorShopProfile(req: AuthedRequest, res: Response) {
     });
   } catch (error) {
     console.error("getVendorShopProfile error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function addVendorService(req: AuthedRequest, res: Response) {
+export async function addVendorService(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
@@ -103,18 +102,18 @@ export async function addVendorService(req: AuthedRequest, res: Response) {
     return res.status(201).json({ message: "Service added successfully", service });
   } catch (error) {
     console.error("addVendorService error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function removeVendorService(req: AuthedRequest, res: Response) {
+export async function removeVendorService(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
 
     const { shop } = await getVendorContext(userId);
-    const serviceId = req.params.serviceId;
+    const serviceId = (req.params.serviceId as string);
 
     const existing = await prisma.shopService.findFirst({
       where: { id: serviceId, shopId: shop.id },
@@ -127,12 +126,12 @@ export async function removeVendorService(req: AuthedRequest, res: Response) {
     return res.json({ message: "Service removed successfully" });
   } catch (error) {
     console.error("removeVendorService error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function addVendorSparePart(req: AuthedRequest, res: Response) {
+export async function addVendorSparePart(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
@@ -165,18 +164,18 @@ export async function addVendorSparePart(req: AuthedRequest, res: Response) {
     return res.status(201).json({ message: "Spare part added successfully", sparePart });
   } catch (error) {
     console.error("addVendorSparePart error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function updateVendorSparePart(req: AuthedRequest, res: Response) {
+export async function updateVendorSparePart(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
 
     const { shop } = await getVendorContext(userId);
-    const sparePartId = req.params.sparePartId;
+    const sparePartId = (req.params.sparePartId as string);
 
     const existing = await prisma.sparePart.findFirst({
       where: { id: sparePartId, shopId: shop.id },
@@ -201,18 +200,18 @@ export async function updateVendorSparePart(req: AuthedRequest, res: Response) {
     return res.json({ message: "Spare part updated successfully", sparePart });
   } catch (error) {
     console.error("updateVendorSparePart error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function removeVendorSparePart(req: AuthedRequest, res: Response) {
+export async function removeVendorSparePart(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
 
     const { shop } = await getVendorContext(userId);
-    const sparePartId = req.params.sparePartId;
+    const sparePartId = (req.params.sparePartId as string);
 
     const existing = await prisma.sparePart.findFirst({
       where: { id: sparePartId, shopId: shop.id },
@@ -225,12 +224,12 @@ export async function removeVendorSparePart(req: AuthedRequest, res: Response) {
     return res.json({ message: "Spare part removed successfully" });
   } catch (error) {
     console.error("removeVendorSparePart error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function updateAiPreferences(req: AuthedRequest, res: Response) {
+export async function updateAiPreferences(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
@@ -249,18 +248,18 @@ export async function updateAiPreferences(req: AuthedRequest, res: Response) {
     return res.json({ message: "AI preferences updated successfully" });
   } catch (error) {
     console.error("updateAiPreferences error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function acceptAiServiceSuggestion(req: AuthedRequest, res: Response) {
+export async function acceptAiServiceSuggestion(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
 
     const { shop } = await getVendorContext(userId);
-    const suggestionId = req.params.suggestionId;
+    const suggestionId = (req.params.suggestionId as string);
 
     const suggestion = await prisma.aiServiceSuggestion.findFirst({
       where: { id: suggestionId, shopId: shop.id, status: "PENDING" },
@@ -272,7 +271,7 @@ export async function acceptAiServiceSuggestion(req: AuthedRequest, res: Respons
     const baseSlug = suggestion.suggestedName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const service = await tx.shopService.create({
         data: {
           shopId: shop.id,
@@ -305,18 +304,18 @@ export async function acceptAiServiceSuggestion(req: AuthedRequest, res: Respons
     return res.json({ message: "Suggestion accepted and service created", service: result });
   } catch (error) {
     console.error("acceptAiServiceSuggestion error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function rejectAiServiceSuggestion(req: AuthedRequest, res: Response) {
+export async function rejectAiServiceSuggestion(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
 
     const { shop } = await getVendorContext(userId);
-    const suggestionId = req.params.suggestionId;
+    const suggestionId = (req.params.suggestionId as string);
 
     const suggestion = await prisma.aiServiceSuggestion.findFirst({
       where: { id: suggestionId, shopId: shop.id, status: "PENDING" },
@@ -332,12 +331,12 @@ export async function rejectAiServiceSuggestion(req: AuthedRequest, res: Respons
     return res.json({ message: "Suggestion dismissed" });
   } catch (error) {
     console.error("rejectAiServiceSuggestion error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
 
-export async function getAiServiceSuggestions(req: AuthedRequest, res: Response) {
+export async function getAiServiceSuggestions(req: AuthenticatedRequest, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Authentication required" });
@@ -352,7 +351,7 @@ export async function getAiServiceSuggestions(req: AuthedRequest, res: Response)
       where: { shopId: shop.id },
       select: { name: true },
     });
-    const existingServiceNames = services.map(s => s.name);
+    const existingServiceNames = services.map((s: any) => s.name);
 
     const aiResponse = await suggestVendorServices({
       specialties: shop.specialties,
@@ -404,8 +403,11 @@ export async function getAiServiceSuggestions(req: AuthedRequest, res: Response)
 
   } catch (error) {
     console.error("getAiServiceSuggestions error:", error);
-    if (isHttpError(error)) return res.status(error.statusCode).json({ message: error.message });
+    if (error instanceof Error && "statusCode" in error) return res.status((error as any).statusCode as number).json({ message: error.message });
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+
+
 
