@@ -105,17 +105,17 @@ If the device is a heavy home appliance (like a washing machine, refrigerator, a
 Provide a JSON object containing an "isAppliance" boolean, and a "suggestions" array of up to 5 likely matches. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name
-- "specs": a brief 3-4 word description (e.g., "Smartphone, 2021", "Laptop, Core i5")
+- "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
 Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...", "specs": "..." } ] }`
     : `You are an AI assistant that identifies the actual commercial name of an electronic device based on a vaguely typed brand and model. 
-Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung") and correct it.
+Check if the brand name is misspelled (e.g., "Samsang" -> "Samsung", "Samsi" -> "Samsung") and correct it.
 If the device is a heavy home appliance (like a washing machine, refrigerator, air conditioner, microwave, oven), set "isAppliance" to true.
 Provide a JSON object containing an "isAppliance" boolean, and a "suggestions" array of up to 3 best matches based on the user's input. Each object should have:
 - "brand": the corrected brand name
 - "model": the exact commercial model name
-- "specs": a brief 3-4 word description (e.g., "Smartphone, 2021")
+- "specs": Strictly follow this format: "[Device Category] • [Release Year] • [Key Spec]". Examples: "Smartphone • 2021 • 6.5\\" Display", "Laptop • 2022 • Core i5", "Tablet • 2020 • 64GB Storage". Do not deviate from this format.
 
 Respond ONLY with valid JSON. NO markdown formatting, NO extra text.
 Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...", "specs": "..." } ] }`;
@@ -142,7 +142,8 @@ Format: { "isAppliance": false, "suggestions": [ { "brand": "...", "model": "...
     const data = await response.json();
     if (!response.ok) return { ok: false, suggestions: [], isAppliance: false };
 
-    const content = data.candidates[0].content.parts[0].text;
+    let content = data.candidates[0].content.parts[0].text;
+    content = content.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "").trim();
     const parsed = JSON.parse(content);
     return { 
       ok: true, 
