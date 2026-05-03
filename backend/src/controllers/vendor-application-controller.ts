@@ -5,6 +5,7 @@ import crypto from "crypto";
 import prisma from "../models/prisma.js";
 import { currentAdminPasskey } from "../services/admin-passkey-service.js";
 import { validateEmail } from "../utils/validate-email.js";
+import emailValidator from 'deep-email-validator';
 
 function parseCsvList(input?: string) {
   if (!input) return [];
@@ -604,3 +605,4 @@ export async function deleteVendorApplication(req: Request, res: Response) {
     return res.status(500).json({ message: "Server error" });
   }
 }
+
