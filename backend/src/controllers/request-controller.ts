@@ -598,7 +598,16 @@ export async function respondToFinalQuote(req: AuthedRequest, res: Response) {
             id: true,
             status: true,
             finalQuotedAmount: true,
-            shop: { select: { name: true } },
+            shop: { select: { name: true, address: true } },
+            deliveries: {
+              where: { direction: "TO_SHOP" },
+              orderBy: { createdAt: "asc" },
+              take: 1,
+              select: {
+                pickupAddress: true,
+                dropAddress: true,
+              },
+            },
           },
         },
       },
@@ -651,6 +660,31 @@ export async function respondToFinalQuote(req: AuthedRequest, res: Response) {
           quotedFinalAmount: true,
         },
       });
+
+      if (!approved) {
+        // Customer declined final quote - device is currently at the shop
+        // Automatically create a return delivery back to the customer
+        const originalDelivery = existingRequest.repairJob!.deliveries?.[0];
+        
+        await tx.delivery.create({
+          data: {
+            repairJobId: repairJob.id,
+            direction: "TO_CUSTOMER",
+            type: "REGULAR",
+            status: "PENDING",
+            fee: 0, // No extra charge for returning a declined item
+            pickupAddress: originalDelivery?.dropAddress || existingRequest.repairJob!.shop.address || "",
+            dropAddress: originalDelivery?.pickupAddress || "Customer Address (Please confirm)",
+          },
+        });
+
+        // We override the status to RETURN_SCHEDULED to indicate it's on its way back
+        await tx.repairRequest.update({
+          where: { id: requestId },
+          data: { status: "RETURN_SCHEDULED" }
+        });
+        request.status = "RETURN_SCHEDULED";
+      }
 
       return { repairJob, request };
     });
