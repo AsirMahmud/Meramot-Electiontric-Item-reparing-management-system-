@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
@@ -60,6 +60,7 @@ function NewRequestPageInner() {
   const [isAppliance, setIsAppliance] = useState(false);
   const [isRubbish, setIsRubbish] = useState(false);
   const [activeField, setActiveField] = useState<"brand" | "model" | null>(null);
+  const suggestAbortController = useRef<AbortController | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -157,11 +158,18 @@ function NewRequestPageInner() {
         setIsAppliance(false);
         setIsRubbish(false);
 
+        // Cancel previous request if still pending
+        if (suggestAbortController.current) {
+          suggestAbortController.current.abort();
+        }
+        suggestAbortController.current = new AbortController();
+
         try {
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/suggest-model`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brand, model, deeperSearch })
+            body: JSON.stringify({ brand, model, deeperSearch }),
+            signal: suggestAbortController.current.signal
           });
           const data = await res.json();
           if (data.ok) {
@@ -192,7 +200,10 @@ function NewRequestPageInner() {
           } else {
             setModelSuggestions([]);
           }
-        } catch (err) {
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            return; // Ignore aborted requests
+          }
           setModelSuggestions([]);
         } finally {
           setCheckingModel(false);
