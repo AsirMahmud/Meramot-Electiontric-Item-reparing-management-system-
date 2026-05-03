@@ -14,6 +14,7 @@ export function useAdminTableState<T extends Record<string, any>>(
   items: T[],
   searchKeys: (keyof T)[],
   dateKey: keyof T = "createdAt" as keyof T,
+  customSortFn?: (a: T, b: T, order: "asc" | "desc") => number,
 ) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -38,14 +39,17 @@ export function useAdminTableState<T extends Record<string, any>>(
     );
   }, [items, searchQuery, searchKeys]);
 
-  // 2) Sort by date
+  // 2) Sort by date (or custom)
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
+      if (customSortFn) {
+        return customSortFn(a, b, sortOrder);
+      }
       const da = new Date(a[dateKey] as string).getTime();
       const db = new Date(b[dateKey] as string).getTime();
       return sortOrder === "desc" ? db - da : da - db;
     });
-  }, [filtered, sortOrder, dateKey]);
+  }, [filtered, sortOrder, dateKey, customSortFn]);
 
   // 3) Paginate
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));

@@ -16,6 +16,8 @@ type Props = {
   /** "asc" = oldest-first, "desc" = newest-first */
   sortOrder: "asc" | "desc";
   onSortToggle: () => void;
+  sortLabelAsc?: string;
+  sortLabelDesc?: string;
 
   /** pagination */
   currentPage: number;
@@ -29,6 +31,8 @@ export default function AdminTableControls({
   onSearchChange,
   sortOrder,
   onSortToggle,
+  sortLabelAsc = "Oldest first",
+  sortLabelDesc = "Newest first",
   currentPage,
   totalPages,
   onPageChange,
@@ -72,7 +76,7 @@ export default function AdminTableControls({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
             )}
           </svg>
-          {sortOrder === "desc" ? "Newest first" : "Oldest first"}
+          {sortOrder === "desc" ? sortLabelDesc : sortLabelAsc}
         </button>
       </div>
 

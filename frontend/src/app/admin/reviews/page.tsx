@@ -92,20 +92,33 @@ export default function AdminReviewsPage() {
     }
   };
 
-  const table = useAdminTableState(reviews, ["review", "user", "shop", "id"] as any);
+  const [sortBy, setSortBy] = useState<"date" | "rating">("date");
+
+  const customSortFn = sortBy === "rating"
+    ? (a: Review, b: Review, order: "asc" | "desc") => {
+        return order === "desc" ? b.score - a.score : a.score - b.score;
+      }
+    : undefined;
+
+  const table = useAdminTableState(reviews, ["review", "user", "shop", "id"] as any, "createdAt", customSortFn);
 
   return (
     <section>
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-foreground)]">Moderation</p>
-        <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Review Moderation</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="mt-3 text-4xl font-bold text-[var(--accent-dark)]">Review Moderation</h2>
+          <div className="mt-3 rounded-full bg-[var(--mint-100)] px-4 py-2 text-sm font-bold text-[var(--accent-dark)]">
+            {reviews.length} Total Reviews
+          </div>
+        </div>
         <p className="mt-3 text-lg text-[var(--muted-foreground)]">
           Monitor platform-wide reviews and remove inappropriate content.
         </p>
       </div>
 
       <div className="mb-8">
-        <form onSubmit={handleFilterSubmit} className="flex flex-col gap-4 md:flex-row md:items-center">
+        <form onSubmit={handleFilterSubmit} className="flex flex-col gap-4 md:flex-row md:items-center flex-wrap">
             <input
                 type="text"
                 placeholder="Filter by Shop ID"
@@ -120,6 +133,14 @@ export default function AdminReviewsPage() {
                 onChange={(e) => setUserId(e.target.value)}
                 className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto"
             />
+            <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "date" | "rating")}
+                className="w-full rounded-2xl border border-[var(--border)] px-4 py-3 text-[var(--foreground)] focus:border-[var(--accent-dark)] focus:outline-none focus:ring-1 focus:ring-[#1F4D2E] md:w-auto bg-white dark:bg-[#1C251F]"
+            >
+                <option value="date">Sort by Date</option>
+                <option value="rating">Sort by Rating</option>
+            </select>
             <button type="submit" className="rounded-2xl bg-[var(--accent-dark)] px-6 py-3 font-semibold text-[var(--accent-foreground)] transition hover:opacity-90">
                 Filter
             </button>
@@ -136,6 +157,8 @@ export default function AdminReviewsPage() {
             onSearchChange={table.setSearchQuery}
             sortOrder={table.sortOrder}
             onSortToggle={table.toggleSort}
+            sortLabelDesc={sortBy === "rating" ? "Highest rating first" : "Newest first"}
+            sortLabelAsc={sortBy === "rating" ? "Lowest rating first" : "Oldest first"}
             currentPage={table.currentPage}
             totalPages={table.totalPages}
             onPageChange={table.setCurrentPage}
