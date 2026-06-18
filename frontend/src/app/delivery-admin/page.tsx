@@ -1,39 +1,74 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  assignDeliveryAdminOrder,
+  approveDeliveryAdminPayoutRequest,
   approveDeliveryPartnerAdmin,
+  blockDeliveryPartnerAdmin,
+  deleteDeliveryPartnerAdmin,
+  fetchDeliveryAdminChatMessages,
+  fetchDeliveryAdminOrderTimeline,
+  fetchDeliveryAdminOrders,
+  fetchDeliveryAdminPayoutRequests,
   fetchDeliveryAdminPartners,
   fetchDeliveryAdminStats,
   rejectDeliveryPartnerAdmin,
+  sendDeliveryAdminChatMessage,
+  type DeliveryAdminOrder,
+  type DeliveryAdminPayoutRequest,
   type DeliveryAdminPartnerRow,
   type DeliveryAdminStats,
+  type DeliveryChatMessage,
 } from "@/lib/api";
 import { useDeliveryAdminAuth } from "@/lib/delivery-admin-auth-context";
 
+type LeafletModule = typeof import("leaflet");
+
 export default function DeliveryAdminDashboard() {
   const { token, user, logout } = useDeliveryAdminAuth();
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
+  const leafletModuleRef = useRef<LeafletModule | null>(null);
+  const markersRef = useRef<import("leaflet").Layer[]>([]);
+  const hasFittedMarkersRef = useRef(false);
   const [stats, setStats] = useState<DeliveryAdminStats | null>(null);
   const [pending, setPending] = useState<DeliveryAdminPartnerRow[]>([]);
   const [allPartners, setAllPartners] = useState<DeliveryAdminPartnerRow[]>([]);
+  const [payoutRequests, setPayoutRequests] = useState<DeliveryAdminPayoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
+  const [focusedPartnerId, setFocusedPartnerId] = useState<string | null>(null);
+  const [orders, setOrders] = useState<DeliveryAdminOrder[]>([]);
+  const [hasNewData, setHasNewData] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [timeline, setTimeline] = useState<Array<{ code: string; title: string; at: string | null }>>([]);
+  const [chatMessages, setChatMessages] = useState<DeliveryChatMessage[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [sendingChat, setSendingChat] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const pusherCleanupRef = useRef<null | (() => void)>(null);
 
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError("");
     try {
-      const [s, p, a] = await Promise.all([
+      const [s, p, a, payoutData, ordersData] = await Promise.all([
         fetchDeliveryAdminStats(token),
         fetchDeliveryAdminPartners(token, "PENDING"),
         fetchDeliveryAdminPartners(token),
+        fetchDeliveryAdminPayoutRequests(token, "PENDING"),
+        fetchDeliveryAdminOrders(token),
       ]);
       setStats(s.stats);
       setPending(p.partners);
       setAllPartners(a.partners);
+      setPayoutRequests(payoutData.payouts ?? []);
+      setOrders(ordersData.deliveries ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data");
     } finally {
@@ -42,8 +77,228 @@ export default function DeliveryAdminDashboard() {
   }, [token]);
 
   useEffect(() => {
+    if (!selectedOrderId && orders.length > 0) {
+      setSelectedOrderId(orders[0].id);
+    }
+  }, [orders, selectedOrderId]);
+
+  useEffect(() => {
+    if (!token || !selectedOrderId) return;
+    Promise.all([
+      fetchDeliveryAdminOrderTimeline(token, selectedOrderId),
+      fetchDeliveryAdminChatMessages(token, selectedOrderId),
+    ])
+      .then(([timelineData, chatData]) => {
+        setTimeline(timelineData.timeline ?? []);
+        setChatMessages(chatData.messages ?? []);
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to load timeline/chat");
+      });
+  }, [token, selectedOrderId]);
+
+  useEffect(() => {
+    if (!token || !selectedOrderId || !isChatOpen) return;
+
+    const interval = setInterval(() => {
+      fetchDeliveryAdminChatMessages(token, selectedOrderId)
+        .then((data) => {
+          const latest = data.messages ?? [];
+          setChatMessages((prev) => {
+            if (prev.length === latest.length) return prev;
+            return latest;
+          });
+        })
+        .catch(() => {
+          // keep existing messages if refresh fails temporarily
+        });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [token, selectedOrderId, isChatOpen]);
+
+  useEffect(() => {
+    if (!token || !selectedOrderId) return;
+
+    let disposed = false;
+
+    (async () => {
+      try {
+        const [{ pusher }, { default: Pusher }] = await Promise.all([
+          fetchDeliveryAdminChatMessages(token, selectedOrderId),
+          import("pusher-js"),
+        ]);
+        if (disposed || !pusher?.enabled || !pusher.key || !pusher.cluster) return;
+
+        const client = new Pusher(pusher.key, {
+          cluster: pusher.cluster,
+          forceTLS: true,
+        });
+        const channel = client.subscribe(`private-delivery-chat-${selectedOrderId}`);
+        channel.bind("message:new", (payload: DeliveryChatMessage) => {
+          setChatMessages((prev) => (prev.some((m) => m.id === payload.id) ? prev : [...prev, payload]));
+        });
+        pusherCleanupRef.current = () => {
+          channel.unbind_all();
+          client.unsubscribe(`private-delivery-chat-${selectedOrderId}`);
+          client.disconnect();
+        };
+      } catch {
+        // fall back to manual refresh only
+      }
+    })();
+
+    return () => {
+      disposed = true;
+      if (pusherCleanupRef.current) {
+        pusherCleanupRef.current();
+        pusherCleanupRef.current = null;
+      }
+    };
+  }, [token, selectedOrderId]);
+
+  useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!token || loading) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const [s, p, a, payoutData, ordersData] = await Promise.all([
+          fetchDeliveryAdminStats(token),
+          fetchDeliveryAdminPartners(token, "PENDING"),
+          fetchDeliveryAdminPartners(token),
+          fetchDeliveryAdminPayoutRequests(token, "PENDING"),
+          fetchDeliveryAdminOrders(token),
+        ]);
+
+        const currentHash = `${stats?.pendingRegistrations}-${stats?.activeApprovedPartners}-${pending.length}-${allPartners.length}-${payoutRequests.length}-${orders.length}`;
+        const newHash = `${s.stats.pendingRegistrations}-${s.stats.activeApprovedPartners}-${p.partners.length}-${a.partners.length}-${payoutData.payouts?.length || 0}-${ordersData.deliveries?.length || 0}`;
+
+        if (currentHash !== newHash && stats !== null) {
+          setHasNewData(true);
+        }
+      } catch (error) {
+        // silently fail
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [token, loading, stats, pending.length, allPartners.length, payoutRequests.length, orders.length]);
+
+  const mappablePartners = useMemo(
+    () =>
+      allPartners.filter(
+        (partner) => typeof partner.currentLat === "number" && typeof partner.currentLng === "number",
+      ),
+    [allPartners],
+  );
+  const selectedOrder = useMemo(
+    () => orders.find((order) => order.id === selectedOrderId) ?? null,
+    [orders, selectedOrderId],
+  );
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    let isDisposed = false;
+
+    async function setupMap() {
+      await import("leaflet/dist/leaflet.css");
+      const leafletModule = await import("leaflet");
+      if (isDisposed || !mapContainerRef.current) return;
+
+      const L = ((leafletModule as any).default || leafletModule) as typeof import("leaflet");
+      leafletModuleRef.current = leafletModule;
+
+      const map = L.map(mapContainerRef.current, {
+        center: [23.8103, 90.4125],
+        zoom: 11,
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      mapRef.current = map;
+    }
+
+    setupMap().catch((mapError) => {
+      console.error("Leaflet map init failed:", mapError);
+    });
+
+    return () => {
+      isDisposed = true;
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      leafletModuleRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !leafletModuleRef.current) return;
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+
+    if (mappablePartners.length === 0) return;
+
+    const map = mapRef.current;
+    const L = ((leafletModuleRef.current as any).default || leafletModuleRef.current) as typeof import("leaflet");
+    const bounds = L.latLngBounds([]);
+
+    mappablePartners.forEach((partner) => {
+      const lng = partner.currentLng as number;
+      const lat = partner.currentLat as number;
+
+      const markerColor = partner.isActive ? "#10b981" : "#f97316";
+      const markerIcon = L.divIcon({
+        className: "",
+        html: `<div style="position:relative;width:22px;height:30px;">
+          <div style="position:absolute;top:0;left:50%;width:22px;height:22px;background:${markerColor};border:2px solid #ffffff;border-radius:999px;transform:translateX(-50%);box-shadow:0 2px 6px rgba(2,6,23,.35);"></div>
+          <div style="position:absolute;bottom:0;left:50%;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid ${markerColor};transform:translateX(-50%);"></div>
+        </div>`,
+        iconSize: [22, 30],
+        iconAnchor: [11, 30],
+        popupAnchor: [0, -28],
+      });
+      const marker = L.marker([lat, lng], {
+        icon: markerIcon,
+      })
+        .bindPopup(
+          `<div style="font-family:system-ui,sans-serif; color:#0f172a;">
+            <strong>${partner.user.name ?? partner.user.username}</strong><br/>
+            <span>${partner.user.email}</span><br/>
+            <span>Status: ${partner.agentStatus}</span><br/>
+            <span>Completed: ${partner.completedDeliveries}</span>
+          </div>`,
+        )
+        .addTo(map);
+
+      markersRef.current.push(marker);
+      bounds.extend([lat, lng]);
+    });
+
+    if (!hasFittedMarkersRef.current && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [80, 80], maxZoom: 14 });
+      hasFittedMarkersRef.current = true;
+    }
+  }, [mappablePartners]);
+
+  useEffect(() => {
+    if (!focusedPartnerId || !mapRef.current) return;
+    const partner = mappablePartners.find((row) => row.id === focusedPartnerId);
+    if (!partner || typeof partner.currentLat !== "number" || typeof partner.currentLng !== "number") return;
+
+    mapRef.current.flyTo([partner.currentLat, partner.currentLng], 14, { duration: 1 });
+  }, [focusedPartnerId, mappablePartners]);
 
   async function approve(id: string) {
     if (!token) return;
@@ -71,23 +326,94 @@ export default function DeliveryAdminDashboard() {
     }
   }
 
+  async function approvePayout(id: string) {
+    if (!token) return;
+    setActionId(id);
+    try {
+      await approveDeliveryAdminPayoutRequest(token, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Payout approval failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function blockPartner(id: string) {
+    if (!token) return;
+    setActionId(id);
+    try {
+      await blockDeliveryPartnerAdmin(token, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Block failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function deletePartner(id: string) {
+    if (!token) return;
+    const confirmed = window.confirm("Delete this delivery partner permanently?");
+    if (!confirmed) return;
+    setActionId(id);
+    try {
+      await deleteDeliveryPartnerAdmin(token, id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function assignOrder(deliveryId: string, deliveryUserId: string) {
+    if (!token || !deliveryUserId) return;
+    setActionId(deliveryId);
+    try {
+      await assignDeliveryAdminOrder(token, deliveryId, deliveryUserId);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Order assignment failed");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function sendChat() {
+    if (!token || !selectedOrderId || !chatText.trim() || !selectedOrder?.deliveryAgent?.user?.id) return;
+    setSendingChat(true);
+    try {
+      const response = await sendDeliveryAdminChatMessage(token, selectedOrderId, chatText);
+      setChatMessages((prev) => [...prev, response.message]);
+      setChatText("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send chat");
+    } finally {
+      setSendingChat(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">Operations</p>
-            <h1 className="text-xl font-bold text-white">Delivery partner management</h1>
-            <p className="text-sm text-slate-400">
+    <div className="min-h-screen bg-[var(--mint-100)] text-[var(--foreground)]">
+      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+            <Image src="/images/meramot.svg" alt="Meramot" width={170} height={56} className="h-10 w-auto" priority />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent-dark)]">Operations</p>
+              <h1 className="text-lg font-bold text-[var(--foreground)] sm:text-xl">Delivery partner management</h1>
+              <p className="break-words text-xs text-[var(--muted-foreground)] sm:text-sm">
               Signed in as {user?.name ?? user?.username}{" "}
-              <span className="text-slate-500">({user?.email})</span>
-            </p>
+              <span className="text-[var(--muted-foreground)]">({user?.email})</span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
             <button
               type="button"
               onClick={() => load()}
-              className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+              className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--mint-50)] sm:px-4"
             >
               Refresh
             </button>
@@ -97,7 +423,7 @@ export default function DeliveryAdminDashboard() {
                 logout();
                 window.location.href = "/delivery-admin/login";
               }}
-              className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+              className="rounded-xl bg-[var(--accent-dark)] px-3 py-2 text-sm font-semibold text-white hover:opacity-90 sm:px-4"
             >
               Sign out
             </button>
@@ -105,15 +431,15 @@ export default function DeliveryAdminDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
         {error ? (
-          <div className="mb-6 rounded-xl border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
           </div>
         ) : null}
 
         {loading && !stats ? (
-          <p className="text-slate-400">Loading dashboard…</p>
+          <p className="text-[var(--muted-foreground)]">Loading dashboard...</p>
         ) : stats ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-10">
             <StatCard label="Pending approvals" value={stats.pendingRegistrations} accent="amber" />
@@ -126,19 +452,20 @@ export default function DeliveryAdminDashboard() {
         ) : null}
 
         <section className="mb-12">
-          <h2 className="mb-4 text-lg font-bold text-white">Pending registration approvals</h2>
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Pending registration approvals</h2>
           {pending.length === 0 ? (
-            <p className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400">
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted-foreground)]">
               No pending partner applications.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-800">
+            <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
               <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+                <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                   <tr>
                     <th className="px-4 py-3">Partner</th>
                     <th className="px-4 py-3">Contact</th>
                     <th className="px-4 py-3">Vehicle</th>
+                    <th className="px-4 py-3">Profile</th>
                     <th className="px-4 py-3">NID</th>
                     <th className="px-4 py-3">Education</th>
                     <th className="px-4 py-3">CV</th>
@@ -146,26 +473,40 @@ export default function DeliveryAdminDashboard() {
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                   {pending.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-800/50">
+                    <tr key={row.id} className="hover:bg-[var(--mint-50)]">
                       <td className="px-4 py-3">
-                        <p className="font-semibold text-white">{row.user.name ?? row.user.username}</p>
-                        <p className="text-xs text-slate-500">{row.user.id}</p>
+                        <p className="font-semibold text-[var(--foreground)]">{row.user.name ?? row.user.username}</p>
+                        <p className="text-xs text-[var(--muted-foreground)]">{row.user.id}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.user.email}
                         <br />
-                        <span className="text-slate-500">{row.user.phone ?? "—"}</span>
+                        <span className="text-[var(--muted-foreground)]">{row.user.phone ?? "—"}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">{row.vehicleType ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">{row.vehicleType ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">
+                        {row.user.avatarUrl ? (
+                          <a
+                            href={row.user.avatarUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[var(--accent-dark)] hover:underline"
+                          >
+                            Open Profile
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.nidDocumentUrl ? (
                           <a
                             href={row.nidDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open NID
                           </a>
@@ -173,13 +514,13 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.educationDocumentUrl ? (
                           <a
                             href={row.educationDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open Education Doc
                           </a>
@@ -187,13 +528,13 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
                         {row.cvDocumentUrl ? (
                           <a
                             href={row.cvDocumentUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-emerald-400 hover:underline"
+                            className="text-[var(--accent-dark)] hover:underline"
                           >
                             Open CV
                           </a>
@@ -201,7 +542,7 @@ export default function DeliveryAdminDashboard() {
                           "—"
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-400">
+                      <td className="px-4 py-3 text-[var(--muted-foreground)]">
                         {new Date(row.user.createdAt).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -210,7 +551,7 @@ export default function DeliveryAdminDashboard() {
                             type="button"
                             disabled={actionId === row.id}
                             onClick={() => approve(row.id)}
-                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                            className="rounded-lg bg-[var(--accent-dark)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
                           >
                             Approve
                           </button>
@@ -218,7 +559,7 @@ export default function DeliveryAdminDashboard() {
                             type="button"
                             disabled={actionId === row.id}
                             onClick={() => reject(row.id)}
-                            className="rounded-lg border border-rose-500/50 bg-rose-950/50 px-3 py-1.5 text-xs font-bold text-rose-200 hover:bg-rose-900/50 disabled:opacity-50"
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
                           >
                             Reject
                           </button>
@@ -233,32 +574,119 @@ export default function DeliveryAdminDashboard() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-lg font-bold text-white">All delivery partners</h2>
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Live delivery partner map</h2>
+          <div className="mb-12 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-2">
+              <div ref={mapContainerRef} className="h-[320px] w-full rounded-lg sm:h-[420px]" />
+            </div>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Agents with live coordinates</p>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                {mappablePartners.length} of {allPartners.length} partners currently visible on map.
+              </p>
+              <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">OpenStreetMap + Leaflet</p>
+              <div className="mt-4 max-h-[360px] space-y-2 overflow-y-auto pr-1">
+                {mappablePartners.length === 0 ? (
+                  <p className="rounded-lg border border-[var(--border)] bg-[var(--mint-50)] px-3 py-2 text-xs text-[var(--muted-foreground)]">
+                    No delivery agent has updated location yet.
+                  </p>
+                ) : (
+                  mappablePartners.map((partner) => (
+                    <button
+                      key={partner.id}
+                      type="button"
+                      onClick={() => setFocusedPartnerId(partner.id)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                        focusedPartnerId === partner.id
+                          ? "border-emerald-500/50 bg-emerald-500/10"
+                          : "border-[var(--border)] bg-[var(--card)] hover:bg-[var(--mint-50)]"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-[var(--foreground)]">{partner.user.name ?? partner.user.username}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{partner.user.phone ?? partner.user.email}</p>
+                      <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--muted-foreground)]">
+                        <span>{partner.isActive ? "Active" : "Inactive"}</span>
+                        <span>{partner.currentLat?.toFixed(4)}, {partner.currentLng?.toFixed(4)}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">Pending delivery payout requests</h2>
+          {payoutRequests.length === 0 ? (
+            <p className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted-foreground)]">
+              No pending payout requests.
+            </p>
+          ) : (
+            <div className="-mx-4 mb-12 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
+                  <tr>
+                    <th className="px-4 py-3">Delivery agent</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Amount</th>
+                    <th className="px-4 py-3">Requested at</th>
+                    <th className="px-4 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
+                  {payoutRequests.map((row) => (
+                    <tr key={row.id} className="hover:bg-[var(--mint-50)]">
+                      <td className="px-4 py-3 text-[var(--foreground)]">
+                        {row.riderProfile?.user?.name ?? row.riderProfile?.user?.username ?? "Delivery agent"}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">{row.riderProfile?.user?.email ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--foreground)]">BDT {row.amount.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-[var(--muted-foreground)]">{new Date(row.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          disabled={actionId === row.id}
+                          onClick={() => approvePayout(row.id)}
+                          className="rounded-lg bg-[var(--accent-dark)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                        >
+                          Approve payout
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <h2 className="mb-4 text-lg font-bold text-[var(--foreground)]">All delivery partners</h2>
+          <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
             <table className="w-full min-w-[800px] text-left text-sm">
-              <thead className="bg-slate-900 text-xs font-semibold uppercase text-slate-400">
+              <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
                 <tr>
                   <th className="px-4 py-3">Partner</th>
                   <th className="px-4 py-3">Registration</th>
                   <th className="px-4 py-3">Agent status</th>
+                  <th className="px-4 py-3">Profile</th>
                   <th className="px-4 py-3">NID</th>
+                  <th className="px-4 py-3">Education</th>
                   <th className="px-4 py-3">CV</th>
                   <th className="px-4 py-3">Completed jobs</th>
                   <th className="px-4 py-3">Active</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
                 {allPartners.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-800/50">
+                  <tr key={row.id} className="hover:bg-[var(--mint-50)]">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-white">{row.user.name ?? row.user.username}</p>
-                      <p className="text-xs text-slate-500">{row.user.email}</p>
+                      <p className="font-semibold text-[var(--foreground)]">{row.user.name ?? row.user.username}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{row.user.email}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
                           row.registrationStatus === "APPROVED"
-                            ? "bg-emerald-500/20 text-emerald-400"
+                            ? "bg-[var(--mint-100)] text-[var(--accent-dark)]"
                             : row.registrationStatus === "PENDING"
                               ? "bg-amber-500/20 text-amber-400"
                               : "bg-rose-500/20 text-rose-400"
@@ -267,14 +695,28 @@ export default function DeliveryAdminDashboard() {
                         {row.registrationStatus}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{row.agentStatus}</td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[var(--foreground)]">{row.agentStatus}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
+                      {row.user.avatarUrl ? (
+                        <a
+                          href={row.user.avatarUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--accent-dark)] hover:underline"
+                        >
+                          Open Profile
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {row.nidDocumentUrl ? (
                         <a
                           href={row.nidDocumentUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
+                          className="text-[var(--accent-dark)] hover:underline"
                         >
                           Open NID
                         </a>
@@ -282,13 +724,27 @@ export default function DeliveryAdminDashboard() {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-[var(--foreground)]">
+                      {row.educationDocumentUrl ? (
+                        <a
+                          href={row.educationDocumentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--accent-dark)] hover:underline"
+                        >
+                          Open Education Doc
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
                       {row.cvDocumentUrl ? (
                         <a
                           href={row.cvDocumentUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-emerald-400 hover:underline"
+                          className="text-[var(--accent-dark)] hover:underline"
                         >
                           Open CV
                         </a>
@@ -296,8 +752,94 @@ export default function DeliveryAdminDashboard() {
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-200">{row.completedDeliveries}</td>
+                    <td className="px-4 py-3 font-mono text-[var(--foreground)]">{row.completedDeliveries}</td>
                     <td className="px-4 py-3">{row.isActive ? "Yes" : "No"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={actionId === row.id || !row.isActive}
+                          onClick={() => blockPartner(row.id)}
+                          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          Block
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionId === row.id}
+                          onClick={() => deletePartner(row.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h2 className="mb-4 mt-12 text-lg font-bold text-[var(--foreground)]">Delivery orders and assignment</h2>
+          <div className="-mx-4 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)] sm:mx-0">
+            <table className="w-full min-w-[980px] text-left text-sm">
+              <thead className="bg-[var(--mint-100)] text-xs font-semibold uppercase text-[var(--muted-foreground)]">
+                <tr>
+                  <th className="px-4 py-3">Order</th>
+                  <th className="px-4 py-3">Direction</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Assigned rider</th>
+                  <th className="px-4 py-3">Assign</th>
+                    <th className="px-4 py-3">Chat</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)] bg-[var(--card)]">
+                {orders.map((order) => (
+                  <tr key={order.id} className="hover:bg-[var(--mint-50)]">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-[var(--foreground)]">{order.repairJob.repairRequest.title}</p>
+                      <p className="text-xs text-[var(--muted-foreground)]">{order.id.slice(0, 10)}</p>
+                    </td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">{order.direction}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">{order.status}</td>
+                    <td className="px-4 py-3 text-[var(--foreground)]">
+                      {order.deliveryAgent?.user?.name ?? order.deliveryAgent?.user?.username ?? "Unassigned"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.status === "DELIVERED" ? (
+                        <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          Delivered - assignment locked
+                        </span>
+                      ) : (
+                        <select
+                          className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-xs text-[var(--foreground)]"
+                          defaultValue=""
+                          onChange={(e) => assignOrder(order.id, e.target.value)}
+                          disabled={actionId === order.id}
+                        >
+                          <option value="">Select rider</option>
+                          {allPartners
+                            .filter((partner) => partner.isActive)
+                            .map((partner) => (
+                              <option key={partner.user.id} value={partner.user.id}>
+                                {partner.user.name ?? partner.user.username}
+                              </option>
+                            ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedOrderId(order.id);
+                          setIsChatOpen(true);
+                        }}
+                        className="rounded-lg border border-[var(--accent)] px-3 py-1 text-xs font-semibold text-[var(--accent-dark)] hover:bg-[var(--mint-100)]"
+                      >
+                        Open chat
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -305,12 +847,104 @@ export default function DeliveryAdminDashboard() {
           </div>
         </section>
 
-        <p className="mt-10 text-center text-sm text-slate-500">
-          <Link href="/delivery/login" className="text-emerald-500 hover:underline">
+        <p className="mt-10 text-center text-sm text-[var(--muted-foreground)]">
+          <Link href="/delivery/login" className="text-[var(--accent-dark)] hover:underline">
             Delivery partner portal →
           </Link>
         </p>
       </main>
+
+      {isChatOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close chat drawer"
+            className="fixed inset-0 z-20 bg-black/50"
+            onClick={() => setIsChatOpen(false)}
+          />
+          <aside className="fixed right-0 top-0 z-30 flex h-full w-full max-w-md flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+              <div>
+                <p className="text-sm font-bold text-[var(--foreground)]">Delivery chat</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {selectedOrder
+                    ? `${selectedOrder.repairJob.repairRequest.title} • ${selectedOrder.status}`
+                    : "Select an order"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="rounded-lg border border-[var(--border)] px-3 py-1 text-xs text-[var(--foreground)] hover:bg-[var(--mint-50)]"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">Timeline</p>
+              <div className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1">
+                {timeline.length === 0 ? (
+                  <p className="text-xs text-[var(--muted-foreground)]">No timeline yet.</p>
+                ) : (
+                  timeline.map((item, index) => (
+                    <div key={`${item.code}-${index}`} className="rounded-lg border border-[var(--border)] bg-[var(--mint-50)] px-3 py-2">
+                      <p className="text-xs font-semibold text-[var(--foreground)]">{item.title}</p>
+                      <p className="text-[11px] text-[var(--muted-foreground)]">{item.at ? new Date(item.at).toLocaleString() : "Pending"}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
+              {chatMessages.length === 0 ? (
+                <p className="text-xs text-[var(--muted-foreground)]">No messages yet.</p>
+              ) : (
+                chatMessages.map((msg) => {
+                  const isMine = msg.senderRole === "DELIVERY_ADMIN" || msg.senderRole === "ADMIN";
+                  return (
+                    <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                          isMine ? "bg-[var(--accent-dark)] text-white" : "border border-[var(--border)] bg-[var(--mint-50)] text-[var(--foreground)]"
+                        }`}
+                      >
+                        <p>{msg.message}</p>
+                        <p className={`mt-1 text-[10px] ${isMine ? "text-[#d9f3ce]" : "text-[var(--muted-foreground)]"}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="border-t border-[var(--border)] p-3">
+              {!selectedOrder?.deliveryAgent?.user?.id ? (
+                <p className="mb-2 text-xs text-amber-400">Assign a rider first to enable chat.</p>
+              ) : null}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => sendChat()}
+                  disabled={sendingChat || !selectedOrder?.deliveryAgent?.user?.id || !chatText.trim()}
+                  className="rounded-lg bg-[var(--accent-dark)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 sm:w-auto"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </aside>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -329,13 +963,13 @@ function StatCard({
     amber: "border-amber-500/30",
     sky: "border-sky-500/30",
     violet: "border-violet-500/30",
-    slate: "border-slate-600",
+    slate: "border-[var(--border)]",
     rose: "border-rose-500/30",
   };
   return (
-    <div className={`rounded-2xl border bg-slate-900 p-5 ${ring[accent]}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-white">{value}</p>
+    <div className={`rounded-2xl border bg-[var(--card)] p-5 ${ring[accent]}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{label}</p>
+      <p className="mt-2 text-3xl font-bold text-[var(--foreground)]">{value}</p>
     </div>
   );
 }

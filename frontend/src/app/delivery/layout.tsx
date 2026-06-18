@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import "@uploadthing/react/styles.css";
 import { DeliveryAuthGate, DeliveryAuthProvider } from "@/lib/delivery-auth-context";
 import { DeliveryLayoutChrome } from "@/components/delivery/DeliveryLayoutChrome";
 

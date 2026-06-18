@@ -4,15 +4,67 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
+import LocationPickerModal from "@/components/location/LocationPickerModal";
+import { useSelectedLocation } from "@/components/location/useSelectedLocation";
+import type { StoredLocation } from "@/components/location/types";
 import {
   addServiceToCart,
   createReview,
   getReviewEligibility,
   getShopBySlug,
   getShopReviews,
-  type Review,
   type Shop,
 } from "@/lib/api";
+import { pushLocalNotification } from "@/lib/notifications";
+import { useGuestCart, GUEST_CART_STORAGE_KEY } from "@/hooks/useGuestCart";
+
+const API = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+
+
+type Review = {
+  id: string;
+  score: number;
+  review?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  canEdit?: boolean;
+  editExpiresAt?: string;
+  user?: {
+    id?: string;
+    name?: string | null;
+    username?: string | null;
+  } | null;
+};
+
+type PendingCartItem = {
+  shopSlug: string;
+  serviceName: string;
+  description: string;
+  price: number;
+  quantity: number;
+  metadata: {
+    source: string;
+    shopName: string;
+    pickupLocation?: StoredLocation;
+  };
+};
+
+type ExistingReview = {
+  id: string;
+  score: number;
+  review?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  canEdit?: boolean;
+  editExpiresAt?: string;
+};
+
+type ReviewEligibilityState = {
+  eligible: boolean;
+  hasCompletedJob: boolean;
+  hasExistingReview: boolean;
+  existingReview?: ExistingReview | null;
+};
 
 type ShopDetails = Shop & {
   phone?: string | null;
@@ -67,28 +119,192 @@ function getServiceSummary(service: string) {
   };
 }
 
-export default function ShopDetailsPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+function formatDate(value?: string) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("en-BD", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function StarDisplay({ value, size = "text-lg" }: { value: number; size?: string }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${value} stars`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span
+          key={star}
+          className={`${size} ${star <= value ? "text-yellow-500" : "text-[var(--border)]"}`}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StarInput({ value, onChange }: { value: number; onChange: (next: number) => void }) {
+  const [hovered, setHovered] = useState(0);
+  const displayValue = hovered || value;
+
+  return (
+    <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-50)] p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--muted-foreground)]">
+        Your rating
+      </p>
+      <div className="mt-3 flex items-center gap-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            onFocus={() => setHovered(star)}
+            onBlur={() => setHovered(0)}
+            onClick={() => onChange(star)}
+            className="text-4xl leading-none transition hover:scale-110 focus:outline-none"
+            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+          >
+            <span className={star <= displayValue ? "text-yellow-500" : "text-[var(--border)]"}>
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-3 text-sm font-semibold text-[var(--foreground)]">
+        {value} out of 5 stars
+      </p>
+    </div>
+  );
+}
+
+async function updateReviewRequest(
+  slug: string,
+  reviewId: string,
+  payload: { score: number; review?: string },
+  token: string,
+) {
+  const response = await fetch(
+    `${API}/api/shops/${encodeURIComponent(slug)}/reviews/${encodeURIComponent(reviewId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.message || "Could not update review.");
+  }
+
+  return data;
+}
+
+function addGuestServiceToCart(shop: ShopDetails, item: { name: string; estimate: number; summary: string }) {
+  const existing = JSON.parse(localStorage.getItem(GUEST_CART_STORAGE_KEY) || "[]");
+  const carts = Array.isArray(existing) ? existing : [];
+  const existingCartIndex = carts.findIndex(
+    (cart: any) => cart.shop?.slug === shop.slug || cart.shopSlug === shop.slug,
+  );
+
+  if (existingCartIndex >= 0) {
+    const cart = carts[existingCartIndex];
+    const items = Array.isArray(cart.items) ? cart.items : [];
+    const existingItemIndex = items.findIndex((cartItem: any) => cartItem.serviceName === item.name);
+
+    if (existingItemIndex >= 0) {
+      items[existingItemIndex] = {
+        ...items[existingItemIndex],
+        quantity: Number(items[existingItemIndex].quantity || 1) + 1,
+      };
+    } else {
+      items.push({
+        id: `guest-item-${Date.now()}`,
+        cartId: cart.id,
+        serviceName: item.name,
+        description: item.summary,
+        price: item.estimate,
+        quantity: 1,
+        metadata: { source: "shop-details", shopName: shop.name },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    carts[existingCartIndex] = {
+      ...cart,
+      items,
+      subtotal: items.reduce((sum: number, cartItem: any) => sum + Number(cartItem.price || 0) * Number(cartItem.quantity || 1), 0),
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    const cartId = `guest-cart-${Date.now()}`;
+    carts.push({
+      id: cartId,
+      userId: "guest",
+      shopId: shop.id,
+      shopSlug: shop.slug,
+      status: "ACTIVE",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      subtotal: item.estimate,
+      shop: {
+        id: shop.id,
+        name: shop.name,
+        slug: shop.slug,
+        address: shop.address,
+        ratingAvg: shop.ratingAvg,
+        reviewCount: shop.reviewCount,
+      },
+      items: [
+        {
+          id: `guest-item-${Date.now()}`,
+          cartId,
+          serviceName: item.name,
+          description: item.summary,
+          price: item.estimate,
+          quantity: 1,
+          metadata: { source: "shop-details", shopName: shop.name },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+    });
+  }
+
+  localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(carts));
+  window.dispatchEvent(new Event("meramot-cart-changed"));
+}
+
+export default function ShopDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const [slug, setSlug] = useState("");
   const [shop, setShop] = useState<ShopDetails | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [eligibility, setEligibility] = useState<{
-    eligible: boolean;
-    hasCompletedJob: boolean;
-    hasExistingReview: boolean;
-  } | null>(null);
+  const [eligibility, setEligibility] = useState<ReviewEligibilityState | null>(null);
   const [score, setScore] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [message, setMessage] = useState("");
   const [cartToast, setCartToast] = useState("");
+  const [reviewToast, setReviewToast] = useState("");
   const [addingService, setAddingService] = useState<string | null>(null);
-
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewStarFilter, setReviewStarFilter] = useState(0); // 0 = all
+  const [reviewSortOrder, setReviewSortOrder] = useState<"newest" | "oldest">("newest");
+  const [mobileTab, setMobileTab] = useState<"services" | "reviews">("services");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [pendingCartItem, setPendingCartItem] = useState<PendingCartItem | null>(
+    null
+  );
   const { data: session } = useSession();
-  const token = (session?.user as { accessToken?: string } | undefined)
-    ?.accessToken;
+  const token = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+  const { selectedLocation, saveLocation } = useSelectedLocation(!!session?.user);
+  const guestCart = useGuestCart();
 
   useEffect(() => {
     params.then((value) => setSlug(value.slug));
@@ -102,7 +318,7 @@ export default function ShopDetailsPage({
         setShop({
           ...data,
           specialties: data.specialties ?? [],
-        })
+        }),
       )
       .catch(() => setShop(null));
 
@@ -111,19 +327,34 @@ export default function ShopDetailsPage({
 
   useEffect(() => {
     if (!cartToast) return;
-
-    const timeout = setTimeout(() => {
-      setCartToast("");
-    }, 2800);
-
+    const timeout = setTimeout(() => setCartToast(""), 2800);
     return () => clearTimeout(timeout);
   }, [cartToast]);
 
   useEffect(() => {
+    if (!reviewToast) return;
+    const timeout = setTimeout(() => setReviewToast(""), 2800);
+    return () => clearTimeout(timeout);
+  }, [reviewToast]);
+
+  useEffect(() => {
     if (!slug || !token) return;
+
     getReviewEligibility(slug, token)
-      .then(setEligibility)
-      .catch(() => setEligibility(null));
+      .then((result: ReviewEligibilityState) => {
+        setEligibility(result);
+        if (result.existingReview) {
+          setScore(result.existingReview.score);
+          setReviewText(result.existingReview.review || "");
+        }
+      })
+      .catch(() =>
+        setEligibility({
+          eligible: true,
+          hasCompletedJob: false,
+          hasExistingReview: false,
+        }),
+      );
   }, [slug, token]);
 
   const serviceItems = useMemo(() => {
@@ -138,11 +369,266 @@ export default function ShopDetailsPage({
     }));
   }, [shop]);
 
+  const ratingSummary = useMemo(() => {
+    if (!reviews.length) return { average: shop?.ratingAvg || 0, counts: [0, 0, 0, 0, 0] };
+
+    const counts = [1, 2, 3, 4, 5].map(
+      (star) => reviews.filter((review) => review.score === star).length,
+    );
+    const average = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length;
+    return { average, counts };
+  }, [reviews, shop?.ratingAvg]);
+
+  const existingReview = eligibility?.existingReview || null;
+  const isEditingReview = Boolean(existingReview?.canEdit);
+
+  async function refreshReviewsAndEligibility() {
+    if (!slug) return;
+    const [nextReviews, nextEligibility] = await Promise.all([
+      getShopReviews(slug),
+      token ? getReviewEligibility(slug, token) : Promise.resolve(null),
+    ]);
+
+    setReviews(nextReviews);
+    if (nextEligibility) {
+      setEligibility(nextEligibility as ReviewEligibilityState);
+    }
+  }
+
+  async function handleReviewSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!token || !shop) return;
+
+    setSubmittingReview(true);
+    setMessage("");
+
+    try {
+      if (existingReview?.id && existingReview.canEdit) {
+        await updateReviewRequest(shop.slug, existingReview.id, { score, review: reviewText }, token);
+        setReviewToast("Review updated successfully.");
+      } else {
+        await createReview(shop.slug, { score, review: reviewText }, token);
+        setReviewToast("Review submitted successfully.");
+
+        pushLocalNotification({
+          title: "Review submitted",
+          message: "Your review has been posted.",
+          type: "review",
+        });
+      }
+
+      await refreshReviewsAndEligibility();
+      setReviewModalOpen(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
+
+  function hasUsableLocation(location: StoredLocation | null) {
+    return Boolean(
+      location?.address?.trim() ||
+      location?.area?.trim() ||
+      location?.city?.trim() ||
+      (typeof location?.lat === "number" && typeof location?.lng === "number")
+    );
+  }
+
+  function buildCartPayload(item: {
+    name: string;
+    summary: string;
+    estimate: number;
+  }): PendingCartItem {
+    return {
+      shopSlug: shop!.slug,
+      serviceName: item.name,
+      description: item.summary,
+      price: item.estimate,
+      quantity: 1,
+      metadata: {
+        source: "shop-details",
+        shopName: shop!.name,
+      },
+    };
+  }
+
+  async function addPreparedItemToCart(
+    payload: PendingCartItem,
+    location: StoredLocation
+  ) {
+    const payloadWithLocation: PendingCartItem = {
+      ...payload,
+      metadata: {
+        ...payload.metadata,
+        pickupLocation: location,
+      },
+    };
+
+    if (token) {
+      await addServiceToCart(payloadWithLocation, token);
+    } else {
+      const key = "meramot.guestCart";
+      const existing = JSON.parse(localStorage.getItem(key) || "[]");
+
+      const existingShop = existing.find(
+        (cart: any) =>
+          cart.shop?.slug === shop!.slug || cart.shopSlug === shop!.slug
+      );
+
+      let updated;
+
+      if (existingShop) {
+        updated = existing.map((cart: any) => {
+          const sameShop =
+            cart.shop?.slug === shop!.slug || cart.shopSlug === shop!.slug;
+
+          if (!sameShop) return cart;
+
+          const items = cart.items || [];
+          const existingItem = items.find(
+            (cartItem: any) => cartItem.serviceName === payload.serviceName
+          );
+
+          return {
+            ...cart,
+            pickupLocation: location,
+            items: existingItem
+              ? items.map((cartItem: any) =>
+                cartItem.serviceName === payload.serviceName
+                  ? {
+                    ...cartItem,
+                    quantity: Number(cartItem.quantity || 1) + 1,
+                    metadata: payloadWithLocation.metadata,
+                  }
+                  : cartItem
+              )
+              : [
+                ...items,
+                {
+                  id: `guest-item-${Date.now()}`,
+                  serviceName: payload.serviceName,
+                  description: payload.description,
+                  price: payload.price,
+                  quantity: 1,
+                  metadata: payloadWithLocation.metadata,
+                },
+              ],
+          };
+        });
+      } else {
+        updated = [
+          ...existing,
+          {
+            id: `guest-cart-${Date.now()}`,
+            shopSlug: shop!.slug,
+            status: "ACTIVE",
+            pickupLocation: location,
+            shop: {
+              id: shop!.id,
+              name: shop!.name,
+              slug: shop!.slug,
+              address: shop!.address,
+              ratingAvg: shop!.ratingAvg,
+              reviewCount: shop!.reviewCount,
+            },
+            items: [
+              {
+                id: `guest-item-${Date.now()}`,
+                serviceName: payload.serviceName,
+                description: payload.description,
+                price: payload.price,
+                quantity: 1,
+                metadata: payloadWithLocation.metadata,
+              },
+            ],
+          },
+        ];
+      }
+
+      localStorage.setItem(key, JSON.stringify(updated));
+      window.dispatchEvent(new Event("meramot-cart-changed"));
+    }
+
+    const msg = `${payload.serviceName} added to cart.`;
+
+    setCartToast(msg);
+
+    pushLocalNotification({
+      title: "Added to cart",
+      message: msg,
+      type: "cart",
+      href: "/cart",
+    });
+  }
+
+  async function handleAddService(item: {
+    name: string;
+    summary: string;
+    estimate: number;
+  }) {
+    const payload = buildCartPayload(item);
+
+    if (!hasUsableLocation(selectedLocation)) {
+      setPendingCartItem(payload);
+      setCartToast("Choose your pickup location before adding this service.");
+      setLocationModalOpen(true);
+      return;
+    }
+
+    try {
+      setAddingService(item.name);
+      await addPreparedItemToCart(payload, selectedLocation!);
+    } catch (error) {
+      setCartToast(
+        error instanceof Error ? error.message : "Could not add service to cart."
+      );
+    } finally {
+      setAddingService(null);
+    }
+  }
+
+  async function handleLocationConfirm(location: StoredLocation) {
+    const savedLocation: StoredLocation = {
+      address:
+        location.address ||
+        (typeof location.lat === "number" && typeof location.lng === "number"
+          ? `${location.lat}, ${location.lng}`
+          : "Pinned location"),
+      city: location.city || "",
+      area: location.area || "",
+      lat: typeof location.lat === "number" ? location.lat : null,
+      lng: typeof location.lng === "number" ? location.lng : null,
+      source: location.source || "map",
+    };
+
+    localStorage.setItem("meramot.selectedLocation", JSON.stringify(savedLocation));
+    window.dispatchEvent(
+      new CustomEvent("meramot-location-changed", { detail: savedLocation })
+    );
+
+    setLocationModalOpen(false);
+
+    if (!pendingCartItem) return;
+
+    try {
+      setAddingService(pendingCartItem.serviceName);
+      await addPreparedItemToCart(pendingCartItem, savedLocation);
+      setPendingCartItem(null);
+    } catch (error) {
+      setCartToast(
+        error instanceof Error ? error.message : "Could not add service to cart."
+      );
+    } finally {
+      setAddingService(null);
+    }
+  }
+
   if (!shop) {
     return (
-      <main className="min-h-screen bg-[#E4FCD5]">
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
         <Navbar />
-        <div className="mx-auto max-w-6xl px-4 py-10 text-[#173726]">
+        <div className="mx-auto max-w-6xl px-4 py-10 text-[var(--foreground)]">
           Loading shop...
         </div>
       </main>
@@ -150,167 +636,304 @@ export default function ShopDetailsPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#E4FCD5]">
-      <Navbar
-        isLoggedIn={!!session?.user}
-        firstName={session?.user?.name?.split(" ")[0]}
-      />
+    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <Navbar isLoggedIn={!!session?.user} firstName={session?.user?.name?.split(" ")[0]} />
 
       {cartToast && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4">
-          <div
-            className="rounded-2xl px-5 py-3 text-sm font-medium text-white shadow-xl"
-            style={{ backgroundColor: "var(--accent-dark)" }}
-          >
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
             {cartToast}
           </div>
         </div>
       )}
 
-      <div className="border-b border-[#dbe5d6] bg-white">
+      {reviewToast && (
+        <div className="pointer-events-none fixed inset-x-0 top-20 z-[101] flex justify-center px-4">
+          <div className="rounded-2xl bg-[var(--accent-dark)] px-5 py-3 text-sm font-medium text-white shadow-xl">
+            {reviewToast}
+          </div>
+        </div>
+      )}
+
+      <div className="border-b border-[var(--border)] bg-[var(--card)]">
         <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-          <div className="text-sm text-[#667d6d]">
-            <Link href="/" className="hover:text-[#214c34]">
-              Homepage
-            </Link>
+          <div className="text-sm text-[var(--muted-foreground)]">
+            <Link href="/" className="hover:text-[var(--accent-dark)]">Homepage</Link>
             <span className="mx-2">›</span>
-            <Link href="/shops" className="hover:text-[#214c34]">
-              Shops
-            </Link>
+            <Link href="/shops" className="hover:text-[var(--accent-dark)]">Shops</Link>
             <span className="mx-2">›</span>
-            <span className="text-[#214c34]">{shop.name}</span>
+            <span className="text-[var(--accent-dark)]">{shop.name}</span>
           </div>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
-            <div className="h-[120px] w-[120px] rounded-[1.5rem] border border-[#dde7d8] bg-[linear-gradient(135deg,#edf4e8,#d7e5cf)]" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[140px_minmax(0,1fr)_220px] lg:items-start">
+            <div className="hidden lg:block h-[120px] w-[120px] rounded-[1.5rem] border border-[var(--border)] bg-[var(--mint-100)]" />
 
             <div>
-              <p className="text-sm text-[#607565]">
-                {(shop.specialties?.slice(0, 4) || []).join(" · ") ||
-                  "Repair services"}
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {(shop.specialties?.slice(0, 4) || []).join(" · ") || "Repair services"}
               </p>
-              <h1 className="mt-2 text-4xl font-bold tracking-tight text-[#153726]">
+
+              <h1 className="mt-2 text-2xl lg:text-4xl font-bold tracking-tight text-[var(--foreground)]">
                 {shop.name}
               </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#34523f]">
-                <span>
-                  ⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} (
-                  {shop.reviewCount ?? 0})
-                </span>
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--foreground)]">
+                <span>⭐ {shop.ratingAvg?.toFixed(1) ?? "0.0"} ({shop.reviewCount ?? 0})</span>
                 <span>{shop.address}</span>
                 {shop.phone ? <span>{shop.phone}</span> : null}
                 {shop.email ? <span>{shop.email}</span> : null}
               </div>
-              <p className="mt-4 max-w-3xl text-[#56715d]">
+
+              <p className="mt-4 max-w-3xl text-[var(--muted-foreground)]">
                 {shop.description ||
                   "Professional device repair support with diagnostics, updates, and service handling from this shop."}
               </p>
             </div>
 
-            <div className="rounded-[1.5rem] border border-[#dce5d8] bg-white p-4 shadow-sm">
-              <Link
-                href="/cart"
-                className="inline-flex w-full items-center justify-center rounded-full bg-[#214c34] px-5 py-3 text-sm font-semibold text-white"
-              >
+            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+              <Link href="/cart" className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white">
                 Go to cart
               </Link>
-              <p className="mt-3 text-center text-xs text-[#6a816f]">
-                Add one or more services below, then finish checkout in your
-                cart.
+              <p className="mt-3 text-center text-xs text-[var(--muted-foreground)]">
+                Add one or more services below, then finish checkout in your cart.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="min-w-0">
-          <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[#dbe5d6] bg-white px-4 py-3 text-sm font-medium text-[#516655]">
-            <span className="border-b-4 border-[#214c34] pb-2 text-[#173726]">
-              Services
-            </span>
-            <span className="pb-2">Reviews</span>
-          </div>
+      {/* ── MOBILE TAB LAYOUT */}
+      <div className="lg:hidden">
+        {/* Sticky tab bar */}
+        <div className="sticky top-0 z-10 flex border-b border-[var(--border)] bg-[var(--card)]">
+          <button
+            type="button"
+            onClick={() => setMobileTab("services")}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${mobileTab === "services"
+                ? "border-b-2 border-[var(--accent-dark)] text-[var(--accent-dark)]"
+                : "text-[var(--muted-foreground)]"
+              }`}
+          >
+            Services
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("reviews")}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${mobileTab === "reviews"
+                ? "border-b-2 border-[var(--accent-dark)] text-[var(--accent-dark)]"
+                : "text-[var(--muted-foreground)]"
+              }`}
+          >
+            Reviews
+          </button>
+        </div>
 
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        {/* Services tab */}
+        {mobileTab === "services" && (
+          <div className="px-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              {serviceItems.map((item) => (
+                <article key={item.name} className="flex flex-col rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold leading-snug text-[var(--foreground)]">{item.name}</h3>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted-foreground)] line-clamp-2">{item.summary}</p>
+                  <div className="mt-2">
+                    <span className="text-sm font-bold text-[var(--foreground)]">৳{item.estimate.toLocaleString("en-BD")}</span>
+                    <span className="ml-1 text-[10px] text-[var(--muted-foreground)]">est.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleAddService(item)}
+                    className="mt-3 w-full rounded-full bg-[var(--accent-dark)] py-2 text-xs font-semibold text-white"
+                  >
+                    {addingService === item.name ? "Adding..." : "Add to cart"}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reviews tab */}
+        {mobileTab === "reviews" && (
+          <div className="px-4 py-4">
+            {/* Sort + filter row */}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-[var(--muted-foreground)]">
+                {reviewStarFilter === 0
+                  ? `${reviews.length} review${reviews.length !== 1 ? "s" : ""}`
+                  : `${reviews.filter(r => r.score === reviewStarFilter).length} ★${reviewStarFilter} review${reviews.filter(r => r.score === reviewStarFilter).length !== 1 ? "s" : ""}`}
+              </p>
+              {reviews.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={reviewSortOrder}
+                    onChange={(e) => { setReviewSortOrder(e.target.value as "newest" | "oldest"); setReviewPage(1); }}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] outline-none"
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                  <select
+                    value={reviewStarFilter}
+                    onChange={(e) => { setReviewStarFilter(Number(e.target.value)); setReviewPage(1); }}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] outline-none"
+                  >
+                    <option value={0}>All ratings</option>
+                    {[5, 4, 3, 2, 1].map(s => (
+                      <option key={s} value={s}>{"★".repeat(s)} ({reviews.filter(r => r.score === s).length})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Paginated review list */}
+            {(() => {
+              const filtered = (reviewStarFilter === 0 ? reviews : reviews.filter(r => r.score === reviewStarFilter))
+                .slice()
+                .sort((a, b) => reviewSortOrder === "newest"
+                  ? new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+                  : new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
+                );
+              const totalPages = Math.ceil(filtered.length / 4);
+              const page = Math.min(reviewPage, totalPages || 1);
+              const visible = filtered.slice((page - 1) * 4, page * 4);
+
+              if (reviews.length === 0) return (
+                <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-sm text-[var(--muted-foreground)]">No reviews yet.</p>
+              );
+              if (filtered.length === 0) return (
+                <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-sm text-[var(--muted-foreground)]">No {reviewStarFilter}★ reviews yet.</p>
+              );
+
+              return (
+                <>
+                  <div className="space-y-3">
+                    {visible.map((item) => {
+                      const isMine = existingReview?.id === item.id;
+                      return (
+                        <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-bold text-[var(--foreground)]">{item.user?.name || item.user?.username || "Customer"}</p>
+                                {isMine && <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-dark)]">You</span>}
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">{formatDate(item.createdAt)}{item.updatedAt && item.updatedAt !== item.createdAt ? " · edited" : ""}</p>
+                            </div>
+                            <StarDisplay value={item.score} />
+                          </div>
+                          {item.review && <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">{item.review}</p>}
+                        </article>
+                      );
+                    })}
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <button onClick={() => setReviewPage(p => Math.max(1, p - 1))} disabled={page === 1} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-xs font-semibold disabled:opacity-40">← Prev</button>
+                      <span className="text-xs text-[var(--muted-foreground)]">Page {page} of {totalPages}</span>
+                      <button onClick={() => setReviewPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-xs font-semibold disabled:opacity-40">Next →</button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            {/* Write / Edit review button */}
+            {session?.user && (!eligibility?.hasExistingReview || existingReview?.canEdit) && (
+              <button
+                type="button"
+                onClick={() => setReviewModalOpen(true)}
+                className="mt-6 w-full rounded-full bg-[var(--accent-dark)] py-3 text-sm font-bold text-white"
+              >
+                {existingReview?.canEdit ? "Edit your review" : "Want to add a review?"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── REVIEW MODAL (mobile) ── */}
+      {reviewModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-black/40 lg:hidden"
+          onClick={(e) => { if (e.target === e.currentTarget) setReviewModalOpen(false); }}
+        >
+          <div className="w-full rounded-t-[2rem] bg-[var(--card)] p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
+                {existingReview?.canEdit ? "Edit your review" : "Write a review"}
+              </p>
+              <button
+                type="button"
+                onClick={() => setReviewModalOpen(false)}
+                className="rounded-full p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--mint-100)]"
+              >
+                ✕
+              </button>
+            </div>
+            <h2 className="text-xl font-bold text-[var(--foreground)]">Rate this shop</h2>
+            <form className="mt-4 space-y-4" onSubmit={handleReviewSubmit}>
+              <StarInput value={score} onChange={setScore} />
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={4}
+                className="w-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent-dark)]"
+                placeholder="Tell others about your experience"
+              />
+              {existingReview?.canEdit && existingReview.editExpiresAt && (
+                <p className="rounded-2xl bg-[var(--mint-50)] px-4 py-3 text-xs text-[var(--muted-foreground)]">
+                  You can edit this review until {formatDate(existingReview.editExpiresAt)}.
+                </p>
+              )}
+              {message && <p className="text-xs text-[var(--accent-dark)]">{message}</p>}
+              <button
+                disabled={submittingReview}
+                className="w-full rounded-full bg-[var(--accent-dark)] py-3 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {submittingReview ? "Saving..." : existingReview?.canEdit ? "Update review" : "Submit review"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <div className="hidden lg:grid mx-auto max-w-7xl gap-6 px-4 py-6 md:px-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0">
+
+          <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
             <div className="mb-5">
-              <h2 className="text-3xl font-bold text-[#173726]">
-                Available services
-              </h2>
-              <p className="mt-2 text-[#607565]">
-                Add services to cart first, then choose schedule, payment
-                method, and address during checkout.
+              <h2 className="text-3xl font-bold text-[var(--foreground)]">Available services</h2>
+              <p className="mt-2 text-[var(--muted-foreground)]">
+                Add services to cart first, then choose schedule, payment method, and address during checkout.
               </p>
             </div>
 
             <div className="space-y-4">
               {serviceItems.map((item) => (
-                <article
-                  key={item.name}
-                  className="flex flex-col gap-4 rounded-[1.5rem] border border-[#dfe8d9] p-4 transition hover:border-[#bfd3bc] hover:shadow-sm md:flex-row md:items-start md:justify-between"
-                >
+                <article key={item.name} className="flex flex-col gap-4 rounded-[1.5rem] border border-[var(--border)] p-4 transition hover:shadow-sm md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <h3 className="text-xl font-semibold text-[#173726]">
-                          {item.name}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-[#5c7563]">
-                          {item.summary}
-                        </p>
+                        <h3 className="text-xl font-semibold text-[var(--foreground)]">{item.name}</h3>
+                        <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
                       </div>
+
                       <div className="shrink-0 text-right">
-                        <div className="text-lg font-bold text-[#173726]">
+                        <div className="text-lg font-bold text-[var(--foreground)]">
                           ৳{item.estimate.toLocaleString("en-BD")}
                         </div>
-                        <div className="text-xs text-[#6d8372]">
-                          starting estimate
-                        </div>
+                        <div className="text-xs text-[var(--muted-foreground)]">starting estimate</div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 md:pl-4">
+                  <div className="flex items-center gap-3 w-full md:w-auto md:pl-4">
                     <button
                       type="button"
-                      onClick={async () => {
-                        if (!token) {
-                          setCartToast(
-                            "Please log in first to add services to your cart."
-                          );
-                          return;
-                        }
-
-                        try {
-                          setAddingService(item.name);
-
-                          await addServiceToCart(
-                            {
-                              shopSlug: shop.slug,
-                              serviceName: item.name,
-                              description: item.summary,
-                              price: item.estimate,
-                              quantity: 1,
-                              metadata: {
-                                source: "shop-details",
-                                shopName: shop.name,
-                              },
-                            },
-                            token
-                          );
-
-                          setCartToast(`${item.name} added to cart.`);
-                        } catch (error) {
-                          setCartToast(
-                            error instanceof Error
-                              ? error.message
-                              : "Could not add service to cart."
-                          );
-                        } finally {
-                          setAddingService(null);
-                        }
-                      }}
-                      className="inline-flex h-11 items-center rounded-full bg-[#214c34] px-5 text-sm font-semibold text-white"
+                      onClick={() => void handleAddService(item)}
+                      className="inline-flex h-11 w-full md:w-auto items-center justify-center rounded-full bg-[var(--accent-dark)] px-5 text-sm font-semibold text-white"
                     >
                       {addingService === item.name ? "Adding..." : "Add to cart"}
                     </button>
@@ -320,113 +943,206 @@ export default function ShopDetailsPage({
             </div>
           </div>
 
-          <section className="mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-[#173726]">
-              Customer reviews
-            </h2>
-            <div className="mt-5 space-y-4">
-              {reviews.length === 0 && (
-                <p className="text-[#5b7262]">No reviews yet.</p>
-              )}
+          <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] items-start">
 
-              {reviews.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-2xl border border-[#d7e4d0] p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-[#173726]">
-                      {item.user?.name || item.user?.username || "Customer"}
-                    </p>
-                    <p className="text-sm text-[#5b7262]">{item.score}/5</p>
-                  </div>
-                  {item.review ? (
-                    <p className="mt-2 text-[#355541]">{item.review}</p>
-                  ) : null}
-                </article>
-              ))}
+            {/* LEFT CARD: heading + score + filter bars */}
+            <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm self-start">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">Customer reviews</p>
+              <h2 className="mt-2 text-2xl font-bold text-[var(--foreground)]">What customers are saying</h2>
+
+              <div className="mt-4 rounded-[1.5rem] bg-[var(--mint-50)] px-5 py-4 text-center">
+                <div className="text-4xl font-black text-[var(--foreground)]">{ratingSummary.average.toFixed(1)}</div>
+                <StarDisplay value={Math.round(ratingSummary.average)} />
+                <p className="mt-1 text-xs text-[var(--muted-foreground)]">{reviews.length} review{reviews.length === 1 ? "" : "s"}</p>
+              </div>
+
+              <div className="mt-4">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = ratingSummary.counts[star - 1] || 0;
+                  const percentage = reviews.length ? (count / reviews.length) * 100 : 0;
+                  const isActive = reviewStarFilter === star;
+                  return (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => { setReviewStarFilter(isActive ? 0 : star); setReviewPage(1); }}
+                      className={`mb-3 flex w-full items-center gap-3 last:mb-0 rounded-xl px-1 py-0.5 transition-colors ${isActive ? "bg-[var(--mint-200)]" : "hover:bg-[var(--mint-100)]"}`}
+                    >
+                      <span className="w-8 text-left text-sm font-semibold text-[var(--foreground)]">{star} ★</span>
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--mint-200)]">
+                        <div className="h-full rounded-full bg-yellow-500" style={{ width: `${percentage}%` }} />
+                      </div>
+                      <span className="w-6 text-right text-xs text-[var(--muted-foreground)]">{count}</span>
+                    </button>
+                  );
+                })}
+                {reviewStarFilter !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setReviewStarFilter(0); setReviewPage(1); }}
+                    className="mt-3 w-full rounded-full border border-[var(--border)] py-1.5 text-xs font-semibold text-[var(--muted-foreground)] hover:bg-[var(--mint-100)] transition-colors"
+                  >
+                    Clear filter
+                  </button>
+                )}
+              </div>
             </div>
-          </section>
+
+            {/* RIGHT CARD: filter dropdown + paginated reviews */}
+            <div className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  {reviewStarFilter === 0
+                    ? `${reviews.length} review${reviews.length !== 1 ? "s" : ""}`
+                    : `${reviews.filter(r => r.score === reviewStarFilter).length} ★${reviewStarFilter} review${reviews.filter(r => r.score === reviewStarFilter).length !== 1 ? "s" : ""}`}
+                </p>
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={reviewSortOrder}
+                      onChange={(e) => { setReviewSortOrder(e.target.value as "newest" | "oldest"); setReviewPage(1); }}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] outline-none cursor-pointer"
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                    </select>
+                    <select
+                      value={reviewStarFilter}
+                      onChange={(e) => { setReviewStarFilter(Number(e.target.value)); setReviewPage(1); }}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] outline-none cursor-pointer"
+                    >
+                      <option value={0}>All ratings</option>
+                      {[5, 4, 3, 2, 1].map(s => (
+                        <option key={s} value={s}>{"★".repeat(s)} ({reviews.filter(r => r.score === s).length})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {(() => {
+                const filtered = (reviewStarFilter === 0 ? reviews : reviews.filter(r => r.score === reviewStarFilter))
+                  .slice()
+                  .sort((a, b) => reviewSortOrder === "newest"
+                    ? new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+                    : new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime()
+                  );
+                const totalPages = Math.ceil(filtered.length / 4);
+                const page = Math.min(reviewPage, totalPages || 1);
+                const visible = filtered.slice((page - 1) * 4, page * 4);
+
+                if (reviews.length === 0) return (
+                  <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-[var(--muted-foreground)]">No reviews yet.</p>
+                );
+                if (filtered.length === 0) return (
+                  <p className="rounded-2xl border border-dashed border-[var(--border)] p-5 text-[var(--muted-foreground)]">No {reviewStarFilter}★ reviews yet.</p>
+                );
+
+                return (
+                  <>
+                    <div className="space-y-4">
+                      {visible.map((item) => {
+                        const isMine = existingReview?.id === item.id;
+                        return (
+                          <article key={item.id} className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-[var(--foreground)]">{item.user?.name || item.user?.username || "Customer"}</p>
+                                  {isMine && (
+                                    <span className="rounded-full bg-[var(--mint-100)] px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">Your review</span>
+                                  )}
+                                </div>
+                                <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                                  {formatDate(item.createdAt)}{item.updatedAt && item.updatedAt !== item.createdAt ? " · edited" : ""}
+                                </p>
+                              </div>
+                              <StarDisplay value={item.score} />
+                            </div>
+                            {item.review && <p className="mt-4 leading-7 text-[var(--muted-foreground)]">{item.review}</p>}
+                          </article>
+                        );
+                      })}
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="mt-5 flex items-center justify-between gap-2">
+                        <button onClick={() => setReviewPage(p => Math.max(1, p - 1))} disabled={page === 1} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-semibold disabled:opacity-40 hover:bg-[var(--mint-50)] transition-colors">← Prev</button>
+                        <span className="text-xs text-[var(--muted-foreground)]">Page {page} of {totalPages}</span>
+                        <button onClick={() => setReviewPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-semibold disabled:opacity-40 hover:bg-[var(--mint-50)] transition-colors">Next →</button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+          </div>
         </section>
 
+        {locationModalOpen && (
+          <LocationPickerModal
+            selectedLocation={selectedLocation}
+            onClose={() => {
+              setLocationModalOpen(false);
+              setPendingCartItem(null);
+            }}
+            onConfirm={handleLocationConfirm}
+          />
+        )}
+
         <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-          <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-[#173726]">
-              Write a review
+          <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--muted-foreground)]">
+              {isEditingReview ? "Edit your review" : "Write a review"}
+            </p>
+            <h2 className="mt-2 text-3xl font-bold text-[var(--foreground)]">
+              Rate this shop
             </h2>
 
             {!session?.user && (
-              <p className="mt-3 text-sm text-[#5b7262]">
-                Log in to review a shop after a completed service.
+              <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
+                Log in to review this shop.
               </p>
             )}
 
-            {session?.user && eligibility && !eligibility.eligible && (
-              <p className="mt-3 text-sm text-[#5b7262]">
-                You can review this shop only after a completed service, and
-                only once.
+            {session?.user && eligibility?.hasExistingReview && !existingReview?.canEdit && (
+              <p className="mt-4 rounded-2xl bg-[var(--mint-50)] p-4 text-sm text-[var(--muted-foreground)]">
+                You already reviewed this shop. The 6-month edit window has expired.
               </p>
             )}
 
-            {session?.user && eligibility?.eligible && (
-              <form
-                className="mt-4 space-y-3"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!token) return;
-
-                  try {
-                    await createReview(
-                      shop.slug,
-                      { score, review: reviewText },
-                      token
-                    );
-                    setMessage("Review submitted successfully.");
-                    setReviewText("");
-                    setEligibility({
-                      eligible: false,
-                      hasCompletedJob: true,
-                      hasExistingReview: true,
-                    });
-                    setReviews(await getShopReviews(shop.slug));
-                  } catch (error) {
-                    setMessage(
-                      error instanceof Error
-                        ? error.message
-                        : "Could not submit review."
-                    );
-                  }
-                }}
-              >
-                <select
-                  value={score}
-                  onChange={(e) => setScore(Number(e.target.value))}
-                  className="w-full rounded-2xl border border-[#cfe0c6] px-4 py-3"
-                >
-                  {[5, 4, 3, 2, 1].map((value) => (
-                    <option key={value} value={value}>
-                      {value} stars
-                    </option>
-                  ))}
-                </select>
+            {session?.user && (!eligibility?.hasExistingReview || existingReview?.canEdit) && (
+              <form className="mt-5 space-y-4" onSubmit={handleReviewSubmit}>
+                <StarInput value={score} onChange={setScore} />
 
                 <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-2xl border border-[#cfe0c6] px-4 py-3"
+                  rows={5}
+                  className="w-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] focus:border-[var(--accent-dark)]"
                   placeholder="Tell others about your experience"
                 />
 
-                <button className="rounded-full bg-[#214c34] px-6 py-3 text-sm font-semibold text-white">
-                  Submit review
+                {existingReview?.canEdit && existingReview.editExpiresAt && (
+                  <p className="rounded-2xl bg-[var(--mint-50)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
+                    You can edit this review until {formatDate(existingReview.editExpiresAt)}.
+                  </p>
+                )}
+
+                <button
+                  disabled={submittingReview}
+                  className="w-full rounded-full bg-[var(--accent-dark)] px-6 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:opacity-60"
+                >
+                  {submittingReview
+                    ? "Saving..."
+                    : isEditingReview
+                      ? "Update review"
+                      : "Submit review"}
                 </button>
               </form>
             )}
 
-            {message && (
-              <p className="mt-3 text-sm text-[#214c34]">{message}</p>
-            )}
+            {message && <p className="mt-3 text-sm text-[var(--accent-dark)]">{message}</p>}
           </section>
         </aside>
       </div>

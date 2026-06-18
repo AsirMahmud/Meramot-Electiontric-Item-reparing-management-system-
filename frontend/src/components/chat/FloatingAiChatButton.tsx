@@ -2,54 +2,245 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+
+type Position = {
+  x: number;
+  y: number;
+};
+
+function getButtonSize() {
+  if (typeof window !== "undefined" && window.innerWidth < 640) {
+    return { width: 56, height: 56 }; // mobile
+  }
+  return { width: 220, height: 72 }; // desktop
+}
+
+const { width: BUTTON_WIDTH, height: BUTTON_HEIGHT } = getButtonSize();
+const EDGE_MARGIN = 16;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 export default function FloatingAiChatButton() {
   const pathname = usePathname();
-
-  const hiddenPrefixes = [
-    "/ai-chat",
-    "/admin",
-    "/delivery",
-    "/vendor",
-    "/login",
-    "/signup",
+  const userPagePrefixes = [
+    "/",
+    "/shops",
+    "/cart",
+    "/orders",
+    "/profile",
+    "/requests",
+    "/checkout",
   ];
 
-  const shouldHide = hiddenPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  const blockedPrefixes = [
+    "/ai-chat",
+    "/login",
+    "/signup",
+    "/register",
+    "/admin",
+    "/vendor",
+    "/delivery",
+    "/delivery-admin",
+  ];
+
+  const isBlockedPage = blockedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
   );
 
-  if (shouldHide) return null;
+  const isUserPage = userPagePrefixes.some((prefix) => {
+    if (prefix === "/") return pathname === "/";
+    return pathname === prefix || pathname.startsWith(prefix + "/");
+  });
+
+  const shouldHide = isBlockedPage || !isUserPage;
+
+  const [mounted, setMounted] = useState(false);
+  const [position, setPosition] = useState<Position>({
+    x: 0,
+    y: 0,
+  });
+  const [dragging, setDragging] = useState(false);
+
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const movedRef = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const saved = window.localStorage.getItem("meramot-ai-chat-position");
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Position;
+        setPosition(parsed);
+        return;
+      } catch {
+        // ignore broken saved data
+      }
+    }
+
+    setPosition({
+      x: window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN,
+      y: window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    window.localStorage.setItem(
+      "meramot-ai-chat-position",
+      JSON.stringify(position)
+    );
+  }, [position, mounted]);
+
+  useEffect(() => {
+    function keepInsideViewport() {
+      setPosition((prev) => ({
+        x: clamp(
+          prev.x,
+          EDGE_MARGIN,
+          window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
+        ),
+        y: clamp(
+          prev.y,
+          EDGE_MARGIN,
+          window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
+        ),
+      }));
+    }
+
+    window.addEventListener("resize", keepInsideViewport);
+    return () => window.removeEventListener("resize", keepInsideViewport);
+  }, []);
+
+  function startDrag(clientX: number, clientY: number) {
+    movedRef.current = false;
+    setDragging(true);
+    dragOffsetRef.current = {
+      x: clientX - position.x,
+      y: clientY - position.y,
+    };
+  }
+
+  function updateDrag(clientX: number, clientY: number) {
+    const nextX = clamp(
+      clientX - dragOffsetRef.current.x,
+      EDGE_MARGIN,
+      window.innerWidth - BUTTON_WIDTH - EDGE_MARGIN
+    );
+    const nextY = clamp(
+      clientY - dragOffsetRef.current.y,
+      EDGE_MARGIN,
+      window.innerHeight - BUTTON_HEIGHT - EDGE_MARGIN
+    );
+
+    movedRef.current = true;
+    setPosition({ x: nextX, y: nextY });
+  }
+
+  useEffect(() => {
+    function onMouseMove(event: MouseEvent) {
+      if (!dragging) return;
+      updateDrag(event.clientX, event.clientY);
+    }
+
+    function onMouseUp() {
+      if (!dragging) return;
+      setDragging(false);
+    }
+
+    function onTouchMove(event: TouchEvent) {
+      if (!dragging || event.touches.length === 0) return;
+      const touch = event.touches[0];
+      updateDrag(touch.clientX, touch.clientY);
+    }
+
+    function onTouchEnd() {
+      if (!dragging) return;
+      setDragging(false);
+    }
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [dragging]);
+
+  if (shouldHide || !mounted) return null;
 
   return (
-    <Link
-      href="/ai-chat"
-      aria-label="Open AI chat"
-      className="group fixed bottom-6 right-6 z-[90] flex items-center gap-3 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-white shadow-[0_12px_30px_rgba(36,66,41,0.28)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(36,66,41,0.38)]"
+    <div
+      className="fixed z-[90]"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          className="h-6 w-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 10h.01M12 10h.01M15 10h.01M8.4 18.2 4 20l1.6-4.1A8 8 0 1 1 20 12"
-          />
-        </svg>
-      </div>
+      <Link
+        href="/ai-chat"
+        aria-label="Open AI chat"
+        draggable={false}
+        onClick={(event) => {
+          if (movedRef.current) {
+            event.preventDefault();
+            movedRef.current = false;
+          }
+        }}
+        onMouseDown={(event) => {
+          if (event.button !== 0) return;
+          startDrag(event.clientX, event.clientY);
+        }}
+        onTouchStart={(event) => {
+          if (event.touches.length === 0) return;
+          const touch = event.touches[0];
+          startDrag(touch.clientX, touch.clientY);
+        }}
+        className={`group flex items-center rounded-full bg-[#214c34] text-white
+          shadow-[0_12px_30px_rgba(36,66,41,0.28)] ring-1 ring-white/10 transition
+          ${
+            dragging
+              ? "cursor-grabbing select-none"
+              : "cursor-grab hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(36,66,41,0.38)]"
+          }
+          px-3 py-2 gap-2 sm:px-4 sm:py-3 sm:gap-3
+        `}
+      >
+        <div className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/16 ring-1 ring-white/20">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            className="h-6 w-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 10h.01M12 10h.01M15 10h.01M8.4 18.2 4 20l1.6-4.1A8 8 0 1 1 20 12"
+            />
+          </svg>
+        </div>
 
-      <div className="hidden sm:block">
-        <p className="text-sm font-semibold leading-4">AI Help Chat</p>
-        <p className="mt-1 text-xs text-white/80">
+        <div>
+        <p className="text-xs sm:text-sm font-semibold leading-4">
+          AI Help Chat
+        </p>
+        <p className="mt-0.5 text-[10px] sm:text-xs text-white/80 leading-tight">
           Ask repair questions instantly
         </p>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

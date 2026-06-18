@@ -25,11 +25,13 @@ Rules:
 - Do not give dangerous repair instructions
 - If there is smoke, sparks, swelling battery, burning smell, or electric shock risk, tell the user to stop using the device immediately
 - Keep replies concise, practical, and user-friendly
+- Do not use Markdown formatting symbols such as **, __, #, or backticks
+- Use plain numbered lines with short labels, for example: 1. Likely issue: ...
 - Focus on phones, laptops, tablets, accessories, home electronics, and repair logistics
-- If useful, structure the reply as:
-  1. Likely issue
-  2. What you can try now
-  3. When to seek repair
+- If useful, structure the reply as: [The title of each point should be in bold]
+  1. Likely issue: [short describtion of issue]
+  2. What you can try now: [this should be a bullet list]
+  3. When to seek repair:
 `;
 
 export async function generateAiRepairReply(input: AiChatInput) {

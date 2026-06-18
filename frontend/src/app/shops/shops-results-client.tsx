@@ -3,11 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/home/Navbar";
-import { type ApiShop, getShops } from "@/lib/api";
+import SidebarFilters from "@/components/home/SidebarFilters";
+import { type Shop, getShops } from "@/lib/api";
 import { fallbackShops } from "@/lib/mock-data";
-import { defaultSearchState, filterAndSortShops, formatPriceLevel, normalizeSearchState, toShopQuery } from "@/lib/shop-search";
+import {
+  defaultSearchState,
+  filterAndSortShops,
+  formatPriceLevel,
+  normalizeSearchState,
+  toShopQuery,
+} from "@/lib/shop-search";
 
 const sortTabs = [
   { label: "Lowest Price", value: "price" },
@@ -42,21 +50,33 @@ function etaLabel(minutes?: number | null) {
   return "Next day";
 }
 
-function ShopResultCard({ shop }: { shop: ApiShop }) {
+function ShopResultCard({ shop }: { shop: Shop }) {
   return (
     <Link
       href={`/shops/${shop.slug}`}
-      className="group rounded-[1.6rem] border border-[#d7dfd0] bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group rounded-[1.6rem] border border-[var(--border)] bg-[var(--card)] p-2.5 sm:p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="flex items-start gap-3">
-        <div className="h-14 w-14 shrink-0 rounded-xl bg-[#dfe6d7]" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+        {shop.logoUrl ? (
+          <div className="relative h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--mint-100)] border border-[var(--border)]">
+            <Image src={shop.logoUrl} alt={shop.name} fill className="object-cover" />
+          </div>
+        ) : (
+          <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl bg-[var(--mint-100)] border border-[var(--border)] flex items-center justify-center">
+            <span className="text-xl font-bold text-[var(--accent-dark)] opacity-50">
+              {shop.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="truncate text-[1.15rem] font-bold text-[#163626]">
+              <h3 className="truncate text-[1.15rem] font-bold text-[var(--foreground)]">
                 {shop.name}
               </h3>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#536b58]">
+
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
                 <span>⭐ {shop.ratingAvg.toFixed(1)}</span>
                 <span>({shop.reviewCount})</span>
                 {typeof shop.distanceKm === "number" ? (
@@ -65,11 +85,12 @@ function ShopResultCard({ shop }: { shop: ApiShop }) {
                 <span>{etaLabel(shop.etaMinutes)}</span>
               </div>
             </div>
+
             <div className="shrink-0 text-right">
-              <div className="text-2xl font-extrabold leading-none text-[#214c34]">
+              <div className="text-2xl font-extrabold leading-none text-[var(--accent-dark)]">
                 {shop.offerSummary ?? "৳--"}
               </div>
-              <div className="mt-1 text-xs font-semibold text-[#5d705f]">
+              <div className="mt-1 text-xs font-semibold text-[var(--muted-foreground)]">
                 {etaLabel(shop.etaMinutes)}
               </div>
             </div>
@@ -77,15 +98,29 @@ function ShopResultCard({ shop }: { shop: ApiShop }) {
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-1 text-xs text-[#4a5f4d]">
+      <p className="mt-3 line-clamp-1 text-xs text-[var(--muted-foreground)]">
         {shop.description || shop.address}
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#244734]">
-        {shop.hasVoucher ? <span className="rounded-full bg-[#eff8e8] px-2.5 py-1">Voucher</span> : null}
-        {shop.freeDelivery ? <span className="rounded-full bg-[#eff8e8] px-2.5 py-1">Free delivery</span> : null}
-        {shop.hasDeals ? <span className="rounded-full bg-[#eff8e8] px-2.5 py-1">Deal</span> : null}
-        <span className="rounded-full bg-[#eff8e8] px-2.5 py-1">{formatPriceLevel(shop.priceLevel)}</span>
+      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[var(--accent-dark)]">
+        {shop.hasVoucher ? (
+          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+            Voucher
+          </span>
+        ) : null}
+        {shop.freeDelivery ? (
+          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+            Free delivery
+          </span>
+        ) : null}
+        {shop.hasDeals ? (
+          <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+            Deal
+          </span>
+        ) : null}
+        <span className="rounded-full bg-[var(--mint-50)] px-2.5 py-1">
+          {formatPriceLevel(shop.priceLevel)}
+        </span>
       </div>
     </Link>
   );
@@ -93,17 +128,17 @@ function ShopResultCard({ shop }: { shop: ApiShop }) {
 
 export default function ShopsResultsClient() {
   const { data: session } = useSession();
-
-  const firstName = useMemo(() => {
-  return (
-    session?.user?.name?.trim()?.split(" ")[0] ||
-    (session?.user as any)?.username?.trim()?.split(" ")[0] ||
-    "User"
-  );
-}, [session]);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  const firstName = useMemo(() => {
+    return (
+      session?.user?.name?.trim()?.split(" ")[0] ||
+      (session?.user as any)?.username?.trim()?.split(" ")[0] ||
+      "User"
+    );
+  }, [session]);
 
   const searchState = useMemo(
     () =>
@@ -122,14 +157,16 @@ export default function ShopsResultsClient() {
   );
 
   const categoryBrowseMode = Boolean(searchState.category && !searchState.q);
-
-  const [remoteShops, setRemoteShops] = useState<ApiShop[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [remoteShops, setRemoteShops] = useState<Shop[]>([]);
   const [apiFailed, setApiFailed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+
     setLoading(true);
+
     getShops(toShopQuery(searchState))
       .then((data) => {
         if (cancelled) return;
@@ -151,157 +188,108 @@ export default function ShopsResultsClient() {
   }, [searchState]);
 
   const visibleShops = useMemo(() => {
-    const source = remoteShops.length > 0 ? remoteShops : fallbackShops;
+    const source = remoteShops.length > 0 ? remoteShops : (fallbackShops as Shop[]);
     return filterAndSortShops(source, searchState);
   }, [remoteShops, searchState]);
 
   const updateParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
+
     Object.entries(updates).forEach(([key, value]) => {
       if (!value) params.delete(key);
       else params.set(key, value);
     });
+
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  if (categoryBrowseMode) {
-    return (
-      <main className="min-h-screen bg-[#E4FCD5]">
-        <Navbar
-          isLoggedIn={!!session?.user}
-          firstName={firstName}
-        />
-
-        <section className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-          {apiFailed ? (
-            <p className="mb-5 text-sm text-[#6b7e6d]">
-              Showing local fallback results because the backend shop API is not responding yet.
-            </p>
-          ) : null}
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visibleShops.map((shop) => (
-              <ShopResultCard key={shop.id} shop={shop} />
-            ))}
-          </div>
-
-          {!loading && visibleShops.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-[#bfd1bc] bg-white p-8 text-center text-[#476050]">
-              No shops are currently listed under {categoryLabels[searchState.category] ?? "this category"}.
-            </div>
-          ) : null}
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-[#f7f8f3]">
-        <Navbar
-          isLoggedIn={!!session?.user}
-          firstName={firstName}
-        />
+    <main className="min-h-screen bg-[var(--background)] text-foreground">
+      <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
 
       <section className="mx-auto max-w-7xl px-4 py-5 md:px-6">
-        <div className="mb-5">
-          <h1 className="text-[2.7rem] font-extrabold leading-none tracking-tight text-[#123324]">
-            {loading ? "Searching..." : `${visibleShops.length} matches found`}
-          </h1>
-          <p className="mt-2 text-[1.7rem] text-[#31483a]">{searchState.q || "Repair results"}</p>
-          {apiFailed ? (
-            <p className="mt-2 text-sm text-[#6b7e6d]">Showing interactive local fallback results because the backend shop API is not responding yet.</p>
-          ) : null}
+
+        {/* HEADER & SORT TABS CONTAINER */}
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-[2.7rem] font-extrabold leading-none tracking-tight">
+              {loading
+                ? "Searching..."
+                : categoryBrowseMode
+                  ? `${visibleShops.length} shops`
+                  : `${visibleShops.length} matches found`}
+            </h1>
+
+            <p className="mt-2 text-[1.7rem] text-[var(--muted-foreground)]">
+              {searchState.q ||
+                categoryLabels[searchState.category] ||
+                "Repair results"}
+            </p>
+          </div>
+
+          {/* MOBILE FILTER BUTTON */}
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((prev) => !prev)}
+            className="mb-8 self-start inline-flex items-center gap-2 rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white shadow-sm lg:hidden"
+          >
+            <span className="text-lg leading-none">☰</span>
+            {filtersOpen ? "Close filters" : "Filters & sort"}
+          </button>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {sortTabs.map((tab) => {
+              const active = searchState.sort === tab.value;
+
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => updateParams({ sort: tab.value })}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${active
+                    ? "bg-[var(--accent-dark)] text-white shadow-sm"
+                    : "bg-[var(--card)] hover:bg-[var(--mint-50)]"
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
+        {/* LAYOUT */}
         <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]">
-          <aside className="space-y-6 pt-2">
-            <div>
-              <h2 className="mb-4 text-lg font-semibold text-[#22392c]">Filters</h2>
-              <div className="space-y-4">
-                {sidebarSort.map((item) => {
-                  const active = searchState.sort === item.value;
-                  return (
-                    <button key={item.value} type="button" onClick={() => updateParams({ sort: item.value })} className="flex items-center gap-3 text-left text-[1rem] text-[#253c2c]">
-                      <span className={`h-4 w-4 rounded-full ${active ? "bg-[#344f2f]" : "bg-[#a9c06b]"}`} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
-            <div>
-              <div className="mb-3 text-lg font-semibold text-[#22392c]">Distance</div>
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <div className="mb-2 flex items-center justify-between text-sm text-[#355140]">
-                  <span>Nearby only</span>
-                  <span>{searchState.maxDistanceKm} km</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={25}
-                  step={1}
-                  value={searchState.maxDistanceKm}
-                  onChange={(event) => updateParams({ maxDistanceKm: event.currentTarget.value })}
-                  className="w-full accent-[#2a5239]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-lg font-semibold text-[#22392c]">Offers & Promotions</h3>
-              <div className="space-y-4 text-[#233b2d]">
-                {promoToggles.map((promo) => {
-                  const checked = searchState[promo.key];
-                  return (
-                    <label key={promo.key} className="flex items-center gap-3 text-[1rem]">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(event) => updateParams({ [promo.key]: event.currentTarget.checked ? "true" : null })}
-                        className="h-4 w-4 rounded border-[#adc2a9] accent-[#2a5239]"
-                      />
-                      <span>{promo.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
+          {/* DESKTOP SIDEBAR */}
+          <aside className="hidden lg:block">
+            <SidebarFilters targetPath="/shops" />
           </aside>
 
+          {/* RESULTS */}
           <div>
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-[#e5f1e2] p-2">
-              {sortTabs.map((tab) => {
-                const active = searchState.sort === tab.value;
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => updateParams({ sort: tab.value })}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${active ? "bg-[#39a95d] text-white shadow-sm" : "bg-transparent text-[#2a4231] hover:bg-white"}`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-              <div className="ml-auto rounded-xl px-3 py-2 text-[#36523d]">≡</div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
               {visibleShops.map((shop) => (
                 <ShopResultCard key={shop.id} shop={shop} />
               ))}
             </div>
-
-            {!loading && visibleShops.length === 0 ? (
-              <div className="mt-6 rounded-2xl border border-dashed border-[#bfd1bc] bg-white p-8 text-center text-[#476050]">
-                No matching shops found for this search. Try increasing the distance or removing one promotion filter.
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
+
+      {/* MOBILE DRAWER */}
+      {filtersOpen && (
+        <div className="fixed inset-0 z-[110] lg:hidden">
+          <button
+            onClick={() => setFiltersOpen(false)}
+            className="absolute inset-0 bg-black/25 backdrop-blur-sm transition-opacity"
+            aria-label="Close filters"
+          />
+
+          <aside className="absolute left-0 top-0 h-full w-[86vw] max-w-[340px] overflow-y-auto bg-[var(--background)] p-6 shadow-2xl">
+            <SidebarFilters targetPath="/shops" />
+          </aside>
+        </div>
+      )}
     </main>
   );
 }

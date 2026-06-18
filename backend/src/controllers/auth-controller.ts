@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "../models/prisma";
-import { env } from "../config/env";
-import { isAdminEmail } from "../config/admin";
+import prisma from "../models/prisma.js";
+import { env } from "../config/env.js";
+import { isAdminEmail } from "../config/admin.js";
 
 function signToken(user: {
   id: string;
@@ -120,6 +120,13 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Block deleted or banned users
+    if (user.status === "DELETED" || user.status === "BANNED") {
+      return res.status(403).json({
+        message: "This account has been deactivated. Please contact support.",
+      });
+    }
+
     const token = signToken(user);
 
     return res.json({
@@ -132,6 +139,7 @@ export async function login(req: Request, res: Response) {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        status: user.status,
       },
     });
   } catch (error) {

@@ -1,12 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
+import { useSession } from "next-auth/react";
 import Navbar from "@/components/home/Navbar";
-import { chatWithAi } from "@/lib/api";
+import {
+  chatWithAi,
+  createAiChatSession,
+  getAiChatSessions,
+  saveAiChatMessage,
+} from "@/lib/api";
 
 type Message = {
   role: "user" | "assistant";
   text: string;
+};
+
+type ChatSession = {
+  id: string;
+  title: string;
+  messages: Message[];
 };
 
 type ChatPreview = {
@@ -15,6 +33,46 @@ type ChatPreview = {
   subtitle: string;
 };
 
+const CHAT_STORAGE_KEY = "meramot-ai-chat-sessions";
+const ACTIVE_CHAT_STORAGE_KEY = "meramot-ai-active-chat-id";
+
+const DEFAULT_GREETING =
+  "Hi, I’m Meramot AI. Tell me what’s happening with your device, and I’ll help you figure out the next step.";
+
+function createDefaultChat(id = "draft-chat", title = "General Support"): ChatSession {
+  return {
+    id,
+    title,
+    messages: [
+      {
+        role: "assistant",
+        text: DEFAULT_GREETING,
+      },
+    ],
+  };
+}
+
+function renderFormattedText(text: string) {
+  return text.split("\n").map((line, lineIndex) => {
+    const isBullet = line.trim().startsWith("- ");
+
+    return (
+      <div
+        key={lineIndex}
+        className={isBullet ? "ml-5 list-item" : line.trim() === "" ? "h-3" : ""}
+      >
+        {line.split(/(\*\*[^*]+\*\*)/g).map((part, partIndex) => {
+          if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+            return <strong key={partIndex}>{part.slice(2, -2)}</strong>;
+          }
+
+          return <Fragment key={partIndex}>{part}</Fragment>;
+        })}
+      </div>
+    );
+  });
+}
+
 function makePreview(messages: Message[], fallback: string): string {
   const firstUser = messages.find((msg) => msg.role === "user")?.text?.trim();
   if (!firstUser) return fallback;
@@ -22,27 +80,45 @@ function makePreview(messages: Message[], fallback: string): string {
 }
 
 export default function AiChatPage() {
-  const [chatSessions, setChatSessions] = useState<
-    { id: string; title: string; messages: Message[] }[]
-  >([
-    {
-      id: "default",
-      title: "General Support",
-      messages: [
-        {
-          role: "assistant",
-          text: "Hi, I’m Meramot AI. Tell me what’s happening with your device, and I’ll help you figure out the next step.",
-        },
-      ],
-    },
+  const { data: session } = useSession();
+  const sessionToken = (session?.user as { accessToken?: string } | undefined)?.accessToken;
+
+  const [token, setToken] = useState("");
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([
+    createDefaultChat(),
   ]);
 
-  const [activeChatId, setActiveChatId] = useState("default");
+  const [activeChatId, setActiveChatId] = useState("draft-chat");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  const isLoggedIn = !!token;
+
+  useEffect(() => {
+    setToken(sessionToken || "");
+  }, [sessionToken]);
+
+  const firstName = useMemo(() => {
+    const user = session?.user as
+      | { name?: string | null; username?: string | null; email?: string | null }
+      | undefined;
+
+    return (
+      user?.name?.trim()?.split(" ")[0] ||
+      user?.username?.trim()?.split(" ")[0] ||
+      user?.email?.trim()?.split("@")[0] ||
+      "User"
+    );
+  }, [session]);
 
   const activeChat = useMemo(() => {
-    return chatSessions.find((chat) => chat.id === activeChatId) ?? chatSessions[0];
+    return (
+      chatSessions.find((chat) => chat.id === activeChatId) ?? chatSessions[0]
+    );
   }, [chatSessions, activeChatId]);
 
   const previews: ChatPreview[] = useMemo(() => {
@@ -59,10 +135,99 @@ export default function AiChatPage() {
     }));
   }, [chatSessions]);
 
-  function updateActiveMessages(nextMessages: Message[]) {
+  useEffect(() => {
+    async function loadHistory() {
+      setHistoryError("");
+
+      if (isLoggedIn) {
+        try {
+          const savedChats = await getAiChatSessions(token);
+
+          if (Array.isArray(savedChats) && savedChats.length > 0) {
+            setChatSessions(savedChats);
+            setActiveChatId(savedChats[0].id);
+          } else {
+            const defaultChat = createDefaultChat();
+            setChatSessions([defaultChat]);
+            setActiveChatId(defaultChat.id);
+          }
+        } catch {
+          setHistoryError("Could not load saved AI chat history.");
+          const defaultChat = createDefaultChat();
+          setChatSessions([defaultChat]);
+          setActiveChatId(defaultChat.id);
+        } finally {
+          setHistoryLoaded(true);
+        }
+
+        return;
+      }
+
+      const savedChats = localStorage.getItem(CHAT_STORAGE_KEY);
+      const savedActiveChatId = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY);
+
+      if (savedChats) {
+        try {
+          const parsedChats = JSON.parse(savedChats);
+
+          if (Array.isArray(parsedChats) && parsedChats.length > 0) {
+            setChatSessions(parsedChats);
+            setActiveChatId(savedActiveChatId || parsedChats[0].id);
+          }
+        } catch {
+          localStorage.removeItem(CHAT_STORAGE_KEY);
+          localStorage.removeItem(ACTIVE_CHAT_STORAGE_KEY);
+        }
+      }
+
+      setHistoryLoaded(true);
+    }
+
+    if (token !== "") {
+      void loadHistory();
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      if (!sessionToken) {
+        void loadHistory();
+      }
+    }
+  }, [isLoggedIn, token]);
+
+  useEffect(() => {
+    if (!historyLoaded || isLoggedIn) return;
+
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatSessions));
+    localStorage.setItem(ACTIVE_CHAT_STORAGE_KEY, activeChatId);
+  }, [chatSessions, activeChatId, historyLoaded, isLoggedIn]);
+
+  useEffect(() => {
+    function handleStorageChange(event: StorageEvent) {
+      if (isLoggedIn) return;
+
+      if (event.key === CHAT_STORAGE_KEY && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setChatSessions(parsed);
+          }
+        } catch {}
+      }
+
+      if (event.key === ACTIVE_CHAT_STORAGE_KEY && event.newValue) {
+        setActiveChatId(event.newValue);
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [isLoggedIn]);
+
+  function updateMessagesById(chatId: string, nextMessages: Message[]) {
     setChatSessions((prev) =>
       prev.map((chat) =>
-        chat.id === activeChatId
+        chat.id === chatId
           ? {
               ...chat,
               messages: nextMessages,
@@ -74,13 +239,14 @@ export default function AiChatPage() {
   }
 
   function createNewChat() {
-    const id = `chat-${Date.now()}`;
-    const newChat = {
+    const id = isLoggedIn ? `draft-chat-${Date.now()}` : `guest-chat-${Date.now()}`;
+
+    const newChat: ChatSession = {
       id,
       title: "New Chat",
       messages: [
         {
-          role: "assistant" as const,
+          role: "assistant",
           text: "Hi, I’m Meramot AI. Describe your repair issue, and I’ll help you troubleshoot it.",
         },
       ],
@@ -89,22 +255,76 @@ export default function AiChatPage() {
     setChatSessions((prev) => [newChat, ...prev]);
     setActiveChatId(id);
     setInput("");
+    setHistoryError("");
+  }
+
+  function handleInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+
+    event.preventDefault();
+    void handleSend();
   }
 
   async function handleSend() {
     const trimmed = input.trim();
     if (!trimmed || loading || !activeChat) return;
 
+    const originalChatId = activeChat.id;
+    let currentChatId = activeChat.id;
+    const baseMessages = activeChat.messages;
+
     const nextMessages: Message[] = [
-      ...activeChat.messages,
+      ...baseMessages,
       { role: "user", text: trimmed },
     ];
 
-    updateActiveMessages(nextMessages);
     setInput("");
     setLoading(true);
+    setHistoryError("");
 
     try {
+      if (isLoggedIn && currentChatId.startsWith("draft-chat")) {
+        const createdChat = await createAiChatSession(
+          makePreview(nextMessages, "New Chat"),
+          token
+        );
+
+        currentChatId = createdChat.id;
+
+        await saveAiChatMessage(currentChatId, "assistant", baseMessages[0].text, token);
+
+        setChatSessions((prev) =>
+          prev.map((chat) =>
+            chat.id === originalChatId
+              ? {
+                  ...chat,
+                  id: currentChatId,
+                  title: makePreview(nextMessages, createdChat.title || "New Chat"),
+                }
+              : chat
+          )
+        );
+
+        setActiveChatId(currentChatId);
+      }
+
+      setChatSessions((prev) =>
+        prev.map((chat) =>
+          chat.id === originalChatId || chat.id === currentChatId
+            ? {
+                ...chat,
+                id: currentChatId,
+                messages: nextMessages,
+                title: makePreview(nextMessages, chat.title),
+              }
+            : chat
+        )
+      );
+
+      if (isLoggedIn) {
+        await saveAiChatMessage(currentChatId, "user", trimmed, token);
+      }
+
       const result = await chatWithAi({
         message: trimmed,
         history: nextMessages.map((msg) => ({
@@ -113,15 +333,27 @@ export default function AiChatPage() {
         })),
       });
 
-      updateActiveMessages([
+      const finalMessages: Message[] = [
         ...nextMessages,
         {
           role: "assistant",
           text: result.reply,
         },
-      ]);
+      ];
+
+      updateMessagesById(currentChatId, finalMessages);
+
+      if (isLoggedIn) {
+        await saveAiChatMessage(currentChatId, "assistant", result.reply, token);
+      }
     } catch (error) {
-      updateActiveMessages([
+      setHistoryError(
+        isLoggedIn
+          ? "Could not save this AI chat. Check the AI chat history API."
+          : ""
+      );
+
+      updateMessagesById(originalChatId, [
         ...nextMessages,
         {
           role: "assistant",
@@ -137,17 +369,19 @@ export default function AiChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      <Navbar />
+    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <Navbar isLoggedIn={!!session?.user} firstName={firstName} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <div className="rounded-[2.5rem] border border-[var(--border)] bg-[linear-gradient(180deg,#eaf8de_0%,#f8fcf5_100%)] p-4 shadow-[0_20px_50px_rgba(67,100,64,0.12)] md:p-6">
-          <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="rounded-[2rem] border border-[var(--border)] bg-white/90 p-4 shadow-sm">
+        <div className="rounded-[2.5rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_20px_50px_rgba(67,100,64,0.12)] md:p-6 dark:shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+          <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] relative">
+            {/* Desktop Sidebar */}
+            <aside className="hidden lg:block rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
               <button
                 type="button"
                 onClick={createNewChat}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
               >
                 <span className="text-lg leading-none">+</span>
                 New Chat
@@ -199,18 +433,115 @@ export default function AiChatPage() {
               </div>
             </aside>
 
-            <section className="flex min-h-[620px] flex-col rounded-[2rem] border border-[var(--border)] bg-white/90 p-4 shadow-sm md:p-6">
+            {/* Mobile Drawer Overlay */}
+            {isHistoryOpen && (
+              <div className="fixed inset-0 z-50 flex lg:hidden">
+                <div 
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
+                  onClick={() => setIsHistoryOpen(false)}
+                />
+                <aside className="relative flex w-[85vw] max-w-[320px] flex-col overflow-y-auto bg-[var(--background)] p-6 shadow-2xl animate-in slide-in-from-left-4 duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-[var(--foreground)]">Chat History</h2>
+                    <button
+                      onClick={() => setIsHistoryOpen(false)}
+                      className="rounded-full bg-[var(--card)] p-2 text-[var(--foreground)] shadow-sm transition hover:bg-[var(--mint-50)]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      createNewChat();
+                      setIsHistoryOpen(false);
+                    }}
+                    disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent-dark)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+                  >
+                    <span className="text-lg leading-none">+</span>
+                    New Chat
+                  </button>
+
+                  <div className="mt-6 flex-1 space-y-3">
+                    {previews.map((chat) => {
+                      const selected = chat.id === activeChatId;
+
+                      return (
+                        <button
+                          key={chat.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveChatId(chat.id);
+                            setIsHistoryOpen(false);
+                          }}
+                          className={`flex w-full items-start gap-3 rounded-[1.4rem] px-3 py-3 text-left transition ${
+                            selected
+                              ? "bg-[var(--mint-100)] shadow-sm"
+                              : "hover:bg-[var(--mint-50)] border border-[var(--border)] bg-[var(--card)]"
+                          }`}
+                        >
+                          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-200)] text-[var(--accent-dark)]">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              className="h-5 w-5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                              />
+                            </svg>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                              {chat.title}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                              {chat.subtitle}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </aside>
+              </div>
+            )}
+
+            {/* Mobile Chat History Toggle Button */}
+            <div className="lg:hidden flex">
+              <button
+                onClick={() => setIsHistoryOpen(true)}
+                className="inline-flex items-center gap-3 rounded-full bg-[var(--accent-dark)] px-5 py-3 text-white shadow-sm transition hover:opacity-95"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+                </svg>
+                <span className="font-semibold text-[15px]">View Chat History</span>
+              </button>
+            </div>
+
+            <section className="flex min-h-[620px] flex-col rounded-[2rem] border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm md:p-6">
               <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-[var(--foreground)]">
+                  <h1 className="text-xl md:text-2xl font-bold text-[var(--foreground)]">
                     AI Repair Assistant
                   </h1>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                  <p className="mt-1 text-xs md:text-sm text-[var(--muted-foreground)]">
                     Ask about device issues, repair urgency, and next steps.
                   </p>
                 </div>
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)]">
+                <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -228,6 +559,12 @@ export default function AiChatPage() {
                 </div>
               </div>
 
+              {historyError && (
+                <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-600">
+                  {historyError}
+                </div>
+              )}
+
               <div className="flex-1 space-y-5 overflow-y-auto py-6">
                 {activeChat?.messages.map((msg, index) => (
                   <div
@@ -237,30 +574,32 @@ export default function AiChatPage() {
                     }`}
                   >
                     {msg.role === "assistant" && (
-                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
-                        <span className="text-sm font-bold">AI</span>
+                      <div className="mt-1 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
+                        <span className="text-[10px] sm:text-sm font-bold">AI</span>
                       </div>
                     )}
 
                     <div
-                      className={`max-w-[78%] rounded-[1.4rem] px-4 py-3 text-sm leading-7 shadow-sm ${
+                      className={`max-w-[90%] md:max-w-[78%] rounded-[1.4rem] px-4 py-3 text-sm leading-7 shadow-sm ${
                         msg.role === "user"
-                          ? "bg-[linear-gradient(135deg,var(--accent-dark),#2e6d44)] text-white"
+                          ? "bg-[var(--accent-dark)] text-white"
                           : "bg-[var(--mint-100)] text-[var(--foreground)]"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap">{msg.text}</div>
+                      <div className="whitespace-pre-wrap">
+                        {renderFormattedText(msg.text)}
+                      </div>
                     </div>
 
                     {msg.role === "user" && (
-                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
+                      <div className="mt-1 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="1.8"
-                          className="h-5 w-5"
+                          className="h-4 w-4 sm:h-5 sm:w-5"
                         >
                           <path
                             strokeLinecap="round"
@@ -275,8 +614,8 @@ export default function AiChatPage() {
 
                 {loading && (
                   <div className="flex items-start gap-3">
-                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
-                      <span className="text-sm font-bold">AI</span>
+                    <div className="mt-1 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-[var(--mint-100)] text-[var(--accent-dark)] shadow-sm">
+                      <span className="text-[10px] sm:text-sm font-bold">AI</span>
                     </div>
                     <div className="rounded-[1.4rem] bg-[var(--mint-100)] px-4 py-3 text-sm text-[var(--foreground)] shadow-sm">
                       Thinking...
@@ -286,20 +625,22 @@ export default function AiChatPage() {
               </div>
 
               <div className="border-t border-[var(--border)] pt-4">
-                <div className="flex items-end gap-3 rounded-[1.6rem] bg-[linear-gradient(90deg,var(--accent-dark),#2f7a47)] p-3 shadow-sm">
+                <div className="flex items-end gap-3 rounded-[1.6rem] bg-[var(--mint-100)] p-3 shadow-sm">
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleInputKeyDown}
                     rows={2}
                     placeholder="Type your message here..."
-                    className="min-h-[56px] flex-1 resize-none rounded-[1.2rem] bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/75"
+                    disabled={loading}
+                    className="min-h-[56px] flex-1 resize-none rounded-[1.2rem] border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)] disabled:opacity-60"
                   />
 
                   <button
                     type="button"
                     onClick={handleSend}
                     disabled={loading}
-                    className="rounded-full bg-[#dfe8c7] px-5 py-3 text-sm font-semibold text-[var(--accent-dark)] transition hover:opacity-95 disabled:opacity-60"
+                    className="rounded-full bg-[var(--accent-dark)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
                   >
                     Send
                   </button>

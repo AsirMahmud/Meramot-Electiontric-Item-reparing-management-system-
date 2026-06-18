@@ -1,4 +1,4 @@
-import type { ApiShop, ShopQuery } from "@/lib/api";
+import type { Shop, ShopQuery } from "@/lib/api";
 
 export type SearchState = {
   q: string;
@@ -44,7 +44,7 @@ export function toShopQuery(state: SearchState): ShopQuery {
   };
 }
 
-function textForShop(shop: ApiShop) {
+function textForShop(shop: Shop) {
   return [
     shop.name,
     shop.description ?? "",
@@ -60,7 +60,7 @@ function textForShop(shop: ApiShop) {
     .toLowerCase();
 }
 
-function relevanceScore(shop: ApiShop, query: string) {
+function relevanceScore(shop: Shop, query: string) {
   if (!query) return 0;
   const q = query.toLowerCase();
   const text = textForShop(shop);
@@ -73,7 +73,7 @@ function relevanceScore(shop: ApiShop, query: string) {
   return score;
 }
 
-export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
+export function filterAndSortShops(shops: Shop[], state: SearchState) {
   const filtered = shops.filter((shop) => {
     const score = relevanceScore(shop, state.q);
     if (state.q && score === 0) return false;
@@ -109,6 +109,7 @@ export function filterAndSortShops(shops: ApiShop[], state: SearchState) {
   return sorted;
 }
 
-export function formatPriceLevel(priceLevel: number) {
-  return "৳".repeat(Math.max(1, Math.min(priceLevel, 4)));
+export function formatPriceLevel(priceLevel?: number | null) {
+  const level = priceLevel ?? 1;
+  return "৳".repeat(Math.max(1, Math.min(level, 4)));
 }

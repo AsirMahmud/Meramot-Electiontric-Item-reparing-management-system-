@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import FloatingAiChatButton from "@/components/chat/FloatingAiChatButton";
+import { AppThemeProvider } from "@/components/theme/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "meramot",
-  description: "Repair, pickup, and spare parts marketplace for hardware devices.",
+  description:
+    "Repair, pickup, and spare parts marketplace for hardware devices.",
 };
 
 export default function RootLayout({
@@ -26,12 +28,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable}`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
-          {children}
-          <FloatingAiChatButton />
+          <AppThemeProvider>
+            {children}
+            <FloatingAiChatButton />
+          </AppThemeProvider>
         </Providers>
       </body>
     </html>

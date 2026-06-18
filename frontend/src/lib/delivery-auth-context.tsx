@@ -33,6 +33,7 @@ type DeliveryAuthContextValue = DeliveryAuthState & {
     email: string;
     phone: string;
     vehicleType?: string;
+    profilePictureUrl: string;
     nidDocumentUrl: string;
     educationDocumentUrl: string;
     cvDocumentUrl: string;
@@ -49,6 +50,37 @@ const PUBLIC_PREFIXES = ["/delivery/login", "/delivery/signup", "/delivery/regis
 export function isPublicDeliveryPath(pathname: string | null) {
   if (!pathname) return false;
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function normalizeRiderProfile(
+  riderProfile: DeliveryMeResponse["riderProfile"] | Record<string, unknown>,
+): DeliveryMeResponse["riderProfile"] {
+  const p = riderProfile as Record<string, any>;
+  if (p.user && typeof p.user === "object") {
+    return p as DeliveryMeResponse["riderProfile"];
+  }
+
+  return {
+    id: (p.id as string) ?? "",
+    userId: (p.userId as string) ?? (p.id as string) ?? "",
+    vehicleType: (p.vehicleType as string | null | undefined) ?? null,
+    status: (p.status as string) ?? "OFFLINE",
+    isActive: (p.isActive as boolean | undefined) ?? true,
+    registrationStatus: (p.registrationStatus as string | undefined) ?? "APPROVED",
+    currentLat: (p.currentLat as number | null | undefined) ?? (p.lat as number | null | undefined) ?? null,
+    currentLng: (p.currentLng as number | null | undefined) ?? (p.lng as number | null | undefined) ?? null,
+    coverageZones: Array.isArray(p.coverageZones) ? p.coverageZones : [],
+    user: {
+      id: (p.id as string) ?? "",
+      name: (p.name as string | null | undefined) ?? null,
+      username: (p.username as string) ?? "",
+      email: (p.email as string) ?? "",
+      phone: (p.phone as string | null | undefined) ?? null,
+      role: (p.role as string) ?? "DELIVERY",
+      status: (p.status as string | undefined) ?? "ACTIVE",
+      avatarUrl: (p.avatarUrl as string | null | undefined) ?? null,
+    },
+  };
 }
 
 export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
@@ -70,36 +102,44 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
   const applyAuthPayload = useCallback(async (payload: DeliveryAuthPayload) => {
     persistToken(payload.token);
 
+    const rp = payload.riderProfile;
+    const u = payload.user;
+
+    if (!rp || !u) return;
+
     // Use login/register response immediately so auth does not fail on an extra /me round-trip.
     setMe({
-      id: payload.riderProfile.id,
-      userId: payload.user.id,
-      vehicleType: payload.riderProfile.vehicleType ?? null,
-      status: payload.riderProfile.status,
-      isActive: payload.riderProfile.isActive ?? true,
-      registrationStatus: payload.riderProfile.registrationStatus ?? "APPROVED",
+      id: rp.id,
+      email: u.email,
+      name: u.name ?? null,
+      phone: u.phone ?? null,
+      userId: u.id,
+      vehicleType: rp.vehicleType ?? null,
+      status: rp.status,
+      isActive: rp.isActive ?? true,
+      registrationStatus: rp.registrationStatus ?? "APPROVED",
       currentLat: null,
       currentLng: null,
       user: {
-        id: payload.user.id,
-        name: payload.user.name ?? null,
-        username: payload.user.username,
-        email: payload.user.email,
-        phone: payload.user.phone ?? null,
-        role: payload.user.role,
+        id: u.id,
+        name: u.name ?? null,
+        username: u.username,
+        email: u.email,
+        phone: u.phone ?? null,
+        role: u.role,
         status: "ACTIVE",
-        avatarUrl: null,
       },
       coverageZones: [],
     });
 
     try {
       const profile = await fetchDeliveryMe(payload.token);
-      setMe(profile.riderProfile);
+      setMe(normalizeRiderProfile(profile.riderProfile));
     } catch {
       // Keep session from login payload even if /me is temporarily unavailable.
     }
   }, [persistToken]);
+
 
   const refreshMe = useCallback(async () => {
     if (!token) {
@@ -108,7 +148,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const profile = await fetchDeliveryMe(token);
-      setMe(profile.riderProfile);
+      setMe(normalizeRiderProfile(profile.riderProfile));
     } catch {
       persistToken(null);
       setMe(null);
@@ -124,7 +164,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
     setToken(stored);
     setLoading(true);
     fetchDeliveryMe(stored)
-      .then((data) => setMe(data.riderProfile))
+      .then((data) => setMe(normalizeRiderProfile(data.riderProfile)))
       .catch(() => {
         persistToken(null);
         setMe(null);
@@ -154,6 +194,7 @@ export function DeliveryAuthProvider({ children }: { children: ReactNode }) {
       email: string;
       phone: string;
       vehicleType?: string;
+      profilePictureUrl: string;
       nidDocumentUrl: string;
       educationDocumentUrl: string;
       cvDocumentUrl: string;
@@ -218,6 +259,17 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
     }
   }, [hydrated, isPublic, loading, token, me, router, pathname]);
 
+  useEffect(() => {
+    if (!hydrated || loading || isPublic) return;
+    if (!token || !me) return;
+
+    const registrationStatus = me.registrationStatus ?? "APPROVED";
+    const isProfileRoute = pathname === "/delivery/profile" || pathname?.startsWith("/delivery/profile/");
+    if (registrationStatus !== "APPROVED" && !isProfileRoute) {
+      router.replace("/delivery/profile");
+    }
+  }, [hydrated, loading, isPublic, token, me, pathname, router]);
+
   if (!hydrated || (!isPublic && (loading || !token || !me))) {
     if (isPublic) {
       return <>{children}</>;
@@ -227,10 +279,10 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
         <div className="rounded-2xl bg-white px-10 py-8 shadow-sm border border-[#d9e5d5]">
           <div className="flex flex-col items-center gap-4">
             <div
-              className="h-10 w-10 border-2 border-[#163625] border-t-transparent rounded-full animate-spin"
+              className="h-10 w-10 border-2 border-[var(--foreground)] border-t-transparent rounded-full animate-spin"
               aria-hidden
             />
-            <p className="text-sm font-semibold text-[#163625]">Loading partner session…</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">Loading partner sessionâ€¦</p>
           </div>
         </div>
       </div>
@@ -239,3 +291,4 @@ export function DeliveryAuthGate({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

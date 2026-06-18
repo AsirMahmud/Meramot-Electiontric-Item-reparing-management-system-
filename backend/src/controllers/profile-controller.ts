@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import prisma from "../models/prisma.js";
-import type { AuthedRequest } from "../middleware/auth.js";
+import type { AuthenticatedRequest as AuthedRequest } from "../middleware/require-auth.js";
 
 export async function getProfile(req: AuthedRequest, res: Response) {
   try {
@@ -36,7 +36,7 @@ export async function updateProfile(req: AuthedRequest, res: Response) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { name, phone, address, city, area } = req.body as Record<string, string | undefined>;
+    const { name, phone, address, city, area, avatarUrl } = req.body as Record<string, string | undefined>;
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -46,6 +46,7 @@ export async function updateProfile(req: AuthedRequest, res: Response) {
         address: address?.trim() || null,
         city: city?.trim() || null,
         area: area?.trim() || null,
+        avatarUrl: avatarUrl?.trim() || null,
       },
       select: {
         id: true,
@@ -64,6 +65,22 @@ export async function updateProfile(req: AuthedRequest, res: Response) {
     return res.json({ message: "Profile updated", user });
   } catch (error) {
     console.error("updateProfile error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function deleteProfile(req: AuthedRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return res.json({ message: "Profile deleted" });
+  } catch (error) {
+    console.error("deleteProfile error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 }

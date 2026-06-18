@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 import {
   checkUsername,
@@ -82,15 +83,14 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [usernameStatus, setUsernameStatus] =
     useState<UsernameStatus>("idle");
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const passwordChecks = useMemo(
-    () => getPasswordChecks(form.password),
-    [form.password]
-  );
   const passwordBar = useMemo(
     () => getPasswordBar(form.password),
     [form.password]
@@ -132,7 +132,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       return;
     }
 
-    if (user.accessToken) {
+    if (user.accessToken && (user.role === "VENDOR_APPLICANT" || user.role === "VENDOR")) {
       try {
         const vendorStatus = await getVendorApplicationStatus(user.accessToken);
         const application = vendorStatus?.application;
@@ -141,12 +141,16 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           application?.status === "PENDING" ||
           application?.status === "REJECTED"
         ) {
-          router.push("/vendor/status");
+          router.push("/vendor/onboarding");
           return;
         }
 
         if (application?.status === "APPROVED") {
-          router.push("/vendor/onboarding");
+          if (!application.setupComplete) {
+            router.push("/vendor/setup-shop");
+          } else {
+            router.push("/vendor/dashboard");
+          }
           return;
         }
       } catch {
@@ -155,13 +159,51 @@ export default function AuthCard({ mode }: { mode: Mode }) {
     }
 
     if (user.role === "ADMIN") {
-      router.push("/admin/vendors");
+      router.push("/admin");
+      router.refresh();
+      return;
+    }
+
+    if (user.role === "DELIVERY_ADMIN") {
+      router.push("/delivery-admin");
+      router.refresh();
+      return;
+    }
+
+    if (user.role === "DELIVERY") {
+      router.push("/delivery");
+      router.refresh();
+      return;
+    }
+
+    if (user.role === "VENDOR") {
+      router.push("/vendor/dashboard");
       router.refresh();
       return;
     }
 
     router.push("/");
     router.refresh();
+  }
+
+  function validateField(name: string, value: string) {
+    if (isSignup) {
+      if (name === "name" && !value.trim()) return "Full name is required.";
+      if (name === "username" && !value.trim()) return "Username is required.";
+      if (name === "email" && !value.trim()) return "Email is required.";
+      if (name === "phone" && !value.trim()) return "Phone number is required.";
+      if (name === "password" && !value) return "Password is required.";
+      if (name === "confirm" && value !== form.password) return "Passwords do not match.";
+    } else {
+      if (name === "email" && !value.trim()) return "Username or email is required.";
+      if (name === "password" && !value) return "Password is required.";
+    }
+    return "";
+  }
+
+  function handleBlur(name: string) {
+    const errorMsg = validateField(name, form[name as keyof typeof form]);
+    setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -237,7 +279,7 @@ export default function AuthCard({ mode }: { mode: Mode }) {
   }
 
   async function handleGoogleSignIn() {
-    await signIn("google", { callbackUrl: "/admin/vendors" });
+    await signIn("google", { callbackUrl: "/" });
   }
 
   const showPasswordBar =
@@ -248,14 +290,16 @@ export default function AuthCard({ mode }: { mode: Mode }) {
       <div className="rounded-[2rem] border border-white/60 bg-white/90 px-8 py-6 shadow-2xl backdrop-blur">
         <div className="mb-4 text-center">
           <div className="mb-3 flex justify-center">
-            <Image
-              src="/images/meramot.svg"
-              alt="Meramot"
-              width={160}
-              height={48}
-              className="h-10 w-auto object-contain"
-              priority
-            />
+            <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+              <Image
+                src="/images/meramot.svg"
+                alt="Meramot"
+                width={160}
+                height={48}
+                className="h-10 w-auto object-contain"
+                priority
+              />
+            </Link>
           </div>
 
           <h1 className="text-3xl font-bold leading-tight text-accent-dark">
@@ -272,23 +316,30 @@ export default function AuthCard({ mode }: { mode: Mode }) {
         <form className="space-y-3" onSubmit={handleSubmit}>
           {isSignup && (
             <>
-              <input
-                className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
-                placeholder="Full name"
-                value={form.name}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, name: event.target.value }))
-                }
-              />
+              <div>
+                <input
+                  className={`w-full rounded-2xl border ${fieldErrors.name ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm`}
+                  placeholder="Full name"
+                  value={form.name}
+                  onBlur={() => handleBlur("name")}
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, name: event.target.value }));
+                    if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: "" }));
+                  }}
+                />
+                {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
+              </div>
 
               <div>
                 <input
-                  className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
+                  className={`w-full rounded-2xl border ${fieldErrors.username ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm`}
                   placeholder="Username"
                   value={form.username}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, username: event.target.value }))
-                  }
+                  onBlur={() => handleBlur("username")}
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, username: event.target.value }));
+                    if (fieldErrors.username) setFieldErrors((prev) => ({ ...prev, username: "" }));
+                  }}
                 />
                 {usernameStatus === "checking" && (
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -305,43 +356,71 @@ export default function AuthCard({ mode }: { mode: Mode }) {
                     Username already in use.
                   </p>
                 )}
+                {fieldErrors.username && usernameStatus !== "taken" && <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>}
               </div>
             </>
           )}
 
-          <input
-            className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
-            type={isSignup ? "email" : "text"}
-            placeholder={isSignup ? "Email" : "Username or email"}
-            value={form.email}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, email: event.target.value }))
-            }
-          />
+          <div>
+            <input
+              className={`w-full rounded-2xl border ${fieldErrors.email ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm`}
+              type={isSignup ? "email" : "text"}
+              placeholder={isSignup ? "Email" : "Username or email"}
+              value={form.email}
+              onBlur={() => handleBlur("email")}
+              onChange={(event) => {
+                setForm((prev) => ({ ...prev, email: event.target.value }));
+                if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: "" }));
+              }}
+            />
+            {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
+          </div>
 
           {isSignup && (
-            <input
-              className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
-              type="tel"
-              placeholder="Phone number"
-              value={form.phone}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, phone: event.target.value }))
-              }
-            />
+            <div>
+              <input
+                className={`w-full rounded-2xl border ${fieldErrors.phone ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm`}
+                type="tel"
+                placeholder="Phone number"
+                value={form.phone}
+                onBlur={() => handleBlur("phone")}
+                onChange={(event) => {
+                  setForm((prev) => ({ ...prev, phone: event.target.value }));
+                  if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
+                }}
+              />
+              {fieldErrors.phone && <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>}
+            </div>
           )}
 
-          <input
-            className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onFocus={() => setPasswordFocused(true)}
-            onBlur={() => setPasswordFocused(false)}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, password: event.target.value }))
-            }
-          />
+          <div>
+            <div className="relative">
+              <input
+                className={`w-full rounded-2xl border ${fieldErrors.password ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm pr-10`}
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={form.password}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => {
+                  setPasswordFocused(false);
+                  handleBlur("password");
+                }}
+                onChange={(event) => {
+                  setForm((prev) => ({ ...prev, password: event.target.value }));
+                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: "" }));
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-accent-dark"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {fieldErrors.password && <p className="mt-1 text-xs text-red-600">{fieldErrors.password}</p>}
+          </div>
 
           {showPasswordBar && (
             <div className="rounded-2xl border border-border bg-mint-50 px-3 py-3">
@@ -355,15 +434,30 @@ export default function AuthCard({ mode }: { mode: Mode }) {
           )}
 
           {isSignup && (
-            <input
-              className="w-full rounded-2xl border border-border px-4 py-2.5 text-sm"
-              type="password"
-              placeholder="Confirm password"
-              value={form.confirm}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, confirm: event.target.value }))
-              }
-            />
+            <div>
+              <div className="relative">
+                <input
+                  className={`w-full rounded-2xl border ${fieldErrors.confirm ? "border-red-500" : "border-border"} px-4 py-2.5 text-sm pr-10`}
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm password"
+                  value={form.confirm}
+                  onBlur={() => handleBlur("confirm")}
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, confirm: event.target.value }));
+                    if (fieldErrors.confirm) setFieldErrors((prev) => ({ ...prev, confirm: "" }));
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-accent-dark"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {fieldErrors.confirm && <p className="mt-1 text-xs text-red-600">{fieldErrors.confirm}</p>}
+            </div>
           )}
 
           {error ? (

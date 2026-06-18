@@ -24,30 +24,21 @@ export async function requireDeliveryAuth(req: Request, res: Response, next: Nex
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.sub },
-      select: { id: true, role: true },
+      select: { id: true, role: true, status: true },
     });
 
     if (!user || user.role !== "DELIVERY") {
       return res.status(403).json({ message: "Delivery access denied" });
     }
 
-    const rider = await prisma.riderProfile.findUnique({
-      where: { userId: user.id },
-      select: { id: true, isActive: true, registrationStatus: true },
-    });
-
-    if (!rider) {
-      return res.status(403).json({ message: "Delivery account incomplete" });
-    }
-
-    if (!rider.isActive) {
+    if (user.status !== "ACTIVE") {
       return res.status(403).json({ message: "Delivery account is suspended" });
     }
 
     req.deliveryAuth = {
       userId: user.id,
-      riderProfileId: rider.id,
-      registrationStatus: rider.registrationStatus,
+      riderProfileId: user.id,
+      registrationStatus: "APPROVED",
     };
     return next();
   } catch {
